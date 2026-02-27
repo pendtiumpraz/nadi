@@ -2145,6 +2145,13 @@ footer {
     display: flex;
   }
 
+  .nav-cta {
+    border: none !important;
+    padding: 0 !important;
+    color: var(--crimson-mid) !important;
+    display: block !important;
+  }
+
   .about-right {
     grid-template-columns: 1fr 1fr;
   }
