@@ -2,26 +2,26 @@
 
 const partners = [
     "Indonesian Ministry of Health",
+    "Inke Maris",
     "Nanyang Technological University",
     "Carnegie Mellon University",
     "Monash University",
     "Institut Teknologi Bandung",
     "University of Pittsburgh",
+    "Maerki Baumann & Co. AG",
     "Boston University School of Medicine",
+    "Boston Children's Hospital",
+    "Pittsburgh Veterans Affairs Healthcare System",
     "UNICEF",
     "UnitedHealth Group",
     "Novo Nordisk",
     "Pfizer",
     "Biofarma",
-    "Boston Children's Hospital",
     "International Vaccine Institute",
     "Alvarez & Marsal",
-    "Maerki Baumann & Co.",
-    "Inke Maris",
 ];
 
 export default function Partners() {
-    // Duplicate list for seamless marquee loop
     const allPartners = [...partners, ...partners];
 
     return (
