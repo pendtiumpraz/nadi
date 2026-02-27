@@ -1,0 +1,97 @@
+{
+    "slug": "health-financing-southeast-asia",
+    "title": "Health Financing in Southeast Asia",
+    "subtitle": "Why fiscal sustainability demands institutional redesign",
+    "category": "POLICY BRIEF",
+    "date": "2026-02-15",
+    "readTime": "8 min read",
+    "author": "NADI Research Team",
+    "coverColor": "crimson",
+    "seo": {
+        "description": "An analysis of health financing sustainability across Southeast Asia, examining the structural gaps between policy ambition and fiscal reality that threaten universal health coverage goals.",
+        "keywords": [
+            "health financing",
+            "southeast asia",
+            "UHC",
+            "fiscal sustainability",
+            "health policy"
+        ]
+    },
+    "blocks": [
+        {
+            "type": "lead",
+            "text": "Across Southeast Asia, governments have committed to universal health coverage. Yet the financing architecture underlying these commitments remains fragile, fragmented, and — in several cases — structurally unsustainable. The gap between policy ambition and fiscal reality is not a matter of willpower. It is a design problem."
+        },
+        {
+            "type": "heading",
+            "text": "The Structural Challenge"
+        },
+        {
+            "type": "text",
+            "text": "Health financing in the region has historically relied on out-of-pocket expenditure, donor funding, and general tax revenues allocated through political negotiation rather than actuarial discipline. This model was adequate when populations were young, disease burdens were acute, and economic growth outpaced demand. None of these conditions hold today."
+        },
+        {
+            "type": "asymmetric",
+            "left": "Demographic transition is compressing the window of fiscal opportunity. Aging populations require chronic care infrastructure that episodic funding cannot sustain. Every year of delayed structural reform compounds the eventual cost of correction.",
+            "right": "Meanwhile, the political economy of health budgets remains oriented toward visible, short-term interventions — hospital construction, equipment procurement, pilot programs — rather than the unglamorous work of sustainable financing design.",
+            "offsetRight": true
+        },
+        {
+            "type": "pullquote",
+            "text": "The question is no longer whether countries can afford universal health coverage. The question is whether they can afford not to redesign the financing architecture that makes it possible."
+        },
+        {
+            "type": "heading",
+            "text": "Three Design Failures"
+        },
+        {
+            "type": "text",
+            "text": "Our analysis across six national health systems identifies three recurring structural failures in financing design:"
+        },
+        {
+            "type": "callout",
+            "label": "FAILURE 1",
+            "text": "Revenue fragmentation — multiple collection channels with no unified risk pool, creating administrative overhead that absorbs resources meant for service delivery."
+        },
+        {
+            "type": "callout",
+            "label": "FAILURE 2",
+            "text": "Provider payment misalignment — reimbursement mechanisms that incentivize volume over value, acute care over prevention, and urban concentration over equitable distribution."
+        },
+        {
+            "type": "callout",
+            "label": "FAILURE 3",
+            "text": "Governance disconnection — financing decisions made in ministries of finance without adequate technical input from health system planners, and health coverage promises made without fiscal validation."
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "heading",
+            "text": "Toward Institutional Redesign"
+        },
+        {
+            "type": "two-column",
+            "left": "Institutional redesign does not mean starting over. It means restructuring the relationship between revenue collection, risk pooling, and strategic purchasing so that each function reinforces the others.",
+            "right": "This requires a shift from project-based financing to systems-based financing. From annual budget cycles to multi-year fiscal frameworks. From political allocation to actuarial discipline tempered by equity objectives."
+        },
+        {
+            "type": "stat",
+            "value": "63%",
+            "label": "of Southeast Asian health expenditure still flows through fragmented, non-pooled channels"
+        },
+        {
+            "type": "text",
+            "text": "The path forward requires honest acknowledgment that current structures were designed for a different era. Reforms must be technically sound, politically navigable, and implemented with the institutional patience that sustainable change demands."
+        },
+        {
+            "type": "quote",
+            "text": "Financing reform is not a technical exercise conducted in isolation. It is a political negotiation that must be grounded in evidence, structured by institutional design, and guided by a long-term vision of system sustainability.",
+            "attribution": "NADI Policy Framework"
+        },
+        {
+            "type": "text",
+            "text": "NADI's work in this domain focuses on helping governments and development partners move from fragmented financing arrangements to coherent, sustainable architectures — without losing sight of the political realities that determine what is implementable."
+        }
+    ]
+}

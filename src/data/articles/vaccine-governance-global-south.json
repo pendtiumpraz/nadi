@@ -1,0 +1,83 @@
+{
+    "slug": "vaccine-governance-global-south",
+    "title": "Vaccine Governance and the Global South",
+    "subtitle": "Lessons from fragmented multilateral coordination",
+    "category": "RESEARCH PAPER",
+    "date": "2026-01-22",
+    "readTime": "11 min read",
+    "author": "NADI Research Team",
+    "coverColor": "charcoal",
+    "seo": {
+        "description": "An examination of vaccine governance failures in multilateral health initiatives targeting the Global South, and a framework for restructuring coordination mechanisms.",
+        "keywords": [
+            "vaccine governance",
+            "global south",
+            "multilateral",
+            "immunization",
+            "global health"
+        ]
+    },
+    "blocks": [
+        {
+            "type": "lead",
+            "text": "The COVID-19 pandemic exposed a governance deficit that the global health community had known about — and largely ignored — for decades. Vaccine procurement, distribution, and deployment across the Global South were hampered not by a shortage of science, but by a surplus of fragmented coordination."
+        },
+        {
+            "type": "text",
+            "text": "Multilateral vaccine initiatives have proliferated since the early 2000s. Gavi, COVAX, regional procurement blocs, bilateral donation programs, and philanthropic platforms all operate with legitimate mandates and genuine ambition. Yet the absence of a coherent governance architecture means that these efforts frequently duplicate, contradict, or under-resource one another."
+        },
+        {
+            "type": "pullquote",
+            "text": "The failure was not one of goodwill. It was one of architecture. Multiple well-intentioned actors operating without shared governance produced fragmentation rather than coverage."
+        },
+        {
+            "type": "heading",
+            "text": "The Coordination Paradox"
+        },
+        {
+            "type": "asymmetric",
+            "left": "More actors should theoretically mean more resources, broader reach, and faster response. In practice, the multiplication of coordination bodies creates a governance paradox: each new mechanism adds complexity that reduces the system's collective ability to act decisively.",
+            "right": "Country-level health ministries, already under-resourced, must navigate reporting requirements from multiple donors, align domestic procurement with external supply commitments, and reconcile competing technical guidance — all while managing public expectations shaped by media narratives they cannot control.",
+            "offsetRight": false
+        },
+        {
+            "type": "heading",
+            "text": "Five Structural Observations"
+        },
+        {
+            "type": "list",
+            "items": [
+                "Governance structures were designed for steady-state operations, not pandemic-scale surge demands.",
+                "Risk-sharing mechanisms between manufacturers, multilaterals, and recipient governments remain ad hoc and under-specified.",
+                "Regional procurement blocs lack the legal and financial frameworks to function as genuine pooled purchasing agents.",
+                "Country ownership is undermined when financing conditions dictate programmatic choices that conflict with national health priorities.",
+                "Accountability mechanisms focus on input tracking rather than outcome measurement, creating compliance cultures rather than performance cultures."
+            ]
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "heading",
+            "text": "A Framework for Restructuring"
+        },
+        {
+            "type": "two-column",
+            "left": "The first requirement is role clarity. Every actor in the vaccine governance ecosystem must have a defined function, bounded authority, and accountability to a shared performance framework. Overlapping mandates are not collaboration — they are confusion.",
+            "right": "The second requirement is financial architecture. Sustainable vaccine governance requires predictable, multi-year financing that is not contingent on annual donor pledging cycles or emergency declarations. This means moving from crisis-driven mobilization to institutionalized fiscal commitment."
+        },
+        {
+            "type": "highlight",
+            "text": "Governance restructuring must begin with an honest mapping of who does what, who pays for what, and who is accountable to whom. Without this foundation, any reform initiative will reproduce the fragmentation it seeks to resolve."
+        },
+        {
+            "type": "quote",
+            "text": "The measure of governance quality is not the number of coordination meetings held. It is whether the system delivers vaccines to the populations that need them, when they need them, at a cost that is sustainable.",
+            "attribution": "NADI Governance Assessment Framework"
+        },
+        {
+            "type": "text",
+            "text": "NADI's engagement in vaccine governance focuses on institutional design — building the structures, incentives, and accountability mechanisms that make multilateral cooperation productive rather than performative."
+        }
+    ]
+}

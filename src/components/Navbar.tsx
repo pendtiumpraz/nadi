@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -11,16 +12,25 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
+    const handleLinkClick = () => setMenuOpen(false);
+
     return (
         <nav className={scrolled ? "scrolled" : ""}>
             <a href="/" className="nav-logo">
                 <span className="nav-logo-word">NADI</span>
-                <span className="nav-logo-sub">Research &amp; Policy Institute</span>
+                <span className="nav-logo-sub">Advancing Development &amp; Innovation</span>
             </a>
-            <ul className="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/contact" className="nav-cta">Contact Us</a></li>
+            <ul className={`nav-links${menuOpen ? " open" : ""}`}>
+                <li><a href="#about" onClick={handleLinkClick}>About</a></li>
+                <li><a href="#areas" onClick={handleLinkClick}>Areas of Work</a></li>
+                <li><a href="#methodology" onClick={handleLinkClick}>Methodology</a></li>
+                <li><a href="#engage" onClick={handleLinkClick}>Who We Engage</a></li>
+                <li><a href="/publications" onClick={handleLinkClick}>Publications</a></li>
+                <li><a href="/contact" className="nav-cta" onClick={handleLinkClick}>Get in Touch</a></li>
             </ul>
+            <button className={`hamburger${menuOpen ? " active" : ""}`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+                <span /><span /><span />
+            </button>
         </nav>
     );
 }

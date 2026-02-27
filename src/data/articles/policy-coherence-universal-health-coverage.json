@@ -1,0 +1,81 @@
+{
+    "slug": "policy-coherence-universal-health-coverage",
+    "title": "Policy Coherence and Universal Health Coverage",
+    "subtitle": "Aligning ambition with institutional capacity",
+    "category": "STRATEGIC ANALYSIS",
+    "date": "2025-12-08",
+    "readTime": "6 min read",
+    "author": "NADI Research Team",
+    "coverColor": "dark",
+    "seo": {
+        "description": "An analysis of the coherence gap between UHC policy commitments and the institutional capacity required to deliver them, with practical recommendations for alignment.",
+        "keywords": [
+            "UHC",
+            "policy coherence",
+            "institutional capacity",
+            "health systems",
+            "governance"
+        ]
+    },
+    "blocks": [
+        {
+            "type": "lead",
+            "text": "Universal health coverage has become the defining aspiration of global health policy. More than 150 countries have made formal commitments to achieving UHC. Yet the distance between declaration and delivery remains vast — not because the aspiration is wrong, but because the institutional infrastructure required to fulfill it has not been built."
+        },
+        {
+            "type": "heading",
+            "text": "The Coherence Gap"
+        },
+        {
+            "type": "text",
+            "text": "Policy coherence in health systems refers to the alignment between stated objectives, financing mechanisms, governance structures, and implementation capacity. When these elements are misaligned, the system generates contradictions that no amount of political will can resolve."
+        },
+        {
+            "type": "stat",
+            "value": "150+",
+            "label": "countries have committed to UHC, but fewer than 30 have the institutional infrastructure to deliver it"
+        },
+        {
+            "type": "asymmetric",
+            "left": "Consider the common scenario: a government commits to expanding primary healthcare coverage while simultaneously cutting public health budgets under fiscal consolidation pressure. The policy says expand; the budget says contract. Frontline health workers receive the contradiction as an impossible mandate.",
+            "right": "Or consider the governance dimension: decentralization policies transfer health service delivery to local governments that lack the administrative capacity, technical expertise, and financial resources to manage the expanded mandate they have been given.",
+            "offsetRight": true
+        },
+        {
+            "type": "pullquote",
+            "text": "Incoherence is not a bug in health policy. In many systems, it is the defining feature — the predictable result of commitments made without institutional foundations."
+        },
+        {
+            "type": "heading",
+            "text": "Three Dimensions of Alignment"
+        },
+        {
+            "type": "callout",
+            "label": "FISCAL ALIGNMENT",
+            "text": "Coverage commitments must be matched by revenue strategies that are sustainable, predictable, and adequate. This means moving beyond general tax allocations to dedicated health financing mechanisms with multi-year fiscal frameworks."
+        },
+        {
+            "type": "callout",
+            "label": "GOVERNANCE ALIGNMENT",
+            "text": "The distribution of authority must match the distribution of capacity. Decentralization without capability transfer is delegation of failure."
+        },
+        {
+            "type": "callout",
+            "label": "IMPLEMENTATION ALIGNMENT",
+            "text": "Service delivery models must reflect the actual health needs, workforce availability, and infrastructure reality of the populations they serve — not the idealized models imported from different contexts."
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "two-column",
+            "left": "Achieving policy coherence is fundamentally a governance challenge. It requires mechanisms that force the conversation between health planners, finance officials, and political decision-makers before commitments are made — not after.",
+            "right": "NADI works with governments and institutional partners to build these mechanisms: structured policy review processes, fiscal impact assessments, and implementation readiness frameworks that test whether stated ambitions are achievable with available resources."
+        },
+        {
+            "type": "quote",
+            "text": "The purpose of policy coherence is not to lower ambition. It is to ensure that ambition is matched by the institutional infrastructure that makes delivery possible.",
+            "attribution": "NADI Strategic Framework"
+        }
+    ]
+}

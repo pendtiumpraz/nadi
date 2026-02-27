@@ -1,0 +1,9 @@
+[
+    {
+        "id": "1",
+        "email": "admin@nadi.com",
+        "name": "Admin",
+        "password": "$2b$10$9eOGWfyD7URGi21NLR27wu1Ijkg71HpfS6Kfv13estegj2o.rO/um",
+        "role": "admin"
+    }
+]
