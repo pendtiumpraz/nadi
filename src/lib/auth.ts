@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { getUserByEmail, verifyPassword } from "@/lib/users";
+import authConfig from "@/lib/auth.config";
 
 declare module "next-auth" {
     interface User {
@@ -23,6 +24,7 @@ declare module "@auth/core/jwt" {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    ...authConfig,
     providers: [
         Credentials({
             name: "Credentials",
@@ -51,6 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     callbacks: {
+        ...authConfig.callbacks,
         jwt({ token, user }) {
             if (user) {
                 token.role = user.role;
@@ -65,9 +68,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return session;
         },
-    },
-    pages: {
-        signIn: "/login",
     },
     session: {
         strategy: "jwt",
