@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import AdminNav from "@/components/AdminNav";
 
 export default async function AdminLayout({
@@ -12,7 +12,7 @@ export default async function AdminLayout({
 
     return (
         <div className="admin-layout">
-            <AdminNav user={session.user} />
+            <AdminNav user={{ name: session.user.name, email: session.user.email, role: session.user.role }} />
             <main className="admin-main">{children}</main>
         </div>
     );

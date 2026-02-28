@@ -2081,6 +2081,440 @@ footer {
   margin-top: 1rem;
 }
 
+/* Admin Nav Icons */
+.admin-nav-icon {
+  margin-right: 8px;
+  font-size: 0.9rem;
+  opacity: 0.5;
+}
+
+.admin-nav-link.active .admin-nav-icon {
+  opacity: 1;
+}
+
+/* Admin Content Header */
+.admin-content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-content--wide {
+  max-width: 1100px;
+}
+
+/* Admin Welcome */
+.admin-welcome {
+  background: var(--charcoal);
+  padding: 2rem 2.5rem;
+  margin: -2rem -2.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-welcome-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--crimson-mid);
+}
+
+.admin-welcome-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 400;
+  color: #fff;
+  margin-top: 0.2rem;
+}
+
+.admin-welcome-meta {
+  text-align: right;
+}
+
+.admin-welcome-role {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  background: var(--crimson);
+  color: #fff;
+  border-radius: 2px;
+}
+
+.admin-welcome-email {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 4px;
+}
+
+/* Admin Stats */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  margin-bottom: 2rem;
+}
+
+.admin-stat-card {
+  background: #fff;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.admin-stat-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--crimson);
+  display: block;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+
+.admin-stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Admin Section Title */
+.admin-section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.8rem;
+}
+
+/* Admin Latest Article */
+.admin-latest {
+  display: block;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.admin-latest:hover {
+  border-color: var(--crimson);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.admin-latest-badge {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  background: var(--crimson-pale);
+  color: var(--crimson);
+  border-radius: 2px;
+  margin-bottom: 0.6rem;
+}
+
+.admin-latest-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--charcoal);
+  line-height: 1.3;
+  margin-bottom: 0.4rem;
+}
+
+.admin-latest-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Admin Empty State */
+.admin-empty {
+  text-align: center;
+  padding: 3rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ══════════════════════════════════════════
+   CMS ARTICLE EDITOR
+   ══════════════════════════════════════════ */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.editor-section {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 1.5rem;
+}
+
+.editor-section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.editor-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.editor-empty {
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: var(--cream);
+  border: 1px dashed var(--line);
+}
+
+/* Editor Blocks */
+.editor-block {
+  border: 1px solid var(--line);
+  margin-bottom: 0.5rem;
+  background: var(--warm-white);
+}
+
+.editor-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+.editor-block-type {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  background: var(--crimson-pale);
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+
+.editor-block-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.editor-block-actions button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.editor-block-actions button:hover:not(:disabled) {
+  border-color: var(--charcoal);
+  color: var(--charcoal);
+}
+
+.editor-block-actions button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.editor-block-delete {
+  color: var(--crimson) !important;
+}
+
+.editor-block-delete:hover {
+  background: var(--crimson) !important;
+  color: #fff !important;
+  border-color: var(--crimson) !important;
+}
+
+.editor-block-body {
+  padding: 0.8rem;
+}
+
+/* Editor inputs */
+.editor-textarea {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.editor-textarea:focus {
+  border-color: var(--crimson);
+}
+
+.editor-input {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.editor-input:focus {
+  border-color: var(--crimson);
+}
+
+.editor-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.editor-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+.editor-checkbox input {
+  accent-color: var(--crimson);
+}
+
+.editor-divider-hint {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+/* Editor list items */
+.editor-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.editor-list-row {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.editor-list-row .editor-input {
+  flex: 1;
+}
+
+.editor-list-remove {
+  width: 36px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--crimson);
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.editor-list-remove:hover {
+  background: var(--crimson);
+  color: #fff;
+  border-color: var(--crimson);
+}
+
+/* Add block */
+.editor-add-block {
+  padding: 1rem;
+  background: var(--cream);
+  border: 1px dashed var(--line);
+}
+
+.editor-add-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.editor-add-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.editor-add-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.editor-add-btn:hover {
+  border-color: var(--crimson);
+  color: var(--crimson);
+}
+
+/* Editor save */
+.editor-save {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
 

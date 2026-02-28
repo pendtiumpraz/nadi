@@ -15,11 +15,17 @@ export default function AdminNav({ user }: AdminNavProps) {
     const pathname = usePathname();
 
     const links = [
-        { href: "/admin", label: "Dashboard" },
+        { href: "/admin", label: "Dashboard", icon: "◫" },
+        { href: "/admin/articles", label: "Articles", icon: "◧" },
         ...(user.role === "admin"
-            ? [{ href: "/admin/users", label: "User Management" }]
+            ? [{ href: "/admin/users", label: "Users", icon: "◩" }]
             : []),
     ];
+
+    const isActive = (href: string) => {
+        if (href === "/admin") return pathname === "/admin";
+        return pathname.startsWith(href);
+    };
 
     return (
         <aside className="admin-sidebar">
@@ -32,8 +38,9 @@ export default function AdminNav({ user }: AdminNavProps) {
                     <a
                         key={link.href}
                         href={link.href}
-                        className={`admin-nav-link${pathname === link.href ? " active" : ""}`}
+                        className={`admin-nav-link${isActive(link.href) ? " active" : ""}`}
                     >
+                        <span className="admin-nav-icon">{link.icon}</span>
                         {link.label}
                     </a>
                 ))}
