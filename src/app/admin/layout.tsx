@@ -11,9 +11,9 @@ export default async function AdminLayout({
     if (!session?.user) redirect("/login");
 
     return (
-        <div className="admin-layout">
+        <div className="admin-shell">
             <AdminNav user={{ name: session.user.name, email: session.user.email, role: session.user.role }} />
-            <main className="admin-main">{children}</main>
+            <main className="admin-body">{children}</main>
         </div>
     );
 }
