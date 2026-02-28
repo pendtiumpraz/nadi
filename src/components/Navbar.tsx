@@ -15,7 +15,7 @@ export default function Navbar() {
     const handleLinkClick = () => setMenuOpen(false);
 
     return (
-        <nav className={scrolled ? "scrolled" : ""}>
+        <nav className={`site-nav${scrolled ? " scrolled" : ""}`}>
             <a href="/" className="nav-logo">
                 <span className="nav-logo-word">NADI</span>
                 <span className="nav-logo-sub">Advancing Development &amp; Innovation</span>

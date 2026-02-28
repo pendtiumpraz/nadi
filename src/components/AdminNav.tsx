@@ -30,21 +30,18 @@ export default function AdminNav({ user }: AdminNavProps) {
 
     return (
         <>
-            {/* Top navbar — logo + logout only */}
+            {/* Top bar — ONLY logo left, logout right */}
             <header className="adm-topbar">
                 <a href="/admin" className="adm-topbar-logo">
                     <span className="adm-topbar-logo-text">NADI</span>
-                    <span className="adm-topbar-logo-sub">Admin Panel</span>
+                    <span className="adm-topbar-logo-sub">Admin</span>
                 </a>
-                <div className="adm-topbar-right">
-                    <span className="adm-topbar-user">{user.name} <span className="adm-topbar-role">{user.role}</span></span>
-                    <button onClick={() => signOut({ callbackUrl: "/" })} className="adm-topbar-logout">Sign Out</button>
-                </div>
+                <button onClick={() => signOut({ callbackUrl: "/" })} className="adm-topbar-logout">Sign Out</button>
             </header>
 
-            {/* Left sidebar — navigation */}
+            {/* Sidebar — menu links */}
             <aside className="adm-sidebar">
-                <nav className="adm-sidebar-nav">
+                <div className="adm-sidebar-nav">
                     {links.map((link) => (
                         <a
                             key={link.href}
@@ -55,8 +52,10 @@ export default function AdminNav({ user }: AdminNavProps) {
                             <span className="adm-sidebar-label">{link.label}</span>
                         </a>
                     ))}
-                </nav>
-                <div className="adm-sidebar-footer">
+                </div>
+                <div className="adm-sidebar-bottom">
+                    <div className="adm-sidebar-user">{user.name}</div>
+                    <div className="adm-sidebar-role">{user.role}</div>
                     <a href="/" className="adm-sidebar-site" target="_blank">← View Site</a>
                 </div>
             </aside>
