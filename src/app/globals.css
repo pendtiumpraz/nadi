@@ -2515,6 +2515,236 @@ footer {
   padding: 1.5rem 0;
 }
 
+/* ══════════════════════════════════════════
+   AI GENERATOR
+   ══════════════════════════════════════════ */
+.ai-gen {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--line);
+  padding: 2px;
+}
+
+.ai-tab {
+  flex: 1;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 10px 16px;
+  border: none;
+  background: var(--warm-white);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.ai-tab:hover {
+  color: var(--charcoal);
+}
+
+.ai-tab.active {
+  background: #fff;
+  color: var(--crimson);
+  box-shadow: 0 -2px 0 var(--crimson) inset;
+}
+
+.ai-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 1.5rem;
+}
+
+.ai-panel-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--charcoal);
+  margin-bottom: 0.3rem;
+}
+
+.ai-panel-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 1.2rem;
+  line-height: 1.6;
+}
+
+.ai-status {
+  font-size: 0.8rem;
+  color: var(--crimson);
+  margin-top: 0.8rem;
+  font-style: italic;
+}
+
+.ai-topics {
+  margin-top: 1.5rem;
+}
+
+.ai-topics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ai-topic {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--warm-white);
+}
+
+.ai-topic:hover {
+  border-color: var(--crimson-mid);
+}
+
+.ai-topic.selected {
+  border-color: var(--crimson);
+  background: var(--crimson-pale);
+}
+
+.ai-topic-check {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--crimson);
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.ai-topic.selected .ai-topic-check {
+  background: var(--crimson);
+  color: #fff;
+  border-color: var(--crimson);
+}
+
+.ai-topic-content {
+  flex: 1;
+}
+
+.ai-topic-cat {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--crimson);
+}
+
+.ai-topic-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin: 2px 0;
+}
+
+.ai-topic-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.ai-topic-actions {
+  flex-shrink: 0;
+}
+
+.ai-batch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ai-batch-progress {
+  color: var(--crimson);
+}
+
+.ai-batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-batch-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--warm-white);
+}
+
+.ai-batch-item--generating {
+  border-color: var(--crimson-mid);
+  background: var(--crimson-pale);
+}
+
+.ai-batch-item--done {
+  border-color: #2e7d32;
+  background: #f0f7f0;
+}
+
+.ai-batch-item--error {
+  border-color: var(--crimson);
+  background: #fef0f0;
+}
+
+.ai-batch-status {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.ai-empty {
+  text-align: center;
+  padding: 2rem;
+  background: var(--cream);
+  border: 1px dashed var(--line);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ai-link {
+  background: none;
+  border: none;
+  color: var(--crimson);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
 

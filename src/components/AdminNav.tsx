@@ -17,6 +17,7 @@ export default function AdminNav({ user }: AdminNavProps) {
     const links = [
         { href: "/admin", label: "Dashboard", icon: "◫" },
         { href: "/admin/articles", label: "Articles", icon: "◧" },
+        { href: "/admin/ai", label: "AI Generator", icon: "✦" },
         ...(user.role === "admin"
             ? [{ href: "/admin/users", label: "Users", icon: "◩" }]
             : []),
