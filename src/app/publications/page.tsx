@@ -1,8 +1,9 @@
 import { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ArticleCard from "@/components/ArticleCard";
-import { getAllArticlesAsync } from "@/data/articles";
+import PublicationsList from "@/components/PublicationsList";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
     title: "Publications — NADI Research & Policy Institute",
@@ -10,9 +11,7 @@ export const metadata: Metadata = {
         "Policy briefs, research papers, and strategic analyses from NADI on health systems, governance, financing, and institutional design.",
 };
 
-export default async function PublicationsPage() {
-    const articles = await getAllArticlesAsync();
-
+export default function PublicationsPage() {
     return (
         <>
             <Navbar />
@@ -23,15 +22,7 @@ export default async function PublicationsPage() {
                         <h1 className="section-title">
                             Research, policy briefs &amp; strategic analyses
                         </h1>
-                        <div className="publications-grid">
-                            {articles.map((article, i) => (
-                                <ArticleCard
-                                    key={article.slug}
-                                    article={article}
-                                    featured={i === 0}
-                                />
-                            ))}
-                        </div>
+                        <PublicationsList />
                     </div>
                 </section>
             </main>

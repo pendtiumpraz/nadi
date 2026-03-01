@@ -11,9 +11,13 @@ export default function ArticleCard({ article, featured }: ArticleCardProps) {
     return (
         <a href={`/publications/${article.slug}`} className="insight-card" style={{ textDecoration: "none", color: "inherit" }}>
             <div className="insight-card-img">
-                <div className={`insight-card-img-inner${isRed ? " red" : ""}`} style={!featured && article.coverColor === "dark" ? { fontSize: "1.8rem" } : undefined}>
-                    NADI
-                </div>
+                {article.coverImage ? (
+                    <img src={article.coverImage} alt={article.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                    <div className={`insight-card-img-inner${isRed ? " red" : ""}`} style={!featured && article.coverColor === "dark" ? { fontSize: "1.8rem" } : undefined}>
+                        NADI
+                    </div>
+                )}
             </div>
             <div className="insight-card-body">
                 <p className="insight-category">{article.category}</p>
