@@ -7,7 +7,7 @@ export default function Hero() {
                 <div className="hero-content">
                     <span className="hero-badge">Network for Advancing Development and Innovation in Health</span>
                     <h1>Institutional Thinking for <em>Complex</em> Health Systems</h1>
-                    <p className="hero-desc">NADI works at the intersection of public affairs &amp; communication, policy, governance, and implementation — restoring coherence to systems that shape health outcomes at scale.</p>
+                    <p className="hero-desc">NADI —a part of Inke Maris &amp; Associates— works at the intersection of public affairs &amp; communication, policy, governance, and implementation — restoring coherence to systems that shape health outcomes at scale.</p>
                     <div className="hero-actions">
                         <a href="#areas" className="btn-primary">Our Work</a>
                         <a href="/contact" className="btn-outline">Partner With Us</a>
