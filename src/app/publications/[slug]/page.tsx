@@ -3,19 +3,19 @@ import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleRenderer from "@/components/ArticleRenderer";
-import { getArticleBySlug, getAllArticles } from "@/data/articles";
+import { getAllArticlesAsync } from "@/data/articles";
+
+// Dynamic — articles can come from blob storage
+export const dynamic = "force-dynamic";
 
 interface Props {
     params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-    return getAllArticles().map((a) => ({ slug: a.slug }));
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
-    const article = getArticleBySlug(slug);
+    const articles = await getAllArticlesAsync();
+    const article = articles.find((a) => a.slug === slug);
     if (!article) return { title: "Article Not Found" };
     return {
         title: `${article.title} — NADI`,
@@ -38,7 +38,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ArticlePage({ params }: Props) {
     const { slug } = await params;
-    const article = getArticleBySlug(slug);
+    const articles = await getAllArticlesAsync();
+    const article = articles.find((a) => a.slug === slug);
     if (!article) notFound();
 
     const colorMap = {

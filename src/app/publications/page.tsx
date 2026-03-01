@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleCard from "@/components/ArticleCard";
-import { getAllArticles } from "@/data/articles";
+import { getAllArticlesAsync } from "@/data/articles";
 
 export const metadata: Metadata = {
     title: "Publications — NADI Research & Policy Institute",
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
         "Policy briefs, research papers, and strategic analyses from NADI on health systems, governance, financing, and institutional design.",
 };
 
-export default function PublicationsPage() {
-    const articles = getAllArticles();
+export default async function PublicationsPage() {
+    const articles = await getAllArticlesAsync();
 
     return (
         <>

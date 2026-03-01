@@ -1,12 +1,12 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getAllArticles } from "@/data/articles";
+import { getAllArticlesAsync } from "@/data/articles";
 
 export default async function AdminDashboard() {
     const session = await auth();
     if (!session?.user) redirect("/login");
 
-    const articles = getAllArticles();
+    const articles = await getAllArticlesAsync();
     const totalArticles = articles.length;
     const latestArticle = articles[0];
 
