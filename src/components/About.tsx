@@ -35,7 +35,7 @@ export default function About() {
                         <div className="about-card animate-on-scroll">
                             <span className="about-card-icon">⊕</span>
                             <div className="about-card-title">Cross-Sector Depth</div>
-                            <p className="about-card-text">MoH · NTU · CMU · Monash · ITB · UPitt · UnitedHealth · Novo Nordisk · Biofarma · Pfizer · UNICEF · IVI</p>
+                            <p className="about-card-text">Cross-sectoral, interdisciplinary, and multi-institutional collaboration enables the delivery of comprehensive and sustainable solutions.</p>
                         </div>
                         <div className="about-card animate-on-scroll">
                             <span className="about-card-icon">∿</span>
