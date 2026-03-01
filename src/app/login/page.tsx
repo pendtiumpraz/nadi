@@ -48,7 +48,7 @@ export default function LoginPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            placeholder="admin@nadi-health.id"
+                            placeholder="you@email.com"
                             autoFocus
                         />
                     </div>

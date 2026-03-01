@@ -1,45 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { callDeepSeek, extractJSON } from "@/lib/deepseek";
+import { saveTopics, getAllTopics, getPendingTopics, deleteTopic } from "@/lib/topics-store";
 
-const SYSTEM_PROMPT = `You are the editorial director of NADI — Network for Advancing Development & Innovation in Health.
+const SYSTEM_PROMPT = `You are a research topic strategist for NADI — a health policy research institute.
+Generate article topics that are specific, researchable, and relevant to health policy.
+Each topic should have: title, description (2-3 sentences), and category.
+Categories: POLICY BRIEF, RESEARCH PAPER, STRATEGIC ANALYSIS, WORKING PAPER, RESEARCH NOTE
+Respond ONLY with a JSON array: [{"title":"...","description":"...","category":"..."}]`;
 
-NADI is a research and policy institute working at the intersection of:
-- Public Affairs & Communication in Complex Healthcare Ecosystems
-- Strategic Training & Institutional Literacy
-- Governance & Project Management for Global Collaboration
-- Policy Design & Advocacy Architecture
+// GET — list all topics (optionally filter by status)
+export async function GET(req: NextRequest) {
+    const session = await auth();
+    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
-Your role: generate article topics that are intellectually rigorous, policy-relevant, and aligned with NADI's institutional voice. Topics should address real health system challenges — financing, governance, regulation, vaccine policy, UHC, digital health, PPPs, etc.
+    const status = new URL(req.url).searchParams.get("status");
+    if (status === "pending") {
+        return NextResponse.json(await getPendingTopics());
+    }
+    return NextResponse.json(await getAllTopics());
+}
 
-Each topic must include a suggested SEO-optimized title, category, and a one-sentence description.
-
-Respond ONLY with a JSON array. Each item:
-{
-  "title": "SEO-optimized article title",
-  "category": "POLICY BRIEF | RESEARCH PAPER | STRATEGIC ANALYSIS | WORKING PAPER | RESEARCH NOTE",
-  "description": "One sentence describing what the article will cover"
-}`;
-
+// POST — generate new topics with AI and save to DB
 export async function POST(req: NextRequest) {
     const session = await auth();
-    if (!session?.user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
     try {
-        const { count = 5, focus } = await req.json();
-        const userPrompt = focus
-            ? `Generate ${count} article topics focused on: "${focus}". Make them specific, evidence-oriented, and policy-relevant.`
-            : `Generate ${count} diverse article topics across NADI's core areas. Cover different themes — financing, governance, vaccines, digital health, UHC, training, advocacy.`;
-
-        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.8);
+        const { focusArea, count } = await req.json();
+        const userPrompt = `Generate ${count || 5} article topics${focusArea ? ` focused on: ${focusArea}` : " about health policy, governance, and financing"}.`;
+        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.7);
         const topics = JSON.parse(extractJSON(raw));
-        return NextResponse.json({ topics });
+
+        // Save to DB
+        const saved = await saveTopics(topics, focusArea || "general");
+        return NextResponse.json({ topics: saved });
     } catch (err) {
-        return NextResponse.json(
-            { error: (err as Error).message },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: (err as Error).message }, { status: 500 });
     }
+}
+
+// DELETE — remove a topic
+export async function DELETE(req: NextRequest) {
+    const session = await auth();
+    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    await deleteTopic(Number(id));
+    return NextResponse.json({ success: true });
 }

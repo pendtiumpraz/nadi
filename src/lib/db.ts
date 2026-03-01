@@ -2,18 +2,18 @@ import { neon } from "@neondatabase/serverless";
 
 // Get a SQL client
 export function getDB() {
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) throw new Error("DATABASE_URL is not set");
-    return neon(databaseUrl);
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is not set");
+  return neon(databaseUrl);
 }
 
 // ══════════════════════════════════════════
 // Create tables
 // ══════════════════════════════════════════
 export async function migrate() {
-    const sql = getDB();
+  const sql = getDB();
 
-    await sql`
+  await sql`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       email VARCHAR(255) UNIQUE NOT NULL,
@@ -24,7 +24,7 @@ export async function migrate() {
     )
   `;
 
-    await sql`
+  await sql`
     CREATE TABLE IF NOT EXISTS articles (
       id SERIAL PRIMARY KEY,
       slug VARCHAR(500) UNIQUE NOT NULL,
@@ -43,7 +43,7 @@ export async function migrate() {
     )
   `;
 
-    await sql`
+  await sql`
     CREATE TABLE IF NOT EXISTS events (
       id SERIAL PRIMARY KEY,
       slug VARCHAR(500) UNIQUE NOT NULL,
@@ -63,7 +63,7 @@ export async function migrate() {
     )
   `;
 
-    await sql`
+  await sql`
     CREATE TABLE IF NOT EXISTS media (
       id SERIAL PRIMARY KEY,
       slug VARCHAR(500) UNIQUE NOT NULL,
@@ -78,5 +78,26 @@ export async function migrate() {
       category VARCHAR(100) DEFAULT 'Health Policy',
       created_at TIMESTAMP DEFAULT NOW()
     )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS topics (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(500) NOT NULL,
+      description TEXT DEFAULT '',
+      category VARCHAR(100) DEFAULT '',
+      focus_area VARCHAR(255) DEFAULT '',
+      status VARCHAR(50) DEFAULT 'pending',
+      article_slug VARCHAR(500) DEFAULT '',
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+
+  // Add cover_image to articles if missing
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS cover_image TEXT DEFAULT '';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
   `;
 }

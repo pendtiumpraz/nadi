@@ -109,6 +109,7 @@ export interface Article {
     readTime: string;
     author: string;
     coverColor: "crimson" | "charcoal" | "dark";
+    coverImage?: string;
     seo: ArticleSEO;
     blocks: ContentBlock[];
 }

@@ -17,8 +17,8 @@ export async function getArticleBySlugStore(slug: string): Promise<Article | nul
 export async function saveArticle(article: Article): Promise<void> {
     const sql = getDB();
     await sql`
-    INSERT INTO articles (slug, title, subtitle, category, date, read_time, author, cover_color, seo_description, seo_keywords, blocks, updated_at)
-    VALUES (${article.slug}, ${article.title}, ${article.subtitle || ""}, ${article.category}, ${article.date}, ${article.readTime}, ${article.author}, ${article.coverColor}, ${article.seo?.description || ""}, ${article.seo?.keywords || []}, ${JSON.stringify(article.blocks)}, NOW())
+    INSERT INTO articles (slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, seo_description, seo_keywords, blocks, updated_at)
+    VALUES (${article.slug}, ${article.title}, ${article.subtitle || ""}, ${article.category}, ${article.date}, ${article.readTime}, ${article.author}, ${article.coverColor}, ${article.coverImage || ""}, ${article.seo?.description || ""}, ${article.seo?.keywords || []}, ${JSON.stringify(article.blocks)}, NOW())
     ON CONFLICT (slug) DO UPDATE SET
       title = EXCLUDED.title,
       subtitle = EXCLUDED.subtitle,
@@ -27,6 +27,7 @@ export async function saveArticle(article: Article): Promise<void> {
       read_time = EXCLUDED.read_time,
       author = EXCLUDED.author,
       cover_color = EXCLUDED.cover_color,
+      cover_image = EXCLUDED.cover_image,
       seo_description = EXCLUDED.seo_description,
       seo_keywords = EXCLUDED.seo_keywords,
       blocks = EXCLUDED.blocks,
@@ -56,6 +57,7 @@ function rowToArticle(row: Record<string, unknown>): Article {
         readTime: (row.read_time as string) || "5 min read",
         author: (row.author as string) || "NADI",
         coverColor: (row.cover_color as "crimson" | "charcoal" | "dark") || "charcoal",
+        coverImage: (row.cover_image as string) || "",
         seo: {
             description: (row.seo_description as string) || "",
             keywords: (row.seo_keywords as string[]) || [],

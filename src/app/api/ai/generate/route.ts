@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const { title, category, description } = await req.json();
+        const { title, category, description, topicId } = await req.json();
         if (!title) {
             return NextResponse.json({ error: "Title/topic is required" }, { status: 400 });
         }
@@ -78,6 +78,13 @@ Remember: output ONLY valid JSON matching the schema. Use a rich variety of bloc
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "");
         article.date = new Date().toISOString().split("T")[0];
+        article.coverImage = ""; // No cover image — user adds later
+
+        // Mark topic as published if topicId provided
+        if (topicId) {
+            const { markTopicPublished } = await import("@/lib/topics-store");
+            await markTopicPublished(Number(topicId), article.slug);
+        }
 
         return NextResponse.json({ article });
     } catch (err) {
