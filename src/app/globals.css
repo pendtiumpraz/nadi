@@ -2970,6 +2970,41 @@ footer {
   letter-spacing: 0.03em;
 }
 
+/* ── PUBLICATION FILTERS ── */
+.pub-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.pub-filter-btn {
+  background: none;
+  border: 1px solid var(--line);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pub-filter-btn:hover {
+  border-color: var(--body);
+  color: var(--body);
+}
+
+.pub-filter-btn.active {
+  background: var(--crimson);
+  border-color: var(--crimson);
+  color: #fff;
+}
+
 /* ── PUBLIC EVENT CARDS ── */
 .events-public-grid {
   display: grid;

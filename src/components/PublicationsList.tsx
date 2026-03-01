@@ -25,16 +25,27 @@ interface Pagination {
 }
 
 const PER_PAGE = 9;
+const CATEGORIES = [
+    "ALL",
+    "POLICY BRIEF",
+    "RESEARCH PAPER",
+    "STRATEGIC ANALYSIS",
+    "WORKING PAPER",
+    "RESEARCH NOTE",
+];
 
 export default function PublicationsList() {
     const [articles, setArticles] = useState<ArticleItem[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [page, setPage] = useState(1);
+    const [category, setCategory] = useState("ALL");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/public/articles?page=${page}&limit=${PER_PAGE}`)
+        const params = new URLSearchParams({ page: String(page), limit: String(PER_PAGE) });
+        if (category !== "ALL") params.set("category", category);
+        fetch(`/api/public/articles?${params}`)
             .then((r) => r.json())
             .then((data) => {
                 setArticles(data.articles || []);
@@ -42,68 +53,69 @@ export default function PublicationsList() {
             })
             .catch(() => setArticles([]))
             .finally(() => setLoading(false));
-    }, [page]);
+    }, [page, category]);
 
-    if (loading) {
-        return (
-            <div style={{ textAlign: "center", padding: "3rem 0", color: "var(--muted)" }}>
-                Loading publications...
-            </div>
-        );
-    }
-
-    if (articles.length === 0) {
-        return (
-            <div style={{ textAlign: "center", padding: "3rem 0", color: "var(--muted)" }}>
-                No publications yet.
-            </div>
-        );
-    }
+    const handleCategoryChange = (cat: string) => {
+        setCategory(cat);
+        setPage(1);
+    };
 
     return (
         <>
-            <div className="publications-grid">
-                {articles.map((article, i) => (
-                    <ArticleCard
-                        key={article.slug}
-                        article={article as ArticleItem & { blocks: [] }}
-                        featured={page === 1 && i === 0}
-                    />
+            {/* Category Filter */}
+            <div className="pub-filters">
+                {CATEGORIES.map((cat) => (
+                    <button
+                        key={cat}
+                        className={`pub-filter-btn${category === cat ? " active" : ""}`}
+                        onClick={() => handleCategoryChange(cat)}
+                    >
+                        {cat === "ALL" ? "All" : cat.split(" ").map(w => w[0] + w.slice(1).toLowerCase()).join(" ")}
+                    </button>
                 ))}
             </div>
 
-            {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
-                <div className="pagination">
-                    <button
-                        className="pagination-btn"
-                        disabled={page <= 1}
-                        onClick={() => setPage(page - 1)}
-                    >
-                        ← Previous
-                    </button>
-                    <div className="pagination-pages">
-                        {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                            <button
-                                key={p}
-                                className={`pagination-num${p === page ? " active" : ""}`}
-                                onClick={() => setPage(p)}
-                            >
-                                {p}
-                            </button>
+            {loading ? (
+                <div style={{ textAlign: "center", padding: "3rem 0", color: "var(--muted)" }}>
+                    Loading publications...
+                </div>
+            ) : articles.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "3rem 0", color: "var(--muted)" }}>
+                    No publications found{category !== "ALL" ? ` in "${category}"` : ""}.
+                </div>
+            ) : (
+                <>
+                    <div className="publications-grid">
+                        {articles.map((article, i) => (
+                            <ArticleCard
+                                key={article.slug}
+                                article={article as ArticleItem & { blocks: [] }}
+                                featured={page === 1 && i === 0}
+                            />
                         ))}
                     </div>
-                    <span className="pagination-info">
-                        Page {page} of {pagination.totalPages} · {pagination.total} articles
-                    </span>
-                    <button
-                        className="pagination-btn"
-                        disabled={page >= pagination.totalPages}
-                        onClick={() => setPage(page + 1)}
-                    >
-                        Next →
-                    </button>
-                </div>
+
+                    {pagination && pagination.totalPages > 1 && (
+                        <div className="pagination">
+                            <button className="pagination-btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                                ← Previous
+                            </button>
+                            <div className="pagination-pages">
+                                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
+                                    <button key={p} className={`pagination-num${p === page ? " active" : ""}`} onClick={() => setPage(p)}>
+                                        {p}
+                                    </button>
+                                ))}
+                            </div>
+                            <span className="pagination-info">
+                                Page {page} of {pagination.totalPages} · {pagination.total} articles
+                            </span>
+                            <button className="pagination-btn" disabled={page >= pagination.totalPages} onClick={() => setPage(page + 1)}>
+                                Next →
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
         </>
     );

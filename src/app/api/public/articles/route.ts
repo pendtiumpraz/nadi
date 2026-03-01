@@ -7,14 +7,23 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") || 9)));
     const offset = (page - 1) * limit;
+    const category = searchParams.get("category") || "";
 
     try {
         const sql = getDB();
 
-        const countResult = await sql`SELECT COUNT(*) as total FROM articles`;
-        const total = Number(countResult[0].total);
+        let total: number;
+        let rows;
 
-        const rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, seo_description, seo_keywords FROM articles ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+        if (category) {
+            const countResult = await sql`SELECT COUNT(*) as total FROM articles WHERE category = ${category}`;
+            total = Number(countResult[0].total);
+            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, seo_description, seo_keywords FROM articles WHERE category = ${category} ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+        } else {
+            const countResult = await sql`SELECT COUNT(*) as total FROM articles`;
+            total = Number(countResult[0].total);
+            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, seo_description, seo_keywords FROM articles ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+        }
 
         const articles = rows.map((row) => ({
             slug: row.slug,
