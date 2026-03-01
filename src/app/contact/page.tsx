@@ -32,14 +32,14 @@ export default function ContactPage() {
                                         <span className="contact-detail-icon">✉</span>
                                         <div>
                                             <p className="contact-detail-label">Email</p>
-                                            <p className="contact-detail-value">info@nadi.com</p>
+                                            <p className="contact-detail-value">info@nadi-health.id</p>
                                         </div>
                                     </div>
                                     <div className="contact-detail-item">
                                         <span className="contact-detail-icon">🌐</span>
                                         <div>
                                             <p className="contact-detail-label">Website</p>
-                                            <p className="contact-detail-value">www.nadi.com</p>
+                                            <p className="contact-detail-value">www.nadi-health.id</p>
                                         </div>
                                     </div>
                                 </div>

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: "NADI — Institutional Thinking for Complex Health Systems",
     description:
       "A Research & Policy Institute dedicated to advancing systemic, evidence-informed solutions to complex healthcare challenges.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://nadi.com",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://nadi-health.id",
     siteName: "NADI",
     type: "website",
     locale: "en_US",
