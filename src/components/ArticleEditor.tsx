@@ -19,8 +19,11 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const [coverColor, setCoverColor] = useState("crimson");
     const [seoDesc, setSeoDesc] = useState("");
     const [seoKeywords, setSeoKeywords] = useState("");
+    const [coverImage, setCoverImage] = useState("");
+    const [uploadingCover, setUploadingCover] = useState(false);
     const [status, setStatus] = useState("");
     const [saving, setSaving] = useState(false);
+    const coverInputRef = useRef<HTMLInputElement>(null);
 
     // Load existing article
     useEffect(() => {
@@ -34,6 +37,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     setAuthor(data.author || "NADI Research Team");
                     setReadTime(data.readTime || "8 min read");
                     setCoverColor(data.coverColor || "crimson");
+                    setCoverImage(data.coverImage || "");
                     setSeoDesc(data.seo?.description || "");
                     setSeoKeywords(data.seo?.keywords?.join(", ") || "");
                     if (data.blocks && editorRef.current) {
@@ -73,6 +77,25 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const insertLink = () => {
         const url = prompt("Enter URL:");
         if (url) exec("createLink", url);
+    };
+
+    const handleCoverUpload = async (file: File) => {
+        if (!file || file.size === 0) return;
+        setUploadingCover(true);
+        setStatus("⏳ Uploading cover image...");
+        try {
+            const fd = new FormData();
+            fd.append("image", file);
+            fd.append("slug", slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "draft");
+            const res = await fetch("/api/articles/upload", { method: "POST", body: fd });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            setCoverImage(data.url);
+            setStatus("✓ Cover image uploaded!");
+        } catch (err) {
+            setStatus(`Error: ${(err as Error).message}`);
+        }
+        setUploadingCover(false);
     };
 
     const handleSubmit = async (e: FormEvent) => {
@@ -124,6 +147,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 readTime,
                 date: new Date().toISOString().split("T")[0],
                 coverColor,
+                coverImage,
                 seo: { description: finalSeoDesc, keywords: finalKeywords },
                 blocks: formatData.blocks,
             };
@@ -182,6 +206,31 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                             </select>
                         </div>
                     </div>
+                </div>
+
+                {/* Cover Image */}
+                <div className="editor-section">
+                    <div className="editor-section-title">Cover Image <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span></div>
+                    {coverImage ? (
+                        <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                            <img src={coverImage} alt="Cover" style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--line)' }} />
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}>{uploadingCover ? '⏳...' : 'Change Image'}</button>
+                                <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px', color: '#c44' }} onClick={() => setCoverImage('')}>Remove</button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            style={{ border: '2px dashed var(--line)', borderRadius: '8px', padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                            onClick={() => coverInputRef.current?.click()}
+                            onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--crimson)'; }}
+                            onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; }}
+                            onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--line)'; const f = e.dataTransfer.files[0]; if (f) handleCoverUpload(f); }}
+                        >
+                            <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>{uploadingCover ? '⏳ Uploading...' : '📷 Click or drag image here to upload cover'}</p>
+                        </div>
+                    )}
+                    <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f); }} />
                 </div>
 
                 {/* Rich Text Editor */}
