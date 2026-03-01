@@ -7,7 +7,7 @@ export async function GET() {
     if (!session?.user || session.user.role !== "admin") {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
-    return NextResponse.json(getAllUsers());
+    return NextResponse.json(await getAllUsers());
 }
 
 export async function POST(req: NextRequest) {
@@ -54,7 +54,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     try {
-        deleteUser(id);
+        await deleteUser(id);
         return NextResponse.json({ success: true });
     } catch (err) {
         return NextResponse.json(
@@ -78,7 +78,7 @@ export async function PATCH(req: NextRequest) {
                 { status: 400 }
             );
         }
-        updateUserRole(id, role);
+        await updateUserRole(id, role);
         return NextResponse.json({ success: true });
     } catch (err) {
         return NextResponse.json(

@@ -1,117 +1,65 @@
-import { put, list, del } from "@vercel/blob";
-import fs from "fs";
-import path from "path";
+import { getDB } from "@/lib/db";
 import type { Article } from "@/data/articles/types";
 
-const IS_VERCEL = !!process.env.VERCEL;
-const LOCAL_DIR = path.join(process.cwd(), "src/data/articles");
-
-// ── READ all articles ──
 export async function getAllArticlesStore(): Promise<Article[]> {
-    if (IS_VERCEL) {
-        return getAllFromBlob();
-    }
-    return getAllFromFS();
+    const sql = getDB();
+    const rows = await sql`SELECT * FROM articles ORDER BY date DESC`;
+    return rows.map(rowToArticle);
 }
 
-// ── READ single article ──
 export async function getArticleBySlugStore(slug: string): Promise<Article | null> {
-    const articles = await getAllArticlesStore();
-    return articles.find((a) => a.slug === slug) || null;
+    const sql = getDB();
+    const rows = await sql`SELECT * FROM articles WHERE slug = ${slug} LIMIT 1`;
+    if (rows.length === 0) return null;
+    return rowToArticle(rows[0]);
 }
 
-// ── SAVE article (create or update) ──
 export async function saveArticle(article: Article): Promise<void> {
-    if (IS_VERCEL) {
-        await saveToBlob(article);
-    } else {
-        saveToFS(article);
-    }
+    const sql = getDB();
+    await sql`
+    INSERT INTO articles (slug, title, subtitle, category, date, read_time, author, cover_color, seo_description, seo_keywords, blocks, updated_at)
+    VALUES (${article.slug}, ${article.title}, ${article.subtitle || ""}, ${article.category}, ${article.date}, ${article.readTime}, ${article.author}, ${article.coverColor}, ${article.seo?.description || ""}, ${article.seo?.keywords || []}, ${JSON.stringify(article.blocks)}, NOW())
+    ON CONFLICT (slug) DO UPDATE SET
+      title = EXCLUDED.title,
+      subtitle = EXCLUDED.subtitle,
+      category = EXCLUDED.category,
+      date = EXCLUDED.date,
+      read_time = EXCLUDED.read_time,
+      author = EXCLUDED.author,
+      cover_color = EXCLUDED.cover_color,
+      seo_description = EXCLUDED.seo_description,
+      seo_keywords = EXCLUDED.seo_keywords,
+      blocks = EXCLUDED.blocks,
+      updated_at = NOW()
+  `;
 }
 
-// ── DELETE article ──
 export async function deleteArticle(slug: string): Promise<void> {
-    if (IS_VERCEL) {
-        await deleteFromBlob(slug);
-    } else {
-        deleteFromFS(slug);
-    }
+    const sql = getDB();
+    await sql`DELETE FROM articles WHERE slug = ${slug}`;
 }
 
-// ── CHECK existence ──
 export async function articleExists(slug: string): Promise<boolean> {
-    if (IS_VERCEL) {
-        const articles = await getAllFromBlob();
-        return articles.some((a) => a.slug === slug);
-    }
-    return fs.existsSync(path.join(LOCAL_DIR, `${slug}.json`));
+    const sql = getDB();
+    const rows = await sql`SELECT 1 FROM articles WHERE slug = ${slug} LIMIT 1`;
+    return rows.length > 0;
 }
 
-// ══════════════════════════════════════════
-// Vercel Blob Storage
-// ══════════════════════════════════════════
-async function getAllFromBlob(): Promise<Article[]> {
-    try {
-        const { blobs } = await list({ prefix: "articles/" });
-        const articles: Article[] = [];
-        for (const blob of blobs) {
-            try {
-                const res = await fetch(blob.url);
-                const article = (await res.json()) as Article;
-                articles.push(article);
-            } catch {
-                // skip corrupted blobs
-            }
-        }
-        return articles.sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-    } catch {
-        return [];
-    }
-}
-
-async function saveToBlob(article: Article): Promise<void> {
-    const content = JSON.stringify(article, null, 2);
-    await put(`articles/${article.slug}.json`, content, {
-        access: "public",
-        contentType: "application/json",
-        addRandomSuffix: false,
-    });
-}
-
-async function deleteFromBlob(slug: string): Promise<void> {
-    const { blobs } = await list({ prefix: `articles/${slug}.json` });
-    for (const blob of blobs) {
-        await del(blob.url);
-    }
-}
-
-// ══════════════════════════════════════════
-// Local File System (dev)
-// ══════════════════════════════════════════
-function getAllFromFS(): Article[] {
-    try {
-        const files = fs.readdirSync(LOCAL_DIR).filter((f) => f.endsWith(".json"));
-        return files
-            .map((f) => {
-                const raw = fs.readFileSync(path.join(LOCAL_DIR, f), "utf-8");
-                return JSON.parse(raw) as Article;
-            })
-            .sort(
-                (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-            );
-    } catch {
-        return [];
-    }
-}
-
-function saveToFS(article: Article): void {
-    const filePath = path.join(LOCAL_DIR, `${article.slug}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(article, null, 2), "utf-8");
-}
-
-function deleteFromFS(slug: string): void {
-    const filePath = path.join(LOCAL_DIR, `${slug}.json`);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+// Convert DB row to Article type
+function rowToArticle(row: Record<string, unknown>): Article {
+    return {
+        slug: row.slug as string,
+        title: row.title as string,
+        subtitle: (row.subtitle as string) || "",
+        category: (row.category as string) || "ARTICLE",
+        date: row.date ? new Date(row.date as string).toISOString().split("T")[0] : "",
+        readTime: (row.read_time as string) || "5 min read",
+        author: (row.author as string) || "NADI",
+        coverColor: (row.cover_color as "crimson" | "charcoal" | "dark") || "charcoal",
+        seo: {
+            description: (row.seo_description as string) || "",
+            keywords: (row.seo_keywords as string[]) || [],
+        },
+        blocks: (row.blocks as Article["blocks"]) || [],
+    };
 }
