@@ -121,9 +121,7 @@ export default function ContactForm() {
                         <option value="">Select a subject</option>
                         <option value="Institutional Partnership">Institutional Partnership</option>
                         <option value="Advisory Engagement">Advisory Engagement</option>
-                        <option value="Collaborative Inquiry">Collaborative Inquiry</option>
                         <option value="Media & Press">Media &amp; Press</option>
-                        <option value="Join the Team">Join the Team</option>
                         <option value="General Inquiry">General Inquiry</option>
                     </select>
                 </div>

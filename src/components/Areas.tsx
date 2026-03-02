@@ -24,7 +24,6 @@ export default function Areas() {
                         <p className="section-label animate-on-scroll">Core Areas of Work</p>
                         <h2 className="section-title animate-on-scroll">Where NADI<br /><em>engages</em></h2>
                     </div>
-                    <p className="animate-on-scroll" style={{ fontSize: "0.9rem", lineHeight: 1.8, color: "var(--muted)", maxWidth: 400 }}>From regulatory strategy to governance design, NADI provides structured analysis at every stage of health system decision-making.</p>
                 </div>
                 <div className="areas-grid">
                     {areas.map((area) => (

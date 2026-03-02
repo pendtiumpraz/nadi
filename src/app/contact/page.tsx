@@ -49,9 +49,7 @@ export default function ContactPage() {
                                     <ul>
                                         <li>Institutional Partnership</li>
                                         <li>Advisory Engagement</li>
-                                        <li>Collaborative Inquiry</li>
                                         <li>Media &amp; Press</li>
-                                        <li>Join the Team</li>
                                     </ul>
                                 </div>
                             </div>

@@ -7,9 +7,9 @@ export default function Footer() {
                         <span className="nav-logo-word">NADI</span>
                         <span className="nav-logo-sub">Advancing Development &amp; Innovation</span>
                     </a>
-                    <p className="footer-desc">Network for Advancing Development &amp; Innovation in Health. Advancing systemic, evidence-informed solutions to complex healthcare challenges.</p>
+                    <p className="footer-desc">Network for Advancing Development &amp; Innovation in Health.</p>
                     <div className="footer-contact">
-                        <img src="/logo_IMA.png" alt="Inke Maris & Associates" style={{ maxWidth: "180px", marginBottom: "0.75rem", opacity: 0.85 }} />
+                        <img src="/logo_IMA.png" alt="Inke Maris & Associates" style={{ maxWidth: "180px", marginBottom: "0.75rem", filter: "invert(1) brightness(2)", opacity: 0.85 }} />
                         <p><span>📍</span> Jl. KH Abdullah Syafi&apos;i No. 28<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Jakarta 12840, Indonesia</p>
                     </div>
                     <div className="footer-social">
@@ -50,6 +50,7 @@ export default function Footer() {
                 <div className="footer-col">
                     <h4>Get in Touch</h4>
                     <ul>
+                        <li><a href="/contact">Institutional Partnership</a></li>
                         <li><a href="/contact">Advisory Engagement</a></li>
                         <li><a href="/contact">Media &amp; Press</a></li>
                     </ul>

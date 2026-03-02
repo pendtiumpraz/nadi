@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 
 const principles = [
     { num: "01", title: "Systems Orientation", text: "Health outcomes emerge from institutional interaction — not isolated interventions. We map the full ecosystem before recommending action." },
-    { num: "02", title: "Empirical Discipline", text: "Recommendations are grounded in data, fiscal reality, and implementation evidence. Insight without evidence is advocacy; we hold a higher standard." },
+    { num: "02", title: "Empirical Discipline", text: "Our recommendations are evidence-based, fiscally grounded, and built for measurable impact. We don't offer opinions—we design solutions with clear outcomes and accountability." },
     { num: "03", title: "Cross-Sector Perspective", text: "Public, private, academic, and development actors operate under distinct but interdependent incentive structures. We speak all these languages." },
     { num: "04", title: "Long-Term Institutional Thinking", text: "Short-term visibility must not undermine structural sustainability. Our work is designed to endure beyond any single program cycle." },
 ];
