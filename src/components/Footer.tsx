@@ -9,7 +9,7 @@ export default function Footer() {
                     </a>
                     <p className="footer-desc">Network for Advancing Development &amp; Innovation in Health.</p>
                     <div className="footer-contact">
-                        <img src="/logo_IMA.png" alt="Inke Maris & Associates" style={{ maxWidth: "180px", marginBottom: "0.75rem", filter: "invert(1) brightness(0.7)", opacity: 0.5 }} />
+                        <img src="/logo_IMA_white.png" alt="Inke Maris & Associates" style={{ maxWidth: "180px", marginBottom: "0.75rem" }} />
                         <p><span>📍</span> Jl. KH Abdullah Syafi&apos;i No. 28<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Jakarta 12840, Indonesia</p>
                     </div>
                     <div className="footer-social">
