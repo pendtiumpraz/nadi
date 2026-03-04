@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NADI — Network for Advancing Development & Innovation in Health</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson: #8B1C1C;
+    --crimson-pale: #f9f0f0;
+    --dark: #1A1A1A;
+    --muted: #888;
+    --line: #E8E5E1;
+    --bg: #FAFAF8;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body { font-family: 'DM Sans', sans-serif; color: var(--dark); background: var(--bg); overflow-x: hidden; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 6%; height: 64px;
+    background: rgba(250,250,248,0.95); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .logo { text-decoration: none; display: flex; align-items: baseline; gap: 10px; }
+  .logo-name { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--dark); letter-spacing: 0.15em; }
+  .logo-by { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.04em; }
+  .nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
+  .nav-links a { font-size: 0.8rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--crimson); }
+  .nav-cta { padding: 7px 20px; border: 1px solid var(--crimson); color: var(--crimson) !important; border-radius: 1px; transition: all 0.2s !important; }
+  .nav-cta:hover { background: var(--crimson); color: #fff !important; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr;
+    align-items: center; padding: 64px 6% 0; border-bottom: 1px solid var(--line);
+    gap: 60px;
+  }
+  .hero-inner { max-width: 560px; }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--crimson);
+    margin-bottom: 2.5rem;
+  }
+  .hero-tag::before { content: ''; width: 28px; height: 1px; background: var(--crimson); }
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.4rem, 4.5vw, 4rem);
+    font-weight: 300; line-height: 1.08; color: var(--dark);
+    margin-bottom: 2rem; letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--crimson); }
+  .hero-sub {
+    font-size: 1rem; line-height: 1.9; color: var(--muted);
+    margin-bottom: 3rem; font-weight: 300;
+  }
+  .hero-sub strong { color: var(--dark); font-weight: 500; }
+  .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .hero-visual { display: flex; align-items: center; justify-content: center; }
+  .hero-visual svg { width: 100%; max-width: 480px; height: auto; }
+
+  /* BUTTONS */
+  .btn-primary {
+    padding: 12px 30px; background: var(--crimson); color: #fff;
+    text-decoration: none; font-size: 0.8rem; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; border-radius: 1px;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost {
+    padding: 12px 30px; border: 1px solid var(--line); color: var(--dark);
+    text-decoration: none; font-size: 0.8rem; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; border-radius: 1px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--crimson); color: var(--crimson); }
+
+  /* SECTIONS */
+  section { padding: 100px 6%; border-bottom: 1px solid var(--line); }
+  .inner { max-width: 1100px; margin: 0 auto; }
+  .eyebrow {
+    font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--crimson); margin-bottom: 1.2rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--crimson); }
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 300; line-height: 1.2; color: var(--dark); margin-bottom: 1.5rem;
+  }
+  h2 em { font-style: italic; color: var(--crimson); }
+  .body-text { font-size: 1rem; line-height: 1.9; color: var(--muted); max-width: 580px; font-weight: 300; }
+
+  /* ABOUT */
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+  .about-right { padding-top: 0.5rem; }
+  .about-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem; font-style: italic; font-weight: 300;
+    line-height: 1.65; color: var(--dark);
+    border-left: 2px solid var(--crimson); padding-left: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .about-pillars { display: flex; flex-direction: column; }
+  .pillar {
+    padding: 1.2rem 0; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 1rem;
+  }
+  .pillar-label { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--crimson); min-width: 80px; }
+  .pillar-text { font-size: 0.95rem; color: var(--muted); line-height: 1.6; font-weight: 300; }
+  .about-visual { margin-top: 2.5rem; }
+  .about-visual svg { width: 100%; max-width: 360px; }
+
+  /* AREAS */
+  .areas-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; margin-bottom: 3rem; }
+  .areas-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; }
+  .area {
+    padding: 2.5rem; background: #fff; border: 1px solid var(--line);
+    transition: border-color 0.25s; display: flex; flex-direction: column; gap: 1rem;
+  }
+  .area:hover { border-color: var(--crimson); }
+  .area-header { display: flex; align-items: center; gap: 1rem; }
+  .area-icon { width: 40px; height: 40px; flex-shrink: 0; }
+  .area-num { font-size: 0.68rem; letter-spacing: 0.15em; color: var(--muted); }
+  .area h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem; font-weight: 400; color: var(--dark); line-height: 1.3;
+  }
+  .area p { font-size: 0.9rem; line-height: 1.8; color: var(--muted); font-weight: 300; }
+
+  /* PARTNERS */
+  .partners { padding: 50px 6%; border-bottom: 1px solid var(--line); }
+  .partners-label { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; margin-bottom: 2rem; }
+  .marquee-track { overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .marquee-inner { display: flex; width: max-content; animation: marquee 35s linear infinite; }
+  .marquee-inner:hover { animation-play-state: paused; }
+  .chip {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 2.5rem; height: 52px; border-right: 1px solid var(--line);
+    font-size: 0.8rem; font-weight: 400; color: var(--muted);
+    letter-spacing: 0.05em; white-space: nowrap; transition: color 0.2s;
+  }
+  .chip:hover { color: var(--crimson); }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* LEADERSHIP */
+  .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .team-card {
+    padding: 2rem; background: #fff; border: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 1.2rem;
+    transition: border-color 0.25s;
+  }
+  .team-card:hover { border-color: var(--crimson); }
+  .team-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--crimson-pale); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .team-avatar span {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.3rem;
+    font-weight: 400; color: var(--crimson); line-height: 1;
+  }
+  .team-info { display: flex; flex-direction: column; gap: 0.3rem; }
+  .team-info h4 {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.15rem;
+    font-weight: 400; color: var(--dark); line-height: 1.2;
+  }
+  .team-title {
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--crimson); margin-bottom: 0.3rem;
+  }
+  .team-bio { font-size: 0.88rem; line-height: 1.7; color: var(--muted); font-weight: 300; }
+  .link-more {
+    font-size: 0.8rem; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--crimson); text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: gap 0.2s;
+  }
+  .link-more:hover { gap: 12px; }
+
+  /* SUBSCRIPTION */
+  .sub-bar {
+    display: flex; align-items: center; gap: 2rem;
+    padding: 1.6rem 2rem; border: 1px solid var(--line);
+    background: #fff; margin-bottom: 2.5rem; flex-wrap: wrap;
+  }
+  .sub-text { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 200px; }
+  .sub-label { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--crimson); }
+  .sub-desc { font-size: 0.9rem; color: var(--muted); font-weight: 300; }
+  .sub-form { display: flex; gap: 0; flex-shrink: 0; }
+  .sub-input {
+    padding: 10px 16px; border: 1px solid var(--line); border-right: none;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--dark);
+    background: var(--bg); outline: none; width: 240px;
+    transition: border-color 0.2s;
+  }
+  .sub-input:focus { border-color: var(--crimson); }
+  .sub-input::placeholder { color: #bbb; }
+  .sub-btn {
+    padding: 10px 22px; background: var(--crimson); color: #fff;
+    border: none; font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+    font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+  }
+  .sub-btn:hover { opacity: 0.85; }
+  .sub-confirm { display: none; font-size: 0.85rem; color: var(--crimson); font-weight: 400; }
+
+  /* PUBLICATIONS */
+  .pub-visual { margin-bottom: 2.5rem; display: flex; gap: 3px; align-items: flex-end; height: 56px; }
+  .pub-bar { background: var(--line); border-radius: 1px; flex: 1; transition: background 0.3s; }
+  .pub-bar.hi { background: var(--crimson); }
+  .pub-bar:nth-child(1)  { height: 40%; }
+  .pub-bar:nth-child(2)  { height: 65%; }
+  .pub-bar:nth-child(3)  { height: 50%; }
+  .pub-bar:nth-child(4)  { height: 80%; }
+  .pub-bar:nth-child(5)  { height: 55%; }
+  .pub-bar:nth-child(6)  { height: 90%; }
+  .pub-bar:nth-child(7)  { height: 70%; }
+  .pub-bar:nth-child(8)  { height: 100%; }
+  .pub-bar:nth-child(9)  { height: 75%; }
+  .pub-bar:nth-child(10) { height: 85%; }
+  .pub-bar:nth-child(11) { height: 60%; }
+  .pub-bar:nth-child(12) { height: 95%; }
+
+  .pub-list { display: flex; flex-direction: column; }
+  .pub-item {
+    display: grid; grid-template-columns: 120px 1fr 32px;
+    align-items: start; gap: 2rem;
+    padding: 2rem 0; border-top: 1px solid var(--line);
+    text-decoration: none; color: inherit;
+  }
+  .pub-item:last-child { border-bottom: 1px solid var(--line); }
+  .pub-item:hover .pub-arrow { transform: translateX(5px); color: var(--crimson); }
+  .pub-item:hover h3 { color: var(--crimson); }
+  .pub-meta { display: flex; flex-direction: column; gap: 4px; padding-top: 3px; }
+  .pub-type { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--crimson); }
+  .pub-date { font-size: 0.8rem; color: var(--muted); font-weight: 300; }
+  .pub-body h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 400; color: var(--dark); line-height: 1.35; margin-bottom: 0.5rem; transition: color 0.2s; }
+  .pub-body p { font-size: 0.88rem; line-height: 1.75; color: var(--muted); font-weight: 300; }
+  .pub-arrow { font-size: 1.1rem; color: var(--muted); transition: transform 0.2s, color 0.2s; padding-top: 3px; }
+
+  /* CTA */
+  .cta { text-align: center; border-bottom: none; background: var(--bg); }
+  .cta h2 { color: var(--dark); margin-bottom: 1rem; display: inline-block; }
+  .cta h2 em { color: var(--crimson); }
+  .cta .eyebrow { justify-content: center; color: var(--crimson); }
+  .cta .eyebrow::before { background: var(--crimson); }
+  .cta p { color: var(--muted); font-size: 1rem; line-height: 1.8; max-width: 460px; margin: 0 auto 2.5rem; font-weight: 300; }
+  .cta-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .cta-partners { display: flex; justify-content: center; gap: 3rem; margin-bottom: 3rem; flex-wrap: wrap; }
+  .cta-partner-item { text-align: center; }
+  .cta-partner-item .icon { font-size: 1.6rem; margin-bottom: 0.5rem; }
+  .cta-partner-item .label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+  /* FOOTER */
+  footer {
+    padding: 50px 6% 36px; display: flex;
+    justify-content: space-between; align-items: flex-end;
+    flex-wrap: wrap; gap: 2rem; background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  .footer-left .logo-name { color: var(--dark); }
+  .footer-left p { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; max-width: 280px; line-height: 1.7; }
+  .footer-right p { font-size: 0.8rem; color: var(--muted); line-height: 2; text-align: right; }
+  .footer-bottom { padding: 20px 6% 24px; border-top: 1px solid var(--line); font-size: 0.72rem; color: #bbb; background: var(--bg); }
+
+  /* RESPONSIVE */
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-visual { display: none; }
+    .team-grid { grid-template-columns: 1fr; }
+    .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .areas-intro { grid-template-columns: 1fr; gap: 2rem; }
+    .areas-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    footer { flex-direction: column; align-items: flex-start; }
+    .footer-right p { text-align: left; }
+    .pub-item { grid-template-columns: 1fr; gap: 0.5rem; }
+    .pub-arrow { display: none; }
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .hero-inner > * { animation: fadeUp 0.8s ease both; }
+  .hero-inner > *:nth-child(1) { animation-delay: 0.1s; }
+  .hero-inner > *:nth-child(2) { animation-delay: 0.25s; }
+  .hero-inner > *:nth-child(3) { animation-delay: 0.4s; }
+  .hero-inner > *:nth-child(4) { animation-delay: 0.55s; }
+
+  @keyframes drawLine { from { stroke-dashoffset: 800; } to { stroke-dashoffset: 0; } }
+  .pulse-line { stroke-dasharray: 800; stroke-dashoffset: 800; animation: drawLine 2.2s ease forwards 0.7s; }
+
+  @keyframes pulseDot { 0%, 100% { r: 4; opacity: 1; } 50% { r: 7; opacity: 0.5; } }
+  .pulse-dot { animation: pulseDot 1.8s ease-in-out infinite 2.9s; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">
+    <span class="logo-name">NADI</span>
+    <span class="logo-by">advancing development &amp; innovation</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#areas">Work</a></li>
+    <li><a href="#leadership">Team</a></li>
+    <li><a href="#publications">Publications</a></li>
+    <li><a href="#contact" class="nav-cta">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-inner">
+    <p class="hero-tag">Network for Advancing Development &amp; Innovation in Health</p>
+    <h1>Institutional thinking for <em>complex</em> health systems</h1>
+    <p class="hero-sub">
+      NADI —a part of <strong>Inke Maris &amp; Associates</strong>— works at the intersection of public affairs, policy, governance, and implementation. Restoring coherence to systems that shape health outcomes at scale.
+    </p>
+    <div class="hero-actions">
+      <a href="#areas" class="btn-primary">Our Work</a>
+      <a href="#contact" class="btn-ghost">Partner With Us</a>
+    </div>
+  </div>
+
+  <!-- ECG / Health pulse visualization -->
+  <div class="hero-visual">
+    <svg viewBox="0 0 480 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background grid -->
+      <line x1="0" y1="75"  x2="480" y2="75"  stroke="#E8E5E1" stroke-width="1"/>
+      <line x1="0" y1="150" x2="480" y2="150" stroke="#E8E5E1" stroke-width="1"/>
+      <line x1="0" y1="225" x2="480" y2="225" stroke="#E8E5E1" stroke-width="1"/>
+      <line x1="120" y1="10" x2="120" y2="290" stroke="#E8E5E1" stroke-width="1"/>
+      <line x1="240" y1="10" x2="240" y2="290" stroke="#E8E5E1" stroke-width="1"/>
+      <line x1="360" y1="10" x2="360" y2="290" stroke="#E8E5E1" stroke-width="1"/>
+
+      <!-- Axis labels -->
+      <text x="6" y="71"  font-family="'DM Sans',sans-serif" font-size="8.5" fill="#bbb" letter-spacing="0.5">PUBLIC AFFAIRS</text>
+      <text x="6" y="146" font-family="'DM Sans',sans-serif" font-size="8.5" fill="#bbb" letter-spacing="0.5">GOVERNANCE</text>
+      <text x="6" y="221" font-family="'DM Sans',sans-serif" font-size="8.5" fill="#bbb" letter-spacing="0.5">IMPLEMENTATION</text>
+
+      <!-- ECG pulse line -->
+      <polyline class="pulse-line"
+        points="0,150 30,150 45,150 55,95 65,210 75,55 88,255 100,150 130,150 165,150 178,150 188,118 198,182 208,80 220,240 232,150 255,150 290,150 303,150 313,125 323,175 333,95 345,215 357,150 390,150 430,150 455,150"
+        stroke="#8B1C1C" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+
+      <!-- Animated end dot -->
+      <circle class="pulse-dot" cx="455" cy="150" r="4" fill="#8B1C1C"/>
+
+      <!-- Watermark -->
+      <text x="240" y="285" font-family="'Cormorant Garamond',serif" font-size="10" fill="#E0DDD9" text-anchor="middle" letter-spacing="6" font-style="italic">health systems pulse</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="inner">
+    <div class="about-grid">
+      <div>
+        <p class="eyebrow">About</p>
+        <h2>A platform for engagement at the <em>system level</em></h2>
+        <p class="body-text">NADI is a research and policy institute. Neither a transactional firm nor a detached academic centre — but a platform for structured, strategic engagement at the system level. Cross-sectoral, interdisciplinary, and multi-institutional collaboration enables the delivery of comprehensive and sustainable solutions.</p>
+
+        <!-- Venn overlap diagram -->
+        <div class="about-visual">
+          <svg viewBox="0 0 360 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="120" cy="95"  r="72" fill="#8B1C1C" fill-opacity="0.06" stroke="#8B1C1C" stroke-opacity="0.2" stroke-width="1"/>
+            <circle cx="190" cy="60"  r="72" fill="#8B1C1C" fill-opacity="0.06" stroke="#8B1C1C" stroke-opacity="0.2" stroke-width="1"/>
+            <circle cx="190" cy="130" r="72" fill="#8B1C1C" fill-opacity="0.06" stroke="#8B1C1C" stroke-opacity="0.2" stroke-width="1"/>
+            <!-- Center -->
+            <circle cx="168" cy="95" r="10" fill="#8B1C1C" fill-opacity="0.75"/>
+            <text x="168" y="115" font-family="'Cormorant Garamond',serif" font-size="8.5" fill="#8B1C1C" text-anchor="middle" font-style="italic">NADI</text>
+            <!-- Labels -->
+            <text x="52"  y="100" font-family="'DM Sans',sans-serif" font-size="9" fill="#666" font-weight="500">Public Affairs</text>
+            <text x="210" y="38"  font-family="'DM Sans',sans-serif" font-size="9" fill="#666" font-weight="500">Policy</text>
+            <text x="200" y="165" font-family="'DM Sans',sans-serif" font-size="9" fill="#666" font-weight="500">Governance</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="about-right">
+        <blockquote class="about-quote">"A health system's pulse is coherence between public affairs, policy, governance, and implementation."</blockquote>
+        <div class="about-pillars">
+          <div class="pillar">
+            <span class="pillar-label">Rigorous</span>
+            <span class="pillar-text">Intellectually grounded, financially realistic, politically feasible.</span>
+          </div>
+          <div class="pillar">
+            <span class="pillar-label">Executable</span>
+            <span class="pillar-text">Every recommendation must hold up against implementation reality.</span>
+          </div>
+          <div class="pillar">
+            <span class="pillar-label">Long-term</span>
+            <span class="pillar-text">Short-term visibility must never undermine structural sustainability.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AREAS -->
+<section id="areas">
+  <div class="inner">
+    <div class="areas-intro">
+      <div>
+        <p class="eyebrow">Core Areas of Work</p>
+        <h2>Where NADI <em>engages</em></h2>
+        <p class="body-text" style="margin-top:0.5rem;">Structured analysis at every stage of health system decision-making — from regulatory strategy to governance design.</p>
+      </div>
+      <!-- 2×2 quadrant -->
+      <svg viewBox="0 0 260 260" fill="none" xmlns="http://www.w3.org/2000/svg" style="max-width:220px;margin:auto;">
+        <rect x="1"   y="1"   width="122" height="122" rx="2" fill="#fff" stroke="#E8E5E1" stroke-width="1"/>
+        <rect x="137" y="1"   width="122" height="122" rx="2" fill="#8B1C1C" fill-opacity="0.05" stroke="#8B1C1C" stroke-opacity="0.25" stroke-width="1"/>
+        <rect x="1"   y="137" width="122" height="122" rx="2" fill="#8B1C1C" fill-opacity="0.05" stroke="#8B1C1C" stroke-opacity="0.25" stroke-width="1"/>
+        <rect x="137" y="137" width="122" height="122" rx="2" fill="#fff" stroke="#E8E5E1" stroke-width="1"/>
+        <!-- Quadrant icons (simple geometric) -->
+        <!-- 01: bullseye -->
+        <circle cx="62" cy="45" r="14" stroke="#8B1C1C" stroke-opacity="0.35" stroke-width="1.5" fill="none"/>
+        <circle cx="62" cy="45" r="7"  stroke="#8B1C1C" stroke-opacity="0.6"  stroke-width="1.5" fill="none"/>
+        <circle cx="62" cy="45" r="2"  fill="#8B1C1C"/>
+        <!-- 02: bar chart up -->
+        <rect x="184" y="60" width="7" height="20" fill="#8B1C1C" fill-opacity="0.4"/>
+        <rect x="195" y="48" width="7" height="32" fill="#8B1C1C" fill-opacity="0.6"/>
+        <rect x="206" y="38" width="7" height="42" fill="#8B1C1C"/>
+        <!-- 03: network nodes -->
+        <circle cx="62"  cy="158" r="5" stroke="#8B1C1C" stroke-width="1.5" fill="none"/>
+        <circle cx="46"  cy="178" r="4" stroke="#8B1C1C" stroke-width="1.2" fill="none"/>
+        <circle cx="78"  cy="178" r="4" stroke="#8B1C1C" stroke-width="1.2" fill="none"/>
+        <circle cx="62"  cy="196" r="4" stroke="#8B1C1C" stroke-width="1.2" fill="none"/>
+        <line x1="62" y1="163" x2="48"  y2="174" stroke="#8B1C1C" stroke-opacity="0.4" stroke-width="1"/>
+        <line x1="62" y1="163" x2="76"  y2="174" stroke="#8B1C1C" stroke-opacity="0.4" stroke-width="1"/>
+        <line x1="50" y1="182" x2="62"  y2="192" stroke="#8B1C1C" stroke-opacity="0.4" stroke-width="1"/>
+        <line x1="74" y1="182" x2="62"  y2="192" stroke="#8B1C1C" stroke-opacity="0.4" stroke-width="1"/>
+        <!-- 04: document lines -->
+        <rect x="185" y="152" width="34" height="42" rx="1" stroke="#8B1C1C" stroke-opacity="0.3" stroke-width="1.5" fill="none"/>
+        <line x1="192" y1="163" x2="212" y2="163" stroke="#8B1C1C" stroke-opacity="0.5" stroke-width="1.2"/>
+        <line x1="192" y1="171" x2="212" y2="171" stroke="#8B1C1C" stroke-opacity="0.5" stroke-width="1.2"/>
+        <line x1="192" y1="179" x2="205" y2="179" stroke="#8B1C1C" stroke-opacity="0.5" stroke-width="1.2"/>
+        <!-- Labels -->
+        <text x="62"  y="74"  font-family="'DM Sans',sans-serif" font-size="7.5" fill="#555" text-anchor="middle">Public Affairs</text>
+        <text x="198" y="92"  font-family="'DM Sans',sans-serif" font-size="7.5" fill="#555" text-anchor="middle">Str. Training</text>
+        <text x="62"  y="214" font-family="'DM Sans',sans-serif" font-size="7.5" fill="#555" text-anchor="middle">Governance</text>
+        <text x="198" y="207" font-family="'DM Sans',sans-serif" font-size="7.5" fill="#555" text-anchor="middle">Policy Design</text>
+        <!-- Center -->
+        <circle cx="130" cy="130" r="14" fill="none" stroke="#8B1C1C" stroke-opacity="0.15" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="130" y="127" font-family="'Cormorant Garamond',serif" font-size="7.5" fill="#8B1C1C" text-anchor="middle" font-style="italic">system</text>
+        <text x="130" y="137" font-family="'Cormorant Garamond',serif" font-size="7.5" fill="#8B1C1C" text-anchor="middle" font-style="italic">level</text>
+      </svg>
+    </div>
+
+    <div class="areas-grid">
+      <div class="area">
+        <div class="area-header">
+          <svg class="area-icon" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="14" stroke="#8B1C1C" stroke-opacity="0.3" stroke-width="1.5" fill="none"/>
+            <circle cx="20" cy="20" r="8"  stroke="#8B1C1C" stroke-opacity="0.5" stroke-width="1.5" fill="none"/>
+            <circle cx="20" cy="20" r="3"  fill="#8B1C1C"/>
+          </svg>
+          <span class="area-num">01</span>
+        </div>
+        <h3>Public Affairs &amp; Communication</h3>
+        <p>Interpreting institutional incentives, identifying leverage points, and designing coherent public affairs strategies anchored in evidence — across regulatory, fiscal, and geopolitical dynamics.</p>
+      </div>
+      <div class="area">
+        <div class="area-header">
+          <svg class="area-icon" viewBox="0 0 40 40" fill="none">
+            <rect x="10" y="28" width="6" height="8"  fill="#8B1C1C" fill-opacity="0.4"/>
+            <rect x="18" y="20" width="6" height="16" fill="#8B1C1C" fill-opacity="0.65"/>
+            <rect x="26" y="12" width="6" height="24" fill="#8B1C1C"/>
+          </svg>
+          <span class="area-num">02</span>
+        </div>
+        <h3>Strategic Training &amp; Institutional Literacy</h3>
+        <p>Case-based, empirically grounded programs for leaders who need to understand structure, incentives, and long-term system implications. Designed for senior decision-makers.</p>
+      </div>
+      <div class="area">
+        <div class="area-header">
+          <svg class="area-icon" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="14" r="4"  stroke="#8B1C1C" stroke-width="1.5" fill="none"/>
+            <circle cx="11" cy="28" r="3.5" stroke="#8B1C1C" stroke-width="1.2" fill="none"/>
+            <circle cx="29" cy="28" r="3.5" stroke="#8B1C1C" stroke-width="1.2" fill="none"/>
+            <line x1="20" y1="18" x2="12.5" y2="24.5" stroke="#8B1C1C" stroke-opacity="0.5" stroke-width="1"/>
+            <line x1="20" y1="18" x2="27.5" y2="24.5" stroke="#8B1C1C" stroke-opacity="0.5" stroke-width="1"/>
+          </svg>
+          <span class="area-num">03</span>
+        </div>
+        <h3>Governance &amp; Project Management</h3>
+        <p>Designing governance structures, stakeholder coordination mechanisms, and performance alignment frameworks for complex global health initiatives.</p>
+      </div>
+      <div class="area">
+        <div class="area-header">
+          <svg class="area-icon" viewBox="0 0 40 40" fill="none">
+            <rect x="10" y="8" width="22" height="28" rx="1" stroke="#8B1C1C" stroke-opacity="0.3" stroke-width="1.5" fill="none"/>
+            <line x1="15" y1="16" x2="27" y2="16" stroke="#8B1C1C" stroke-opacity="0.55" stroke-width="1.5"/>
+            <line x1="15" y1="21" x2="27" y2="21" stroke="#8B1C1C" stroke-opacity="0.55" stroke-width="1.5"/>
+            <line x1="15" y1="26" x2="22" y2="26" stroke="#8B1C1C" stroke-opacity="0.55" stroke-width="1.5"/>
+          </svg>
+          <span class="area-num">04</span>
+        </div>
+        <h3>Policy Design &amp; Advocacy Architecture</h3>
+        <p>From evidence-informed formulation to regulatory pathway analysis — structuring incentives, clarifying trade-offs, and ensuring sustainability.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNERS -->
+<section class="partners">
+  <p class="partners-label">Institutional Experience</p>
+  <div class="marquee-track">
+    <div class="marquee-inner">
+      <div class="chip">Indonesian Ministry of Health</div><div class="chip">Nanyang Technological University</div><div class="chip">Carnegie Mellon University</div><div class="chip">Monash University</div><div class="chip">Institut Teknologi Bandung</div><div class="chip">University of Pittsburgh</div><div class="chip">Boston University School of Medicine</div><div class="chip">UNICEF</div><div class="chip">UnitedHealth Group</div><div class="chip">Novo Nordisk</div><div class="chip">Pfizer</div><div class="chip">Biofarma</div><div class="chip">Boston Children's Hospital</div><div class="chip">International Vaccine Institute</div><div class="chip">Alvarez &amp; Marsal</div><div class="chip">Maerki Baumann &amp; Co.</div>
+      <div class="chip">Indonesian Ministry of Health</div><div class="chip">Nanyang Technological University</div><div class="chip">Carnegie Mellon University</div><div class="chip">Monash University</div><div class="chip">Institut Teknologi Bandung</div><div class="chip">University of Pittsburgh</div><div class="chip">Boston University School of Medicine</div><div class="chip">UNICEF</div><div class="chip">UnitedHealth Group</div><div class="chip">Novo Nordisk</div><div class="chip">Pfizer</div><div class="chip">Biofarma</div><div class="chip">Boston Children's Hospital</div><div class="chip">International Vaccine Institute</div><div class="chip">Alvarez &amp; Marsal</div><div class="chip">Maerki Baumann &amp; Co.</div>
+    </div>
+  </div>
+</section>
+
+<!-- LEADERSHIP -->
+<section id="leadership">
+  <div class="inner">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:3rem;flex-wrap:wrap;gap:1.5rem;">
+      <div>
+        <p class="eyebrow">Leadership &amp; Experts</p>
+        <h2>The people behind <em>the work</em></h2>
+      </div>
+      <a href="under-development.html" class="link-more">Full Team →</a>
+    </div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar"><span>W</span></div>
+        <div class="team-info">
+          <h4>Dr. Widyaretna Buenastuti</h4>
+          <p class="team-title">Founder &amp; Director</p>
+          <p class="team-bio">Health policy strategist with 20+ years across MoH, multilaterals, and global health institutions.</p>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar"><span>S</span></div>
+        <div class="team-info">
+          <h4>Soleh Ayubi, PhD</h4>
+          <p class="team-title">Co-founder &amp; Partner</p>
+          <p class="team-bio">Healthcare strategist with almost 20 years across academia, large corporations, and global health institutions.</p>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar"><span>S</span></div>
+        <div class="team-info">
+          <h4>Dr. Siti Maharani</h4>
+          <p class="team-title">Lead, Policy Design</p>
+          <p class="team-bio">Academic and practitioner bridging evidence-based research with regulatory implementation.</p>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar"><span>J</span></div>
+        <div class="team-info">
+          <h4>Jonathan Kusuma</h4>
+          <p class="team-title">Head of Public Affairs</p>
+          <p class="team-bio">Cross-sector communicator with experience in pharma, government relations, and advocacy.</p>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar"><span>N</span></div>
+        <div class="team-info">
+          <h4>Dr. Nadia Wulandari</h4>
+          <p class="team-title">Expert, Global Health Financing</p>
+          <p class="team-bio">Specialist in UHC, health economics, and sustainable financing for emerging markets.</p>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar"><span>M</span></div>
+        <div class="team-info">
+          <h4>Marco Djuanda</h4>
+          <p class="team-title">Advisor, Strategic Partnerships</p>
+          <p class="team-bio">Builds and manages cross-sector alliances between academic, government, and industry actors.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PUBLICATIONS -->
+<section id="publications">
+  <div class="inner">
+    <p class="eyebrow">Insights &amp; Publications</p>
+    <h2>Latest <em>thinking</em></h2>
+
+    <!-- Subscription -->
+    <div class="sub-bar">
+      <div class="sub-text">
+        <span class="sub-label">Stay informed</span>
+        <span class="sub-desc">Receive new publications and insights directly to your inbox.</span>
+      </div>
+      <div class="sub-form">
+        <input type="email" class="sub-input" placeholder="your@email.com" id="subEmail"/>
+        <button class="sub-btn" onclick="handleSub()">Subscribe</button>
+      </div>
+      <p class="sub-confirm" id="subConfirm">✓ You're subscribed. Thank you.</p>
+    </div>
+
+    <!-- Sparkline publication activity bars -->
+    <div class="pub-visual">
+      <div class="pub-bar"></div>
+      <div class="pub-bar"></div>
+      <div class="pub-bar"></div>
+      <div class="pub-bar hi"></div>
+      <div class="pub-bar"></div>
+      <div class="pub-bar hi"></div>
+      <div class="pub-bar"></div>
+      <div class="pub-bar hi"></div>
+      <div class="pub-bar"></div>
+      <div class="pub-bar hi"></div>
+      <div class="pub-bar hi"></div>
+      <div class="pub-bar hi"></div>
+    </div>
+
+    <div class="pub-list">
+      <a href="#" class="pub-item">
+        <div class="pub-meta">
+          <span class="pub-type">Policy Brief</span>
+          <span class="pub-date">Feb 2026</span>
+        </div>
+        <div class="pub-body">
+          <h3>Rethinking Health Financing Sustainability in Post-Pandemic Indonesia</h3>
+          <p>Examining structural tensions between universal coverage ambitions and fiscal reality — with a framework for long-term sustainability grounded in empirical evidence and political feasibility.</p>
+        </div>
+        <span class="pub-arrow">→</span>
+      </a>
+      <a href="#" class="pub-item">
+        <div class="pub-meta">
+          <span class="pub-type">Working Paper</span>
+          <span class="pub-date">Jan 2026</span>
+        </div>
+        <div class="pub-body">
+          <h3>When Public-Private Partnerships Fail: A Diagnostic Framework</h3>
+          <p>Misaligned incentives, not bad intentions, drive most PPP breakdowns in global health.</p>
+        </div>
+        <span class="pub-arrow">→</span>
+      </a>
+      <a href="#" class="pub-item">
+        <div class="pub-meta">
+          <span class="pub-type">Research Note</span>
+          <span class="pub-date">Dec 2025</span>
+        </div>
+        <div class="pub-body">
+          <h3>Indonesia's Tuberculosis Challenge: A Systems Perspective</h3>
+          <p>TB persists not due to lack of tools, but failure of system alignment across diagnosis, treatment, and prevention.</p>
+        </div>
+        <span class="pub-arrow">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="contact">
+  <div class="inner">
+    <p class="eyebrow">Get in Touch</p>
+    <h2>Ready to <em>engage?</em></h2>
+    <p>Whether you are a government ministry, multilateral organization, life sciences company, or philanthropic foundation — NADI is ready.</p>
+
+    <div class="cta-partners">
+      <div class="cta-partner-item">
+        <div class="icon">🏛️</div>
+        <div class="label">Government</div>
+      </div>
+      <div class="cta-partner-item">
+        <div class="icon">🌐</div>
+        <div class="label">Multilateral</div>
+      </div>
+      <div class="cta-partner-item">
+        <div class="icon">🔬</div>
+        <div class="label">Life Sciences</div>
+      </div>
+      <div class="cta-partner-item">
+        <div class="icon">🤝</div>
+        <div class="label">Foundations</div>
+      </div>
+    </div>
+
+    <div class="cta-actions">
+      <a href="/cdn-cgi/l/email-protection#8ee6ebe2e2e1cee0efeae7a0e6ebefe2fae6" class="btn-primary">Start a Conversation</a>
+      <a href="under-development.html" class="btn-ghost">Explore Our Work</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    <a href="#" class="logo"><span class="logo-name">NADI</span></a>
+    <p>Network for Advancing Development &amp; Innovation in Health.<br>Part of Inke Maris &amp; Associates.</p>
+  </div>
+  <div class="footer-right">
+    <p>Jl. KH Abdullah Syafi'i No. 28<br>Jakarta 12840, Indonesia</p>
+  </div>
+</footer>
+<div class="footer-bottom">
+  © 2026 NADI — Network for Advancing Development &amp; Innov
+<script>
+function handleSub() {
+  const email = document.getElementById('subEmail').value.trim();
+  const confirm = document.getElementById('subConfirm');
+  const btn = document.querySelector('.sub-btn');
+  if (!email || !email.includes('@')) {
+    document.getElementById('subEmail').style.borderColor = '#c0392b';
+    return;
+  }
+  btn.textContent = '✓ Done';
+  btn.style.background = '#2C7A4B';
+  document.getElementById('subEmail').disabled = true;
+  btn.disabled = true;
+  confirm.style.display = 'block';
+}
+document.getElementById('subEmail').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') handleSub();
+  this.style.borderColor = '';
+});
+</script>

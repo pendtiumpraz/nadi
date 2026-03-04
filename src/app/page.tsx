@@ -1,3 +1,11 @@
+import NewLanding from "@/components/NewLanding";
+import "./landing-v2.css";
+
+export default function Home() {
+  return <NewLanding />;
+}
+
+/* Old landing page components (kept, not deleted):
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -8,22 +16,4 @@ import Partners from "@/components/Partners";
 import Insights from "@/components/Insights";
 import CtaBand from "@/components/CtaBand";
 import Footer from "@/components/Footer";
-
-export default function Home() {
-  return (
-    <>
-      <Navbar />
-      <main>
-        <Hero />
-        <About />
-        <Areas />
-        <Methodology />
-        <Engage />
-        <Partners />
-        <Insights />
-        <CtaBand />
-      </main>
-      <Footer />
-    </>
-  );
-}
+*/
