@@ -9,11 +9,12 @@ interface TeamMember {
     bio: string;
     initials: string;
     photoUrl: string;
+    linkedinUrl: string;
     orderNum: number;
     isFeatured: boolean;
 }
 
-const empty: TeamMember = { id: 0, name: "", title: "", bio: "", initials: "", photoUrl: "", orderNum: 0, isFeatured: false };
+const empty: TeamMember = { id: 0, name: "", title: "", bio: "", initials: "", photoUrl: "", linkedinUrl: "", orderNum: 0, isFeatured: false };
 
 export default function AdminTeamPage() {
     const [members, setMembers] = useState<TeamMember[]>([]);
@@ -83,10 +84,11 @@ export default function AdminTeamPage() {
                         </div>
                         <div className="editor-grid">
                             <div className="form-group"><label>Photo URL</label><input value={editing.photoUrl} placeholder="Optional — leave blank for initials avatar" onChange={(e) => setEditing({ ...editing, photoUrl: e.target.value })} /></div>
-                            <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "0.5rem", paddingTop: "1.8rem" }}>
-                                <input type="checkbox" id="featured" checked={editing.isFeatured} onChange={(e) => setEditing({ ...editing, isFeatured: e.target.checked })} />
-                                <label htmlFor="featured" style={{ margin: 0, textTransform: "none", letterSpacing: "0" }}>Featured on homepage</label>
-                            </div>
+                            <div className="form-group"><label>LinkedIn URL</label><input value={editing.linkedinUrl} placeholder="https://linkedin.com/in/..." onChange={(e) => setEditing({ ...editing, linkedinUrl: e.target.value })} /></div>
+                        </div>
+                        <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <input type="checkbox" id="featured" checked={editing.isFeatured} onChange={(e) => setEditing({ ...editing, isFeatured: e.target.checked })} />
+                            <label htmlFor="featured" style={{ margin: 0, textTransform: "none", letterSpacing: "0" }}>Featured on homepage</label>
                         </div>
                     </div>
 
@@ -103,13 +105,14 @@ export default function AdminTeamPage() {
                     <div className="admin-empty">No team members yet. Create your first member!</div>
                 ) : (
                     <table className="admin-table">
-                        <thead><tr><th>#</th><th>Name</th><th>Title</th><th>Featured</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>#</th><th>Name</th><th>Title</th><th>LinkedIn</th><th>Featured</th><th>Actions</th></tr></thead>
                         <tbody>
                             {members.map((m) => (
                                 <tr key={m.id}>
                                     <td>{m.orderNum}</td>
                                     <td><strong>{m.name}</strong><br /><span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.initials}</span></td>
                                     <td>{m.title}</td>
+                                    <td>{m.linkedinUrl ? <a href={m.linkedinUrl} target="_blank" rel="noopener" style={{ fontSize: "0.72rem", color: "var(--crimson)" }}>View</a> : <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>—</span>}</td>
                                     <td><span className={`role-badge role-badge--${m.isFeatured ? "admin" : "user"}`}>{m.isFeatured ? "Featured" : "Hidden"}</span></td>
                                     <td>
                                         <div className="admin-actions">

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
         const sql = getDB();
         const countResult = await sql`SELECT COUNT(*) as total FROM team_members`;
         const total = Number(countResult[0].total);
-        const rows = await sql`SELECT id, name, title, bio, initials, photo_url, order_num, is_featured FROM team_members ORDER BY order_num ASC, id ASC LIMIT ${limit} OFFSET ${offset}`;
+        const rows = await sql`SELECT id, name, title, bio, initials, photo_url, linkedin_url, order_num, is_featured FROM team_members ORDER BY order_num ASC, id ASC LIMIT ${limit} OFFSET ${offset}`;
 
         const members = rows.map((r) => ({
             id: r.id,
@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
             bio: r.bio || "",
             initials: r.initials || "",
             photoUrl: r.photo_url || "",
+            linkedinUrl: r.linkedin_url || "",
             orderNum: r.order_num || 0,
             isFeatured: r.is_featured || false,
         }));

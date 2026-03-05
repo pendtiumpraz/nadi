@@ -249,6 +249,7 @@ export default function NewLanding() {
                                     <h4>{m.name}</h4>
                                     <p className="v2-team-title">{m.title}</p>
                                     <p className="v2-team-bio">{m.bio}</p>
+                                    <a href="#" className="v2-link-more" style={{ marginTop: "0.5rem", fontSize: "0.7rem" }}>in LinkedIn →</a>
                                 </div>
                             </div>
                         ))}

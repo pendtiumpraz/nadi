@@ -101,6 +101,7 @@ export async function migrate() {
       bio TEXT DEFAULT '',
       initials VARCHAR(10) DEFAULT '',
       photo_url TEXT DEFAULT '',
+      linkedin_url TEXT DEFAULT '',
       order_num INTEGER DEFAULT 0,
       is_featured BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT NOW(),
@@ -123,6 +124,14 @@ export async function migrate() {
   await sql`
     DO $$ BEGIN
       ALTER TABLE articles ADD COLUMN IF NOT EXISTS cover_image TEXT DEFAULT '';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+
+  // Add linkedin_url to team_members if missing
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE team_members ADD COLUMN IF NOT EXISTS linkedin_url TEXT DEFAULT '';
     EXCEPTION WHEN duplicate_column THEN NULL;
     END $$
   `;

@@ -7,6 +7,7 @@ export interface TeamMember {
     bio: string;
     initials: string;
     photoUrl: string;
+    linkedinUrl: string;
     orderNum: number;
     isFeatured: boolean;
     createdAt: string;
@@ -21,6 +22,7 @@ function rowToMember(row: Record<string, unknown>): TeamMember {
         bio: (row.bio as string) || "",
         initials: (row.initials as string) || "",
         photoUrl: (row.photo_url as string) || "",
+        linkedinUrl: (row.linkedin_url as string) || "",
         orderNum: (row.order_num as number) || 0,
         isFeatured: (row.is_featured as boolean) || false,
         createdAt: row.created_at ? new Date(row.created_at as string).toISOString() : "",
@@ -43,8 +45,8 @@ export async function getTeamMemberById(id: number): Promise<TeamMember | null> 
 export async function createTeamMember(data: Partial<TeamMember>): Promise<TeamMember> {
     const sql = getDB();
     const rows = await sql`
-    INSERT INTO team_members (name, title, bio, initials, photo_url, order_num, is_featured)
-    VALUES (${data.name || ""}, ${data.title || ""}, ${data.bio || ""}, ${data.initials || ""}, ${data.photoUrl || ""}, ${data.orderNum || 0}, ${data.isFeatured || false})
+    INSERT INTO team_members (name, title, bio, initials, photo_url, linkedin_url, order_num, is_featured)
+    VALUES (${data.name || ""}, ${data.title || ""}, ${data.bio || ""}, ${data.initials || ""}, ${data.photoUrl || ""}, ${data.linkedinUrl || ""}, ${data.orderNum || 0}, ${data.isFeatured || false})
     RETURNING *`;
     return rowToMember(rows[0]);
 }
@@ -58,6 +60,7 @@ export async function updateTeamMember(id: number, data: Partial<TeamMember>): P
       bio = ${data.bio || ""},
       initials = ${data.initials || ""},
       photo_url = ${data.photoUrl || ""},
+      linkedin_url = ${data.linkedinUrl || ""},
       order_num = ${data.orderNum || 0},
       is_featured = ${data.isFeatured || false},
       updated_at = NOW()

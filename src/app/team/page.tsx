@@ -6,7 +6,7 @@ import "@/app/landing-v2.css";
 
 interface Member {
     id: number; name: string; title: string; bio: string;
-    initials: string; photoUrl: string; isFeatured: boolean;
+    initials: string; photoUrl: string; linkedinUrl: string; isFeatured: boolean;
 }
 
 interface Pagination { page: number; totalPages: number; total: number; }
@@ -48,6 +48,9 @@ export default function TeamPage() {
                                     <h4>{m.name}</h4>
                                     <p className="v2-team-title">{m.title}</p>
                                     <p className="v2-team-bio">{m.bio}</p>
+                                    <a href={m.linkedinUrl || "#"} target={m.linkedinUrl ? "_blank" : undefined} rel="noopener noreferrer" className="v2-link-more" style={{ marginTop: "0.5rem", fontSize: "0.7rem" }}>
+                                        in LinkedIn →
+                                    </a>
                                 </div>
                             </div>
                         ))}
