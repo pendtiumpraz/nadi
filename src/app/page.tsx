@@ -1,19 +1,20 @@
-import NewLanding from "@/components/NewLanding";
+import { getDB } from "@/lib/db";
+import LandingSwitcher from "@/components/LandingSwitcher";
 import "./landing-v2.css";
 
-export default function Home() {
-  return <NewLanding />;
+async function getLandingVersion(): Promise<string> {
+  try {
+    const sql = getDB();
+    const rows = await sql`SELECT value FROM site_settings WHERE key = 'landing_version'`;
+    return rows.length > 0 ? (rows[0].value as string) : "v2";
+  } catch {
+    return "v2";
+  }
 }
 
-/* Old landing page components (kept, not deleted):
-import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import About from "@/components/About";
-import Areas from "@/components/Areas";
-import Methodology from "@/components/Methodology";
-import Engage from "@/components/Engage";
-import Partners from "@/components/Partners";
-import Insights from "@/components/Insights";
-import CtaBand from "@/components/CtaBand";
-import Footer from "@/components/Footer";
-*/
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const version = await getLandingVersion();
+  return <LandingSwitcher version={version} />;
+}

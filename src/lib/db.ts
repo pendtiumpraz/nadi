@@ -93,6 +93,32 @@ export async function migrate() {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS team_members (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      title VARCHAR(255) DEFAULT '',
+      bio TEXT DEFAULT '',
+      initials VARCHAR(10) DEFAULT '',
+      photo_url TEXT DEFAULT '',
+      order_num INTEGER DEFAULT 0,
+      is_featured BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS site_settings (
+      key VARCHAR(100) PRIMARY KEY,
+      value TEXT DEFAULT '',
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+
+  // Seed default settings
+  await sql`INSERT INTO site_settings (key, value) VALUES ('landing_version', 'v2') ON CONFLICT (key) DO NOTHING`;
+
   // Add cover_image to articles if missing
   await sql`
     DO $$ BEGIN

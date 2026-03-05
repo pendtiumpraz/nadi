@@ -43,7 +43,7 @@ export default function NewLanding() {
                 <ul className="v2-nav-links">
                     <li><a href="#about">About</a></li>
                     <li><a href="#areas">Work</a></li>
-                    <li><a href="#leadership">Team</a></li>
+                    <li><a href="/team">Team</a></li>
                     <li><a href="/publications">Publications</a></li>
                     <li><a href="/events">Events</a></li>
                     <li><a href="/media">Media</a></li>
@@ -232,6 +232,7 @@ export default function NewLanding() {
                             <p className="v2-eyebrow">Leadership &amp; Experts</p>
                             <h2>The people behind <em>the work</em></h2>
                         </div>
+                        <a href="/team" className="v2-link-more">Full Team →</a>
                     </div>
                     <div className="v2-team-grid">
                         {[
