@@ -34,6 +34,22 @@ export async function GET() {
             }
         }
 
+        // Seed team members if table is empty
+        const teamCount = await sql`SELECT COUNT(*) as count FROM team_members`;
+        if (Number(teamCount[0].count) === 0) {
+            const team = [
+                { name: "Dr. Widyaretna Buenastuti", title: "Founder & Director", bio: "Health policy strategist with 20+ years across MoH, multilaterals, and global health institutions.", initials: "W", order: 1, featured: true },
+                { name: "Soleh Ayubi, PhD", title: "Co-founder & Partner", bio: "Healthcare strategist with almost 20 years across academia, large corporations, and global health institutions.", initials: "S", order: 2, featured: true },
+                { name: "Dr. Siti Maharani", title: "Lead, Policy Design", bio: "Academic and practitioner bridging evidence-based research with regulatory implementation.", initials: "S", order: 3, featured: true },
+                { name: "Jonathan Kusuma", title: "Head of Public Affairs", bio: "Cross-sector communicator with experience in pharma, government relations, and advocacy.", initials: "J", order: 4, featured: true },
+                { name: "Dr. Nadia Wulandari", title: "Expert, Global Health Financing", bio: "Specialist in UHC, health economics, and sustainable financing for emerging markets.", initials: "N", order: 5, featured: true },
+                { name: "Marco Djuanda", title: "Advisor, Strategic Partnerships", bio: "Builds and manages cross-sector alliances between academic, government, and industry actors.", initials: "M", order: 6, featured: true },
+            ];
+            for (const m of team) {
+                await sql`INSERT INTO team_members (name, title, bio, initials, order_num, is_featured) VALUES (${m.name}, ${m.title}, ${m.bio}, ${m.initials}, ${m.order}, ${m.featured})`;
+            }
+        }
+
         return NextResponse.json({
             success: true,
             message: "Database migrated and seeded successfully",
