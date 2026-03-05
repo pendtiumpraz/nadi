@@ -19,6 +19,8 @@ export default function AdminTeamPage() {
     const [members, setMembers] = useState<TeamMember[]>([]);
     const [editing, setEditing] = useState<TeamMember | null>(null);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [status, setStatus] = useState("");
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -31,15 +33,20 @@ export default function AdminTeamPage() {
     useEffect(() => { load(); }, [load]);
 
     const save = async () => {
-        if (!editing) return;
+        if (!editing || !editing.name.trim()) return;
+        setSaving(true);
+        setStatus("Saving...");
         const method = editing.id ? "PUT" : "POST";
         await fetch("/api/team", {
             method,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(editing),
         });
+        setStatus("✓ Saved!");
         setEditing(null);
+        setSaving(false);
         load();
+        setTimeout(() => setStatus(""), 2000);
     };
 
     const del = async (id: number) => {
@@ -49,82 +56,72 @@ export default function AdminTeamPage() {
     };
 
     return (
-        <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-                <h1 style={{ fontSize: "1.4rem", fontWeight: 600 }}>Team Members</h1>
-                <button className="adm-btn-primary" onClick={() => setEditing({ ...empty })}>+ Add Member</button>
+        <div className="admin-body">
+            <div className="admin-content-header">
+                <h1 className="admin-page-title">Team Members</h1>
+                {!editing && (
+                    <button className="btn-primary" onClick={() => setEditing({ ...empty })}>+ New Member</button>
+                )}
             </div>
 
             {editing && (
-                <div className="adm-card" style={{ marginBottom: "2rem", padding: "1.5rem" }}>
-                    <h3 style={{ marginBottom: "1rem" }}>{editing.id ? "Edit" : "Add"} Team Member</h3>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                        <div>
-                            <label className="adm-label">Name*</label>
-                            <input className="adm-input" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <form className="editor" onSubmit={(e) => { e.preventDefault(); save(); }}>
+                    <div className="editor-section">
+                        <div className="editor-section-title">{editing.id ? "Edit" : "Add"} Team Member</div>
+                        <div className="editor-grid">
+                            <div className="form-group"><label>Full Name *</label><input value={editing.name} required onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
+                            <div className="form-group"><label>Title / Role</label><input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></div>
                         </div>
-                        <div>
-                            <label className="adm-label">Title / Role</label>
-                            <input className="adm-input" value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
+                        <div className="editor-grid">
+                            <div className="form-group"><label>Initials</label><input value={editing.initials} placeholder="e.g. WB" onChange={(e) => setEditing({ ...editing, initials: e.target.value.toUpperCase() })} /></div>
+                            <div className="form-group"><label>Display Order</label><input type="number" value={editing.orderNum} onChange={(e) => setEditing({ ...editing, orderNum: Number(e.target.value) })} /></div>
                         </div>
-                        <div>
-                            <label className="adm-label">Initials</label>
-                            <input className="adm-input" value={editing.initials} placeholder="e.g. WB" onChange={(e) => setEditing({ ...editing, initials: e.target.value.toUpperCase() })} />
+                        <div className="form-group">
+                            <label>Bio</label>
+                            <textarea rows={3} value={editing.bio} onChange={(e) => setEditing({ ...editing, bio: e.target.value })}
+                                style={{ width: "100%", padding: "10px", border: "1px solid var(--line)", borderRadius: "4px", fontFamily: "var(--font-body)", fontSize: "0.9rem", resize: "vertical" }} />
                         </div>
-                        <div>
-                            <label className="adm-label">Order</label>
-                            <input className="adm-input" type="number" value={editing.orderNum} onChange={(e) => setEditing({ ...editing, orderNum: Number(e.target.value) })} />
-                        </div>
-                        <div style={{ gridColumn: "1 / -1" }}>
-                            <label className="adm-label">Bio</label>
-                            <textarea className="adm-textarea" rows={3} value={editing.bio} onChange={(e) => setEditing({ ...editing, bio: e.target.value })} />
-                        </div>
-                        <div>
-                            <label className="adm-label">Photo URL</label>
-                            <input className="adm-input" value={editing.photoUrl} placeholder="Optional" onChange={(e) => setEditing({ ...editing, photoUrl: e.target.value })} />
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", paddingTop: "1.5rem" }}>
-                            <input type="checkbox" checked={editing.isFeatured} onChange={(e) => setEditing({ ...editing, isFeatured: e.target.checked })} />
-                            <label>Featured on homepage</label>
+                        <div className="editor-grid">
+                            <div className="form-group"><label>Photo URL</label><input value={editing.photoUrl} placeholder="Optional — leave blank for initials avatar" onChange={(e) => setEditing({ ...editing, photoUrl: e.target.value })} /></div>
+                            <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "0.5rem", paddingTop: "1.8rem" }}>
+                                <input type="checkbox" id="featured" checked={editing.isFeatured} onChange={(e) => setEditing({ ...editing, isFeatured: e.target.checked })} />
+                                <label htmlFor="featured" style={{ margin: 0, textTransform: "none", letterSpacing: "0" }}>Featured on homepage</label>
+                            </div>
                         </div>
                     </div>
-                    <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
-                        <button className="adm-btn-primary" onClick={save}>Save</button>
-                        <button className="adm-btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
+
+                    {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
+                    <div className="editor-save">
+                        <button type="submit" className="btn-primary" disabled={saving}>{saving ? "⏳ Saving..." : editing.id ? "Update Member" : "Add Member"}</button>
+                        <button type="button" className="btn-outline" onClick={() => setEditing(null)}>Cancel</button>
                     </div>
-                </div>
+                </form>
             )}
 
-            {loading ? (
-                <p style={{ color: "#888" }}>Loading...</p>
-            ) : members.length === 0 ? (
-                <p style={{ color: "#888" }}>No team members yet. Add your first member above.</p>
-            ) : (
-                <table className="adm-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Title</th>
-                            <th>Featured</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {members.map((m) => (
-                            <tr key={m.id}>
-                                <td>{m.orderNum}</td>
-                                <td><strong>{m.name}</strong><br /><small style={{ color: "#888" }}>{m.initials}</small></td>
-                                <td>{m.title}</td>
-                                <td>{m.isFeatured ? "★" : "—"}</td>
-                                <td>
-                                    <button className="adm-btn-sm" onClick={() => setEditing({ ...m })}>Edit</button>
-                                    <button className="adm-btn-sm danger" onClick={() => del(m.id)} style={{ marginLeft: "0.5rem" }}>Delete</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            {!editing && (
+                loading ? <p className="admin-page-desc">Loading...</p> : members.length === 0 ? (
+                    <div className="admin-empty">No team members yet. Create your first member!</div>
+                ) : (
+                    <table className="admin-table">
+                        <thead><tr><th>#</th><th>Name</th><th>Title</th><th>Featured</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            {members.map((m) => (
+                                <tr key={m.id}>
+                                    <td>{m.orderNum}</td>
+                                    <td><strong>{m.name}</strong><br /><span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.initials}</span></td>
+                                    <td>{m.title}</td>
+                                    <td><span className={`role-badge role-badge--${m.isFeatured ? "admin" : "user"}`}>{m.isFeatured ? "Featured" : "Hidden"}</span></td>
+                                    <td>
+                                        <div className="admin-actions">
+                                            <button className="admin-btn" onClick={() => setEditing({ ...m })}>Edit</button>
+                                            <button className="admin-btn admin-btn--danger" onClick={() => del(m.id)}>Del</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )
             )}
         </div>
     );

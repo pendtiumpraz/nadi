@@ -12,62 +12,66 @@ export default function AdminSettingsPage() {
     const [version, setVersion] = useState("v2");
     const [saving, setSaving] = useState(false);
     const [loaded, setLoaded] = useState(false);
+    const [status, setStatus] = useState("");
 
     useEffect(() => {
         fetch("/api/settings")
             .then((r) => r.json())
-            .then((data) => {
-                setVersion(data.settings?.landing_version || "v2");
-                setLoaded(true);
-            })
+            .then((data) => { setVersion(data.settings?.landing_version || "v2"); setLoaded(true); })
             .catch(() => setLoaded(true));
     }, []);
 
     const save = async (val: string) => {
         setVersion(val);
         setSaving(true);
+        setStatus("Saving...");
         await fetch("/api/settings", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ key: "landing_version", value: val }),
         });
         setSaving(false);
+        setStatus("✓ Saved!");
+        setTimeout(() => setStatus(""), 2000);
     };
 
-    if (!loaded) return <p style={{ color: "#888" }}>Loading settings...</p>;
+    if (!loaded) return <div className="admin-body"><p className="admin-page-desc">Loading settings...</p></div>;
 
     return (
-        <div>
-            <h1 style={{ fontSize: "1.4rem", fontWeight: 600, marginBottom: "1.5rem" }}>Site Settings</h1>
+        <div className="admin-body">
+            <h1 className="admin-page-title">Site Settings</h1>
+            <p className="admin-page-desc">Configure how the public-facing site behaves.</p>
 
-            <div className="adm-card" style={{ padding: "1.5rem" }}>
-                <h3 style={{ marginBottom: "0.3rem" }}>Landing Page Mode</h3>
-                <p style={{ color: "#888", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
-                    Choose which landing page visitors see when they visit the homepage.
-                </p>
+            <div className="editor">
+                <div className="editor-section">
+                    <div className="editor-section-title">Landing Page Mode</div>
+                    <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1.2rem" }}>
+                        Choose which landing page visitors see when they open the homepage.
+                    </p>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                    {MODES.map((m) => (
-                        <label key={m.value} style={{
-                            display: "flex", alignItems: "flex-start", gap: "1rem",
-                            padding: "1rem 1.2rem", border: `1px solid ${version === m.value ? "var(--crimson, #8B1C1C)" : "#333"}`,
-                            borderRadius: "4px", cursor: "pointer",
-                            background: version === m.value ? "rgba(139,28,28,0.08)" : "transparent",
-                            transition: "all 0.15s",
-                        }}>
-                            <input type="radio" name="landing" value={m.value} checked={version === m.value}
-                                onChange={() => save(m.value)}
-                                style={{ marginTop: "3px", accentColor: "#8B1C1C" }} />
-                            <div>
-                                <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>{m.label}</div>
-                                <div style={{ fontSize: "0.82rem", color: "#888" }}>{m.desc}</div>
-                            </div>
-                        </label>
-                    ))}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                        {MODES.map((m) => (
+                            <label key={m.value} style={{
+                                display: "flex", alignItems: "flex-start", gap: "0.75rem",
+                                padding: "0.9rem 1rem",
+                                border: `1px solid ${version === m.value ? "var(--crimson, #8B1C1C)" : "var(--line, #333)"}`,
+                                borderRadius: "4px", cursor: "pointer",
+                                background: version === m.value ? "rgba(139,28,28,0.1)" : "transparent",
+                                transition: "all 0.15s",
+                            }}>
+                                <input type="radio" name="landing" value={m.value} checked={version === m.value}
+                                    onChange={() => save(m.value)} style={{ marginTop: "3px", accentColor: "#8B1C1C" }} />
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: "0.88rem", marginBottom: "0.15rem" }}>{m.label}</div>
+                                    <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{m.desc}</div>
+                                </div>
+                            </label>
+                        ))}
+                    </div>
                 </div>
-
-                {saving && <p style={{ color: "#8B1C1C", marginTop: "1rem", fontSize: "0.85rem" }}>Saving...</p>}
             </div>
+
+            {(status || saving) && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
         </div>
     );
 }
