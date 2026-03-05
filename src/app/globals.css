@@ -3424,3 +3424,329 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+/* ══════════════════════════════════════════
+   ADMIN LIGHT THEME (V2) — .adm-light
+   ══════════════════════════════════════════ */
+
+/* Shell & Main */
+.adm-light {
+  background: #FAFAF8;
+}
+
+.adm-light .adm-main {
+  background: #FAFAF8;
+}
+
+/* Topbar → Crimson */
+.adm-light .adm-topbar {
+  background: #8B1C1C;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.adm-light .adm-topbar-logo-text {
+  color: #fff;
+}
+
+.adm-light .adm-topbar-logo-sub {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.adm-light .adm-topbar-user {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.adm-light .adm-topbar-role {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.adm-light .adm-topbar-logout {
+  color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.adm-light .adm-topbar-logout:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Sidebar → White */
+.adm-light .adm-sidebar {
+  background: #fff;
+  border-right: 1px solid #E8E5E1;
+}
+
+.adm-light .adm-sidebar-link {
+  color: #888;
+}
+
+.adm-light .adm-sidebar-link:hover {
+  color: #1A1A1A;
+  background: #f5f3f0;
+}
+
+.adm-light .adm-sidebar-link.active {
+  color: #8B1C1C;
+  background: rgba(139, 28, 28, 0.06);
+}
+
+.adm-light .adm-sidebar-icon {
+  opacity: 0.7;
+}
+
+.adm-light .adm-sidebar-link.active .adm-sidebar-icon {
+  opacity: 1;
+}
+
+.adm-light .adm-sidebar-bottom {
+  border-top: 1px solid #E8E5E1;
+}
+
+.adm-light .adm-sidebar-user {
+  color: #1A1A1A;
+}
+
+.adm-light .adm-sidebar-role {
+  color: #8B1C1C;
+}
+
+.adm-light .adm-sidebar-site {
+  color: #888;
+}
+
+.adm-light .adm-sidebar-site:hover {
+  color: #8B1C1C;
+}
+
+/* Welcome Card */
+.adm-light .admin-welcome {
+  background: linear-gradient(135deg, #8B1C1C 0%, #6b1515 100%);
+}
+
+/* Page titles */
+.adm-light .admin-page-title {
+  color: #1A1A1A;
+}
+
+/* Editor/Form sections */
+.adm-light .editor-section {
+  background: #fff;
+  border-color: #E8E5E1;
+}
+
+.adm-light .editor-section-title {
+  color: #8B1C1C;
+  border-bottom-color: #E8E5E1;
+}
+
+/* Form groups */
+.adm-light .form-group label {
+  color: #888;
+}
+
+.adm-light .form-group input,
+.adm-light .form-group select,
+.adm-light .form-group textarea {
+  background: #FAFAF8;
+  border-color: #E8E5E1;
+  color: #1A1A1A;
+}
+
+.adm-light .form-group input:focus,
+.adm-light .form-group select:focus,
+.adm-light .form-group textarea:focus {
+  border-color: #8B1C1C;
+}
+
+.adm-light .form-group input::placeholder,
+.adm-light .form-group textarea::placeholder {
+  color: #bbb;
+}
+
+/* Tables */
+.adm-light .admin-table {
+  background: #fff;
+  border-color: #E8E5E1;
+}
+
+.adm-light .admin-table th {
+  background: #f9f7f5;
+  border-bottom-color: #E8E5E1;
+  color: #888;
+}
+
+.adm-light .admin-table td {
+  border-bottom-color: #f0eeeb;
+  color: #1A1A1A;
+}
+
+.adm-light .admin-table tr:hover td {
+  background: #faf8f6;
+}
+
+/* Buttons */
+.adm-light .btn-primary {
+  background: #8B1C1C;
+  color: #fff;
+}
+
+.adm-light .btn-primary:hover {
+  opacity: 0.85;
+}
+
+.adm-light .btn-outline {
+  border-color: #E8E5E1;
+  color: #1A1A1A;
+}
+
+.adm-light .btn-outline:hover {
+  border-color: #8B1C1C;
+  color: #8B1C1C;
+}
+
+.adm-light .admin-btn {
+  background: #fff;
+  border-color: #E8E5E1;
+  color: #1A1A1A;
+}
+
+.adm-light .admin-btn:hover {
+  border-color: #8B1C1C;
+  color: #8B1C1C;
+}
+
+.adm-light .admin-btn--danger {
+  color: #8B1C1C;
+  border-color: #e8d5d5;
+}
+
+.adm-light .admin-btn--danger:hover {
+  background: #8B1C1C;
+  color: #fff;
+  border-color: #8B1C1C;
+}
+
+/* Cards */
+.adm-light .admin-card {
+  background: #fff;
+  border-color: #E8E5E1;
+}
+
+.adm-light .admin-card:hover {
+  border-color: #8B1C1C;
+}
+
+.adm-light .admin-stat-card {
+  background: #fff;
+  border-color: #E8E5E1;
+}
+
+.adm-light .admin-latest {
+  background: #fff;
+  border-color: #E8E5E1;
+}
+
+.adm-light .admin-latest:hover {
+  border-color: #8B1C1C;
+}
+
+.adm-light .admin-empty {
+  background: #fff;
+  border-color: #E8E5E1;
+}
+
+/* Message */
+.adm-light .admin-msg {
+  background: rgba(139, 28, 28, 0.06);
+  border-left-color: #8B1C1C;
+  color: #1A1A1A;
+}
+
+/* Admin form components (from earlier) override for light */
+.adm-light .adm-card {
+  background: #fff;
+  border-color: #E8E5E1;
+}
+
+.adm-light .adm-input {
+  background: #FAFAF8;
+  border-color: #E8E5E1;
+  color: #1A1A1A;
+}
+
+.adm-light .adm-input:focus {
+  border-color: #8B1C1C;
+}
+
+.adm-light .adm-textarea {
+  background: #FAFAF8;
+  border-color: #E8E5E1;
+  color: #1A1A1A;
+}
+
+.adm-light .adm-textarea:focus {
+  border-color: #8B1C1C;
+}
+
+.adm-light .adm-label {
+  color: #888;
+}
+
+.adm-light .adm-table {
+  border-color: #E8E5E1;
+}
+
+.adm-light .adm-table th {
+  border-bottom-color: #E8E5E1;
+  color: #888;
+}
+
+.adm-light .adm-table td {
+  border-bottom-color: #f0eeeb;
+  color: #1A1A1A;
+}
+
+/* RTE Editor */
+.adm-light .rte-toolbar {
+  background: #f9f7f5;
+  border-color: #E8E5E1;
+}
+
+.adm-light .rte-btn:hover {
+  background: #E8E5E1;
+  color: #1A1A1A;
+}
+
+.adm-light .rte-content {
+  border-color: #E8E5E1;
+}
+
+.adm-light .rte-content:focus {
+  border-color: #8B1C1C;
+}
+
+/* AI Tabs */
+.adm-light .ai-tabs {
+  background: #E8E5E1;
+}
+
+.adm-light .ai-tab {
+  background: #f9f7f5;
+  color: #888;
+}
+
+.adm-light .ai-tab.active {
+  background: #fff;
+  color: #8B1C1C;
+}
+
+/* Modal */
+.adm-light .admin-modal {
+  background: #fff;
+}
+
+.adm-light .admin-modal h3 {
+  color: #1A1A1A;
+}
