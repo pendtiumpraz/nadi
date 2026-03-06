@@ -3,12 +3,33 @@ import { getDB } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const page = Math.max(1, Number(searchParams.get("page") || 1));
-    const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") || 12)));
-    const offset = (page - 1) * limit;
+    const featured = searchParams.get("featured");
 
     try {
         const sql = getDB();
+
+        // If featured=true, return all featured members (no pagination limit)
+        if (featured === "true") {
+            const rows = await sql`SELECT id, name, title, bio, initials, photo_url, linkedin_url, order_num, is_featured FROM team_members WHERE is_featured = true ORDER BY order_num ASC, id ASC`;
+            const members = rows.map((r) => ({
+                id: r.id,
+                name: r.name,
+                title: r.title || "",
+                bio: r.bio || "",
+                initials: r.initials || "",
+                photoUrl: r.photo_url || "",
+                linkedinUrl: r.linkedin_url || "",
+                orderNum: r.order_num || 0,
+                isFeatured: true,
+            }));
+            return NextResponse.json({ members, pagination: { page: 1, limit: members.length, total: members.length, totalPages: 1 } });
+        }
+
+        // Default: return all members with pagination
+        const page = Math.max(1, Number(searchParams.get("page") || 1));
+        const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") || 12)));
+        const offset = (page - 1) * limit;
+
         const countResult = await sql`SELECT COUNT(*) as total FROM team_members`;
         const total = Number(countResult[0].total);
         const rows = await sql`SELECT id, name, title, bio, initials, photo_url, linkedin_url, order_num, is_featured FROM team_members ORDER BY order_num ASC, id ASC LIMIT ${limit} OFFSET ${offset}`;

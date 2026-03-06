@@ -18,7 +18,7 @@ export default function NewLanding() {
 
 
     useEffect(() => {
-        fetch("/api/public/team?limit=6")
+        fetch("/api/public/team?featured=true")
             .then((r) => r.json())
             .then((data) => {
                 if (data.members && data.members.length > 0) {
