@@ -1,9 +1,35 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+interface TeamMember {
+    id: number;
+    name: string;
+    title: string;
+    bio: string;
+    initials: string;
+    photoUrl: string;
+    linkedinUrl: string;
+    isFeatured: boolean;
+}
 
 export default function NewLanding() {
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
+
     useEffect(() => {
+        fetch("/api/public/team?limit=6")
+            .then((r) => r.json())
+            .then((data) => {
+                if (data.members && data.members.length > 0) {
+                    setTeamMembers(data.members);
+                }
+            })
+            .catch(() => { });
+    }, []);
+
+    useEffect(() => {
+
         // Subscription handler
         const subEmail = document.getElementById("subEmail") as HTMLInputElement | null;
         const subConfirm = document.getElementById("subConfirm");
@@ -235,27 +261,30 @@ export default function NewLanding() {
                         <a href="/team" className="v2-link-more">Full Team →</a>
                     </div>
                     <div className="v2-team-grid">
-                        {[
-                            { init: "W", name: "Dr. Widyaretna Buenastuti", title: "Founder & Director", bio: "Health policy strategist with 20+ years across MoH, multilaterals, and global health institutions." },
-                            { init: "S", name: "Soleh Ayubi, PhD", title: "Co-founder & Partner", bio: "Healthcare strategist with almost 20 years across academia, large corporations, and global health institutions." },
-                            { init: "S", name: "Dr. Siti Maharani", title: "Lead, Policy Design", bio: "Academic and practitioner bridging evidence-based research with regulatory implementation." },
-                            { init: "J", name: "Jonathan Kusuma", title: "Head of Public Affairs", bio: "Cross-sector communicator with experience in pharma, government relations, and advocacy." },
-                            { init: "N", name: "Dr. Nadia Wulandari", title: "Expert, Global Health Financing", bio: "Specialist in UHC, health economics, and sustainable financing for emerging markets." },
-                            { init: "M", name: "Marco Djuanda", title: "Advisor, Strategic Partnerships", bio: "Builds and manages cross-sector alliances between academic, government, and industry actors." },
-                        ].map((m) => (
-                            <div className="v2-team-card" key={m.name}>
-                                <div className="v2-team-avatar"><span>{m.init}</span></div>
+                        {(teamMembers.length > 0 ? teamMembers : [
+                            { id: 0, initials: "W", name: "Dr. Widyaretna Buenastuti", title: "Founder & Director", bio: "Health policy strategist with 20+ years across MoH, multilaterals, and global health institutions.", photoUrl: "", linkedinUrl: "", isFeatured: true },
+                            { id: 1, initials: "S", name: "Soleh Ayubi, PhD", title: "Co-founder & Partner", bio: "Healthcare strategist with almost 20 years across academia, large corporations, and global health institutions.", photoUrl: "", linkedinUrl: "", isFeatured: true },
+                        ]).map((m) => (
+                            <div className="v2-team-card" key={m.id}>
+                                <div className="v2-team-avatar">
+                                    {m.photoUrl ? (
+                                        <img src={m.photoUrl} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+                                    ) : (
+                                        <span>{m.initials || m.name[0]}</span>
+                                    )}
+                                </div>
                                 <div className="v2-team-info">
                                     <h4>{m.name}</h4>
                                     <p className="v2-team-title">{m.title}</p>
                                     <p className="v2-team-bio">{m.bio}</p>
-                                    <a href="#" className="v2-link-more" style={{ marginTop: "0.5rem", fontSize: "0.7rem" }}>in LinkedIn →</a>
+                                    <a href={m.linkedinUrl || "#"} target={m.linkedinUrl ? "_blank" : undefined} rel="noopener noreferrer" className="v2-link-more" style={{ marginTop: "0.5rem", fontSize: "0.7rem" }}>in LinkedIn →</a>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
+
 
             {/* PUBLICATIONS */}
             <section id="publications">
