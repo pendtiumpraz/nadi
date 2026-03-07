@@ -443,7 +443,7 @@
 
 /* PARTNERS */
 .v2-partners {
-    padding: 80px 6%;
+    padding: 100px 6%;
     border-bottom: 1px solid #E8E5E1;
 }
 
@@ -913,6 +913,7 @@
 @media (max-width: 860px) {
     .v2-hero {
         grid-template-columns: 1fr;
+        min-height: auto;
     }
 
     .v2-hero-visual {

@@ -93,7 +93,7 @@ export default function NewLanding() {
                     <p className="v2-hero-sub">
                         NADI —a part of <strong>Inke Maris &amp; Associates</strong>— works at the intersection of public affairs, policy, governance, and implementation. Restoring coherence to systems that shape health outcomes at scale.
                     </p>
-                    <div className="v2-hero-actions">
+                    <div className="v2-hero-actions" style={{ marginTop: "2rem" }}>
                         <a href="#areas" className="v2-btn-primary">Our Work</a>
                         <a href="/contact" className="v2-btn-ghost">Partner With Us</a>
                     </div>
@@ -235,8 +235,8 @@ export default function NewLanding() {
             </section>
 
             {/* PARTNERS */}
-            <section className="v2-partners">
-                <p className="v2-partners-label">Institutional Experience</p>
+            <section className="v2-partners" style={{ paddingTop: "120px", paddingBottom: "120px" }}>
+                <p className="v2-partners-label" style={{ marginBottom: "1rem" }}>Institutional Experience</p>
                 <div className="v2-marquee-track">
                     <div className="v2-marquee-inner">
                         {[...Array(2)].map((_, i) => (
