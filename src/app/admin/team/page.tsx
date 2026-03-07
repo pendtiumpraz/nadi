@@ -113,7 +113,7 @@ export default function AdminTeamPage() {
                                     <td><strong>{m.name}</strong><br /><span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.initials}</span></td>
                                     <td>{m.title}</td>
                                     <td>{m.linkedinUrl ? <a href={m.linkedinUrl} target="_blank" rel="noopener" style={{ fontSize: "0.72rem", color: "var(--crimson)" }}>View</a> : <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>—</span>}</td>
-                                    <td><span className={`role-badge role-badge--${m.isFeatured ? "admin" : "user"}`}>{m.isFeatured ? "Featured" : "Hidden"}</span></td>
+                                    <td><span className={`role-badge role-badge--${m.isFeatured ? "admin" : "user"}`}>{m.isFeatured ? "Homepage + Team" : "Team Only"}</span></td>
                                     <td>
                                         <div className="admin-actions">
                                             <button className="admin-btn" onClick={() => setEditing({ ...m })}>Edit</button>
