@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getAllArticlesAsync } from "@/data/articles";
+import { getSubscriberCount } from "@/lib/newsletter-store";
 
 export default async function AdminDashboard() {
     const session = await auth();
@@ -9,6 +10,7 @@ export default async function AdminDashboard() {
     const articles = await getAllArticlesAsync();
     const totalArticles = articles.length;
     const latestArticle = articles[0];
+    const { active } = await getSubscriberCount();
 
     return (
         <div className="admin-content">
@@ -29,12 +31,12 @@ export default async function AdminDashboard() {
                     <span className="admin-stat-label">Published Articles</span>
                 </div>
                 <div className="admin-stat-card">
-                    <span className="admin-stat-value">{session.user.role === "admin" ? "Full" : "Write"}</span>
-                    <span className="admin-stat-label">Access Level</span>
+                    <span className="admin-stat-value">{active || 0}</span>
+                    <span className="admin-stat-label">Active Subscribers</span>
                 </div>
                 <div className="admin-stat-card">
-                    <span className="admin-stat-value">{latestArticle ? new Date(latestArticle.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</span>
-                    <span className="admin-stat-label">Last Published</span>
+                    <span className="admin-stat-value">{session.user.role === "admin" ? "Full" : "Write"}</span>
+                    <span className="admin-stat-label">Access Level</span>
                 </div>
             </div>
 
@@ -45,10 +47,10 @@ export default async function AdminDashboard() {
                     <span className="admin-card-title">Write New Article</span>
                     <span className="admin-card-desc">Create a publication with magazine-style layout blocks.</span>
                 </a>
-                <a href="/admin/articles" className="admin-card">
-                    <span className="admin-card-icon">📄</span>
-                    <span className="admin-card-title">Manage Articles</span>
-                    <span className="admin-card-desc">Edit, delete, or review all existing publications.</span>
+                <a href="/admin/newsletter" className="admin-card">
+                    <span className="admin-card-icon">✉️</span>
+                    <span className="admin-card-title">Subscribers List</span>
+                    <span className="admin-card-desc">Manage newsletter users, activate, and export to CSV.</span>
                 </a>
                 {session.user.role === "admin" && (
                     <a href="/admin/users" className="admin-card">

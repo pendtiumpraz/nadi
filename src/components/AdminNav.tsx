@@ -20,6 +20,7 @@ export default function AdminNav({ user }: AdminNavProps) {
         { href: "/admin/events", label: "Events", icon: "◈" },
         { href: "/admin/media", label: "Media", icon: "▶" },
         { href: "/admin/team", label: "Team", icon: "◉" },
+        { href: "/admin/newsletter", label: "Newsletter", icon: "✉" },
         { href: "/admin/ai", label: "AI Writer", icon: "✦" },
         { href: "/admin/settings", label: "Settings", icon: "⚙" },
         ...(user.role === "admin"

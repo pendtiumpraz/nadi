@@ -35,18 +35,58 @@ export default function NewLanding() {
         const subConfirm = document.getElementById("subConfirm");
         const subBtn = document.querySelector(".v2-sub-btn") as HTMLButtonElement | null;
 
-        function handleSub() {
+        // Check if already subscribed (localStorage)
+        const alreadySubscribed = localStorage.getItem("nadi_subscribed");
+        if (alreadySubscribed && subEmail && subBtn && subConfirm) {
+            subEmail.disabled = true;
+            subEmail.value = "";
+            subEmail.placeholder = "Already subscribed ✓";
+            subBtn.textContent = "✓ Subscribed";
+            subBtn.style.background = "#2C7A4B";
+            subBtn.disabled = true;
+            subConfirm.style.display = "block";
+            subConfirm.textContent = "✓ You're already subscribed. Thank you!";
+            return;
+        }
+
+        async function handleSub() {
             if (!subEmail || !subBtn || !subConfirm) return;
             const email = subEmail.value.trim();
             if (!email || !email.includes("@")) {
                 subEmail.style.borderColor = "#c0392b";
                 return;
             }
-            subBtn.textContent = "✓ Done";
-            subBtn.style.background = "#2C7A4B";
-            subEmail.disabled = true;
+            subBtn.textContent = "⏳...";
             subBtn.disabled = true;
-            subConfirm.style.display = "block";
+            try {
+                const res = await fetch("/api/public/newsletter", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    // Save to localStorage to prevent repeat submissions
+                    localStorage.setItem("nadi_subscribed", "true");
+                    subBtn.textContent = "✓ Done";
+                    subBtn.style.background = "#2C7A4B";
+                    subEmail.disabled = true;
+                    subConfirm.style.display = "block";
+                    subConfirm.textContent = "✓ You're subscribed. Thank you.";
+                } else {
+                    subBtn.textContent = "Subscribe";
+                    subBtn.disabled = false;
+                    subConfirm.style.display = "block";
+                    subConfirm.textContent = data.error || "Something went wrong.";
+                    subConfirm.style.color = "#c0392b";
+                }
+            } catch {
+                subBtn.textContent = "Subscribe";
+                subBtn.disabled = false;
+                subConfirm.style.display = "block";
+                subConfirm.textContent = "Network error. Please try again.";
+                subConfirm.style.color = "#c0392b";
+            }
         }
 
         if (subBtn) subBtn.addEventListener("click", handleSub);

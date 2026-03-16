@@ -7,6 +7,7 @@ import "@/app/landing-v2.css";
 interface ArticleItem {
     slug: string; title: string; subtitle: string; category: string;
     date: string; readTime: string; author: string; coverImage?: string;
+    pdfUrl?: string;
 }
 
 interface Pagination { page: number; totalPages: number; total: number; }
@@ -54,6 +55,22 @@ export default function PublicationsPage() {
                             <a href={`/publications/${a.slug}`} className="v2-pub-item" key={a.slug}>
                                 <div className="v2-pub-meta">
                                     <span className="v2-pub-type">{a.category}</span>
+                                    {a.pdfUrl && (
+                                        <span style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "0.25rem",
+                                            padding: "0.15rem 0.5rem",
+                                            background: "rgba(139,28,28,0.08)",
+                                            color: "#8B1C1C",
+                                            borderRadius: "3px",
+                                            fontSize: "0.65rem",
+                                            fontWeight: 600,
+                                            letterSpacing: "0.04em",
+                                        }}>
+                                            📄 PDF
+                                        </span>
+                                    )}
                                     <span className="v2-pub-date">{a.date}</span>
                                 </div>
                                 <div className="v2-pub-body">

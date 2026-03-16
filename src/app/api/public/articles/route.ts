@@ -18,11 +18,11 @@ export async function GET(req: NextRequest) {
         if (category) {
             const countResult = await sql`SELECT COUNT(*) as total FROM articles WHERE category = ${category}`;
             total = Number(countResult[0].total);
-            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, seo_description, seo_keywords FROM articles WHERE category = ${category} ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords FROM articles WHERE category = ${category} ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
         } else {
             const countResult = await sql`SELECT COUNT(*) as total FROM articles`;
             total = Number(countResult[0].total);
-            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, seo_description, seo_keywords FROM articles ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords FROM articles ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
         }
 
         const articles = rows.map((row) => ({
@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
             author: row.author || "NADI",
             coverColor: row.cover_color || "charcoal",
             coverImage: row.cover_image || "",
+            pdfUrl: row.pdf_url || "",
             seo: {
                 description: row.seo_description || "",
                 keywords: row.seo_keywords || [],

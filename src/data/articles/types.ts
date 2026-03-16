@@ -110,6 +110,7 @@ export interface Article {
     author: string;
     coverColor: "crimson" | "charcoal" | "dark";
     coverImage?: string;
+    pdfUrl?: string;
     seo: ArticleSEO;
     blocks: ContentBlock[];
 }

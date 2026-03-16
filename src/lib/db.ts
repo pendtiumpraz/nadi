@@ -128,10 +128,37 @@ export async function migrate() {
     END $$
   `;
 
+  // Add pdf_url to articles if missing
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS pdf_url TEXT DEFAULT '';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+
   // Add linkedin_url to team_members if missing
   await sql`
     DO $$ BEGIN
       ALTER TABLE team_members ADD COLUMN IF NOT EXISTS linkedin_url TEXT DEFAULT '';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+
+  // Newsletter subscribers table
+  await sql`
+    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+      id SERIAL PRIMARY KEY,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      ip_address VARCHAR(100) DEFAULT '',
+      is_active BOOLEAN DEFAULT true,
+      subscribed_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+
+  // Add ip_address column if missing
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE newsletter_subscribers ADD COLUMN IF NOT EXISTS ip_address VARCHAR(100) DEFAULT '';
     EXCEPTION WHEN duplicate_column THEN NULL;
     END $$
   `;

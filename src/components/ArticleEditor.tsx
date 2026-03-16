@@ -21,9 +21,12 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const [seoKeywords, setSeoKeywords] = useState("");
     const [coverImage, setCoverImage] = useState("");
     const [uploadingCover, setUploadingCover] = useState(false);
+    const [pdfUrl, setPdfUrl] = useState("");
+    const [uploadingPdf, setUploadingPdf] = useState(false);
     const [status, setStatus] = useState("");
     const [saving, setSaving] = useState(false);
     const coverInputRef = useRef<HTMLInputElement>(null);
+    const pdfInputRef = useRef<HTMLInputElement>(null);
 
     // Load existing article
     useEffect(() => {
@@ -38,6 +41,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     setReadTime(data.readTime || "8 min read");
                     setCoverColor(data.coverColor || "crimson");
                     setCoverImage(data.coverImage || "");
+                    setPdfUrl(data.pdfUrl || "");
                     setSeoDesc(data.seo?.description || "");
                     setSeoKeywords(data.seo?.keywords?.join(", ") || "");
                     if (data.blocks && editorRef.current) {
@@ -98,6 +102,30 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
         setUploadingCover(false);
     };
 
+    const handlePdfUpload = async (file: File) => {
+        if (!file || file.size === 0) return;
+        if (file.type !== "application/pdf") {
+            setStatus("Error: Please upload a PDF file.");
+            return;
+        }
+        setUploadingPdf(true);
+        setStatus("⏳ Uploading PDF...");
+        try {
+            const fd = new FormData();
+            fd.append("pdf", file);
+            fd.append("fileType", "pdf");
+            fd.append("slug", slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "draft");
+            const res = await fetch("/api/articles/upload", { method: "POST", body: fd });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            setPdfUrl(data.url);
+            setStatus("✓ PDF uploaded!");
+        } catch (err) {
+            setStatus(`Error: ${(err as Error).message}`);
+        }
+        setUploadingPdf(false);
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         const content = editorRef.current?.innerText || "";
@@ -148,6 +176,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 date: new Date().toISOString().split("T")[0],
                 coverColor,
                 coverImage,
+                pdfUrl,
                 seo: { description: finalSeoDesc, keywords: finalKeywords },
                 blocks: formatData.blocks,
             };
@@ -231,6 +260,38 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         </div>
                     )}
                     <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f); }} />
+                </div>
+
+                {/* PDF Upload */}
+                <div className="editor-section">
+                    <div className="editor-section-title">PDF Document <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional, attach a PDF for embedded viewing</span></div>
+                    {pdfUrl ? (
+                        <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: 'rgba(139,28,28,0.06)', borderRadius: '8px', border: '1px solid rgba(139,28,28,0.15)' }}>
+                                <span style={{ fontSize: '1.5rem' }}>📄</span>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>PDF Attached</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--muted)', wordBreak: 'break-all' }}>{pdfUrl.split('/').pop()}</div>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => pdfInputRef.current?.click()} disabled={uploadingPdf}>{uploadingPdf ? '⏳...' : 'Change PDF'}</button>
+                                <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px', color: '#c44' }} onClick={() => setPdfUrl('')}>Remove</button>
+                                <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px', textDecoration: 'none' }}>Preview ↗</a>
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            style={{ border: '2px dashed var(--line)', borderRadius: '8px', padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                            onClick={() => pdfInputRef.current?.click()}
+                            onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--crimson)'; }}
+                            onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; }}
+                            onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--line)'; const f = e.dataTransfer.files[0]; if (f) handlePdfUpload(f); }}
+                        >
+                            <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>{uploadingPdf ? '⏳ Uploading PDF...' : '📄 Click or drag PDF here to upload (max 20MB)'}</p>
+                        </div>
+                    )}
+                    <input ref={pdfInputRef} type="file" accept=".pdf,application/pdf" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f); }} />
                 </div>
 
                 {/* Rich Text Editor */}
