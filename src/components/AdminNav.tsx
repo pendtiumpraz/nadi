@@ -22,6 +22,7 @@ export default function AdminNav({ user }: AdminNavProps) {
         { href: "/admin/team", label: "Team", icon: "◉" },
         { href: "/admin/newsletter", label: "Newsletter", icon: "✉" },
         { href: "/admin/ai", label: "AI Writer", icon: "✦" },
+        { href: "/admin/docs", label: "Docs", icon: "📖" },
         { href: "/admin/settings", label: "Settings", icon: "⚙" },
         ...(user.role === "admin"
             ? [{ href: "/admin/users", label: "Users", icon: "⊕" }]
