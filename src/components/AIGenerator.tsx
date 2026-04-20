@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Topic {
     title: string;
@@ -27,10 +27,24 @@ export default function AIGenerator() {
     const [batchRunning, setBatchRunning] = useState(false);
     const [batchProgress, setBatchProgress] = useState(0);
 
+    // Detailed progress for active job
+    const [progressStep, setProgressStep] = useState("");
+    const [progressElapsed, setProgressElapsed] = useState(0);
+
+    // Tick elapsed timer when something is running
+    useEffect(() => {
+        const running = loadingTopics || generating || batchRunning;
+        if (!running) { setProgressElapsed(0); return; }
+        setProgressElapsed(0);
+        const t = setInterval(() => setProgressElapsed(e => e + 1), 1000);
+        return () => clearInterval(t);
+    }, [loadingTopics, generating, batchRunning]);
+
     // Generate Topics
     const genTopics = async () => {
         setLoadingTopics(true);
         setMsg("");
+        setProgressStep("Asking DeepSeek for topic ideas...");
         try {
             const res = await fetch("/api/ai/topics", {
                 method: "POST",
@@ -47,6 +61,7 @@ export default function AIGenerator() {
             setMsg((err as Error).message);
         }
         setLoadingTopics(false);
+        setProgressStep("");
     };
 
     // Generate single article
@@ -55,6 +70,7 @@ export default function AIGenerator() {
         setGenerating(true);
         setMsg("");
         try {
+            setProgressStep("AI is drafting the article (this takes 20–40s)...");
             const res = await fetch("/api/ai/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -63,7 +79,7 @@ export default function AIGenerator() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
 
-            // Save article
+            setProgressStep("Saving article to database...");
             const saveRes = await fetch("/api/articles", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -81,6 +97,7 @@ export default function AIGenerator() {
             setMsg(`Error: ${(err as Error).message}`);
         }
         setGenerating(false);
+        setProgressStep("");
     };
 
     // Toggle topic selection
@@ -97,10 +114,12 @@ export default function AIGenerator() {
         setBatchProgress(0);
         setMsg("");
 
+        let processed = 0;
         for (let i = 0; i < topics.length; i++) {
             if (!topics[i].selected) continue;
 
-            // Mark as generating
+            processed++;
+            setProgressStep(`Generating ${processed} of ${selected.length}: "${topics[i].title}"`);
             setTopics(prev => prev.map((t, j) => j === i ? { ...t, status: "generating" } : t));
 
             try {
@@ -112,7 +131,6 @@ export default function AIGenerator() {
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
 
-                // Save
                 const saveRes = await fetch("/api/articles", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -132,9 +150,14 @@ export default function AIGenerator() {
         }
 
         setBatchRunning(false);
-        const done = topics.filter(t => t.selected).length;
-        setMsg(`Batch complete: ${done} articles processed.`);
+        setProgressStep("");
+        const done = topics.filter(t => t.selected && t.status === "done").length;
+        setMsg(`Batch complete: ${done} of ${selected.length} articles published.`);
     };
+
+    const isRunning = loadingTopics || generating || batchRunning;
+    const batchTotal = topics.filter(t => t.selected).length;
+    const batchPct = batchRunning && batchTotal > 0 ? Math.round((batchProgress / batchTotal) * 100) : 0;
 
     return (
         <div className="ai-gen">
@@ -146,6 +169,34 @@ export default function AIGenerator() {
             </div>
 
             {msg && <div className="admin-msg" onClick={() => setMsg("")}>{msg}</div>}
+
+            {isRunning && (
+                <div style={{ margin: "1rem 0", padding: "1rem 1.25rem", border: "1px solid var(--line)", borderRadius: "8px", background: "rgba(139,28,28,0.04)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                            <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid var(--crimson, #8b1c1c)", borderTopColor: "transparent", borderRadius: "50%", animation: "ai-spin 0.8s linear infinite" }} />
+                            <strong style={{ fontSize: "0.9rem" }}>{progressStep || "Working..."}</strong>
+                        </div>
+                        <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+                            {batchRunning ? `${batchProgress}/${batchTotal}` : `${progressElapsed}s`}
+                        </span>
+                    </div>
+                    <div style={{ width: "100%", height: 6, background: "rgba(0,0,0,0.08)", borderRadius: 3, overflow: "hidden" }}>
+                        {batchRunning ? (
+                            <div style={{ width: `${batchPct}%`, height: "100%", background: "var(--crimson, #8b1c1c)", transition: "width 0.3s ease" }} />
+                        ) : (
+                            <div style={{ width: "30%", height: "100%", background: "var(--crimson, #8b1c1c)", animation: "ai-indeterminate 1.4s ease-in-out infinite" }} />
+                        )}
+                    </div>
+                    <style>{`
+                        @keyframes ai-spin { to { transform: rotate(360deg); } }
+                        @keyframes ai-indeterminate {
+                            0% { transform: translateX(-100%); }
+                            100% { transform: translateX(400%); }
+                        }
+                    `}</style>
+                </div>
+            )}
 
             {/* TOPICS TAB */}
             {tab === "topics" && (
