@@ -7,7 +7,7 @@ import "@/app/landing-v2.css";
 interface EventItem {
     id: number; slug: string; title: string; description: string;
     date: string; time: string; location: string; locationType: string;
-    category: string; status: string; speakers: string[];
+    category: string; status: string; speakers: string[]; imageUrl: string;
 }
 
 export default function EventsPage() {
@@ -31,19 +31,31 @@ export default function EventsPage() {
             ) : (
                 <div className="v2-card-grid">
                     {events.map((e) => (
-                        <div className="v2-card" key={e.id}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span className="v2-card-meta">{e.category}</span>
-                                <span className="v2-card-badge">{e.status}</span>
-                            </div>
-                            <h3>{e.title}</h3>
-                            <p>{e.description}</p>
-                            <div className="v2-card-date">📅 {e.date} {e.time && `· ${e.time}`}</div>
-                            <div className="v2-card-date">📍 {e.location || "TBA"} · {e.locationType}</div>
-                            {e.speakers.length > 0 && (
-                                <div className="v2-card-date">🎤 {e.speakers.join(", ")}</div>
+                        <a
+                            href={`/events/${e.slug}`}
+                            className="v2-card"
+                            key={e.slug}
+                            style={{ textDecoration: "none", color: "inherit", display: "block", padding: 0, overflow: "hidden" }}
+                        >
+                            {e.imageUrl && (
+                                <div style={{ width: "100%", height: 180, overflow: "hidden", background: "#f3f3f3" }}>
+                                    <img src={e.imageUrl} alt={e.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                </div>
                             )}
-                        </div>
+                            <div style={{ padding: "1.25rem" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span className="v2-card-meta">{e.category}</span>
+                                    <span className="v2-card-badge">{e.status}</span>
+                                </div>
+                                <h3>{e.title}</h3>
+                                <p>{e.description}</p>
+                                <div className="v2-card-date">📅 {e.date} {e.time && `· ${e.time}`}</div>
+                                <div className="v2-card-date">📍 {e.location || "TBA"} · {e.locationType}</div>
+                                {e.speakers.length > 0 && (
+                                    <div className="v2-card-date">🎤 {e.speakers.join(", ")}</div>
+                                )}
+                            </div>
+                        </a>
                     ))}
                 </div>
             )}
