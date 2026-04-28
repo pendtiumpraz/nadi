@@ -2,18 +2,31 @@
 
 import { useState, useEffect, FormEvent } from "react";
 
+type UserRole = "admin" | "reviewer" | "contributor" | "partner";
+type UserStatus = "pending" | "active" | "suspended";
+
 interface UserRow {
     id: string;
     email: string;
     name: string;
-    role: "admin" | "user";
+    role: UserRole;
+    status: UserStatus;
 }
+
+const ROLE_OPTIONS: UserRole[] = ["admin", "reviewer", "contributor", "partner"];
+
+const STATUS_LABEL: Record<UserStatus, string> = {
+    pending: "Pending",
+    active: "Active",
+    suspended: "Suspended",
+};
 
 export default function UserManagement() {
     const [users, setUsers] = useState<UserRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAdd, setShowAdd] = useState(false);
     const [passwordModal, setPasswordModal] = useState<UserRow | null>(null);
+    const [filter, setFilter] = useState<"all" | UserStatus>("all");
     const [msg, setMsg] = useState("");
 
     const fetchUsers = async () => {
@@ -39,6 +52,7 @@ export default function UserManagement() {
                 name: fd.get("name"),
                 password: fd.get("password"),
                 role: fd.get("role"),
+                status: "active",
             }),
         });
         const data = await res.json();
@@ -63,16 +77,19 @@ export default function UserManagement() {
         }
     };
 
-    const handleRoleToggle = async (user: UserRow) => {
-        const newRole = user.role === "admin" ? "user" : "admin";
+    const updateUser = async (user: UserRow, patch: { role?: UserRole; status?: UserStatus }) => {
         const res = await fetch("/api/users", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: user.id, role: newRole }),
+            body: JSON.stringify({ id: user.id, ...patch }),
         });
+        const data = await res.json();
         if (res.ok) {
             fetchUsers();
-            setMsg(`${user.name} is now ${newRole}.`);
+            if (patch.role) setMsg(`${user.name} is now ${patch.role}.`);
+            if (patch.status) setMsg(`${user.name} ${patch.status === "active" ? "activated" : patch.status === "suspended" ? "suspended" : "marked pending"}.`);
+        } else {
+            setMsg(data.error || "Update failed.");
         }
     };
 
@@ -100,6 +117,9 @@ export default function UserManagement() {
 
     if (loading) return <p style={{ color: "var(--muted)" }}>Loading...</p>;
 
+    const pendingCount = users.filter((u) => u.status === "pending").length;
+    const visibleUsers = filter === "all" ? users : users.filter((u) => u.status === filter);
+
     return (
         <div>
             {msg && (
@@ -108,13 +128,24 @@ export default function UserManagement() {
                 </div>
             )}
 
-            <button
-                className="btn-primary"
-                onClick={() => setShowAdd(!showAdd)}
-                style={{ marginBottom: "1.5rem" }}
-            >
-                {showAdd ? "Cancel" : "+ Add User"}
-            </button>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+                <button className="btn-primary" onClick={() => setShowAdd(!showAdd)}>
+                    {showAdd ? "Cancel" : "+ Add User"}
+                </button>
+                <div style={{ display: "flex", gap: "0.4rem", marginLeft: "auto" }}>
+                    {(["all", "pending", "active", "suspended"] as const).map((f) => (
+                        <button
+                            key={f}
+                            type="button"
+                            onClick={() => setFilter(f)}
+                            className={filter === f ? "btn-primary" : "btn-outline"}
+                            style={{ fontSize: "0.8rem", padding: "5px 12px" }}
+                        >
+                            {f === "all" ? `All (${users.length})` : `${f.charAt(0).toUpperCase()}${f.slice(1)}${f === "pending" && pendingCount > 0 ? ` (${pendingCount})` : ""}`}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             {showAdd && (
                 <form onSubmit={handleAdd} className="admin-form">
@@ -141,9 +172,10 @@ export default function UserManagement() {
                         </div>
                         <div className="form-group">
                             <label htmlFor="add-role">Role</label>
-                            <select id="add-role" name="role">
-                                <option value="user">User</option>
-                                <option value="admin">Admin</option>
+                            <select id="add-role" name="role" defaultValue="contributor">
+                                {ROLE_OPTIONS.map((r) => (
+                                    <option key={r} value={r}>{r}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -159,30 +191,82 @@ export default function UserManagement() {
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {users.map((user) => (
+                    {visibleUsers.map((user) => (
                         <tr key={user.id}>
                             <td>{user.name}</td>
                             <td>{user.email}</td>
                             <td>
-                                <span
-                                    className={`role-badge role-badge--${user.role}`}
-                                    onClick={() => handleRoleToggle(user)}
-                                    title="Click to toggle role"
+                                <select
+                                    value={user.role}
+                                    onChange={(e) => updateUser(user, { role: e.target.value as UserRole })}
+                                    style={{ padding: "4px 8px", fontSize: "0.8rem", border: "1px solid var(--line)", borderRadius: 4 }}
                                 >
-                                    {user.role}
+                                    {ROLE_OPTIONS.map((r) => (
+                                        <option key={r} value={r}>{r}</option>
+                                    ))}
+                                </select>
+                            </td>
+                            <td>
+                                <span
+                                    style={{
+                                        display: "inline-block",
+                                        padding: "3px 10px",
+                                        borderRadius: 12,
+                                        fontSize: "0.7rem",
+                                        fontWeight: 600,
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.04em",
+                                        background:
+                                            user.status === "active" ? "rgba(40,140,80,0.12)" :
+                                                user.status === "pending" ? "rgba(220,150,40,0.15)" :
+                                                    "rgba(180,60,60,0.12)",
+                                        color:
+                                            user.status === "active" ? "#1a7a3e" :
+                                                user.status === "pending" ? "#9a6a10" :
+                                                    "#a83838",
+                                    }}
+                                >
+                                    {STATUS_LABEL[user.status]}
                                 </span>
                             </td>
                             <td>
                                 <div className="admin-actions">
+                                    {user.status === "pending" && (
+                                        <button
+                                            className="admin-btn"
+                                            style={{ background: "#1a7a3e", color: "#fff" }}
+                                            onClick={() => updateUser(user, { status: "active" })}
+                                        >
+                                            Activate
+                                        </button>
+                                    )}
+                                    {user.status === "active" && (
+                                        <button
+                                            className="admin-btn admin-btn--secondary"
+                                            onClick={() => updateUser(user, { status: "suspended" })}
+                                        >
+                                            Suspend
+                                        </button>
+                                    )}
+                                    {user.status === "suspended" && (
+                                        <button
+                                            className="admin-btn"
+                                            style={{ background: "#1a7a3e", color: "#fff" }}
+                                            onClick={() => updateUser(user, { status: "active" })}
+                                        >
+                                            Reactivate
+                                        </button>
+                                    )}
                                     <button
                                         className="admin-btn admin-btn--secondary"
                                         onClick={() => setPasswordModal(user)}
                                     >
-                                        Change Password
+                                        Password
                                     </button>
                                     <button
                                         className="admin-btn admin-btn--danger"
@@ -194,6 +278,13 @@ export default function UserManagement() {
                             </td>
                         </tr>
                     ))}
+                    {visibleUsers.length === 0 && (
+                        <tr>
+                            <td colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "var(--muted)" }}>
+                                No users in this filter.
+                            </td>
+                        </tr>
+                    )}
                 </tbody>
             </table>
 

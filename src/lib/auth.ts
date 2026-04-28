@@ -6,6 +6,7 @@ import authConfig from "@/lib/auth.config";
 declare module "next-auth" {
     interface User {
         role?: string;
+        status?: string;
     }
     interface Session {
         user: {
@@ -13,6 +14,7 @@ declare module "next-auth" {
             email: string;
             name: string;
             role: string;
+            status: string;
         };
     }
 }
@@ -20,6 +22,7 @@ declare module "next-auth" {
 declare module "@auth/core/jwt" {
     interface JWT {
         role?: string;
+        status?: string;
     }
 }
 
@@ -43,11 +46,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const valid = await verifyPassword(password, user.password);
                 if (!valid) return null;
 
+                // Block accounts that are not yet activated by an admin
+                if (user.status !== "active") {
+                    throw new Error(user.status === "pending" ? "PENDING_APPROVAL" : "ACCOUNT_SUSPENDED");
+                }
+
                 return {
                     id: user.id,
                     email: user.email,
                     name: user.name,
                     role: user.role,
+                    status: user.status,
                 };
             },
         }),
@@ -57,6 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         jwt({ token, user }) {
             if (user) {
                 token.role = user.role;
+                token.status = user.status;
                 token.sub = user.id;
             }
             return token;
@@ -64,7 +74,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session({ session, token }) {
             if (session.user) {
                 session.user.id = token.sub as string;
-                session.user.role = (token.role as string) || "user";
+                session.user.role = (token.role as string) || "contributor";
+                session.user.status = (token.status as string) || "active";
             }
             return session;
         },

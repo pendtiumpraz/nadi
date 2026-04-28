@@ -25,7 +25,15 @@ export default function LoginPage() {
         setLoading(false);
 
         if (result?.error) {
-            setError("Invalid email or password.");
+            // next-auth wraps thrown errors with a generic "CredentialsSignin"; the inner code is in result.code (v5)
+            const code = (result as unknown as { code?: string })?.code || result.error;
+            if (code?.includes("PENDING_APPROVAL")) {
+                setError("Account is pending admin approval. You'll receive an email once activated.");
+            } else if (code?.includes("ACCOUNT_SUSPENDED")) {
+                setError("Account is suspended. Contact an administrator.");
+            } else {
+                setError("Invalid email or password.");
+            }
         } else {
             router.push("/admin");
             router.refresh();
@@ -68,6 +76,9 @@ export default function LoginPage() {
                         {loading ? "Signing in..." : "Sign In"}
                     </button>
                 </form>
+                <div style={{ marginTop: "1rem", textAlign: "center", fontSize: "0.85rem", color: "var(--muted)" }}>
+                    Don&apos;t have an account? <a href="/register" style={{ color: "var(--crimson)", fontWeight: 600 }}>Register as a contributor</a>
+                </div>
                 <a href="/" className="login-back">← Back to NADI Website</a>
             </div>
         </div>

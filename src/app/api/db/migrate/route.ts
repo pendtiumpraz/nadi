@@ -13,7 +13,7 @@ export async function GET() {
         const existing = await sql`SELECT id FROM users WHERE email = 'admin@nadi-health.id'`;
         if (existing.length === 0) {
             const hash = await bcrypt.hash("Nadi@2025!", 10);
-            await sql`INSERT INTO users (email, name, password, role) VALUES ('admin@nadi-health.id', 'Admin', ${hash}, 'admin')`;
+            await sql`INSERT INTO users (email, name, password, role, status) VALUES ('admin@nadi-health.id', 'Admin', ${hash}, 'admin', 'active')`;
         }
 
         // Seed static articles if table is empty

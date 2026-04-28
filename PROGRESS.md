@@ -10,24 +10,25 @@ Tracker for the work in `PLAN.md`. Tick boxes as items land. Keep ordering align
 
 ### 1.1 Database
 
-- [ ] Add `status VARCHAR(20) DEFAULT 'pending'` to `users` (values: `pending|active|suspended`)
-- [ ] Widen `users.role` allowed values: `admin | reviewer | contributor | partner` (keep VARCHAR; enforce in app)
-- [ ] Backfill existing users → `status='active'` and remap `role='user'` → `role='contributor'`
-- [ ] Add `status VARCHAR(20) DEFAULT 'draft'` to `articles`, `media`, `events` (`draft|in_review|published`)
-- [ ] Backfill existing rows → `status='published'`
-- [ ] Create `submissions` table (`id, type, ref_slug, author_id, reviewer_id, status, notes, created_at, updated_at`)
-- [ ] Create `user_events` audit table (`id, actor_id, target_user_id, action, meta JSONB, created_at`)
-- [ ] Wire all of the above into `src/lib/db.ts → migrate()`; verify `/api/db/migrate` is idempotent
+- [x] Add `status VARCHAR(20) DEFAULT 'pending'` to `users` (values: `pending|active|suspended`)
+- [x] Widen `users.role` allowed values: `admin | reviewer | contributor | partner` (enforced in app via union type)
+- [x] Backfill existing users → `status='active'` and remap `role='user'` → `role='contributor'`
+- [x] Add `status VARCHAR(20) DEFAULT 'published'` to `articles`, `media`, `events` (existing rows backfilled to `published` via DEFAULT)
+- [x] Add nullable `author_id` to articles/media/events for tracking
+- [x] Create `submissions` table (`id, type, ref_slug, author_id, reviewer_id, status, notes, created_at, updated_at`)
+- [x] Create `user_events` audit table (`id, actor_id, target_user_id, action, meta JSONB, created_at`)
+- [x] Wire all of the above into `src/lib/db.ts → migrate()`; idempotent (uses ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS)
 
 ### 1.2 Auth & registration
 
-- [ ] Reject sign-in if `users.status !== 'active'` in `src/lib/auth.ts` authorize callback
-- [ ] Add public `/register` page (email, name, password, role default `contributor`)
-- [ ] `POST /api/register` creates row with `status='pending'`
-- [ ] Email notify admins + standing CC list on signup (see Phase 3)
-- [ ] `/admin/users` lists pending users with **Activate** / **Reject** actions
-- [ ] Sidebar badge: count of `users.status='pending'`
-- [ ] Audit log row written on activate/reject
+- [x] Reject sign-in if `users.status !== 'active'` in `src/lib/auth.ts` authorize callback (throws PENDING_APPROVAL or ACCOUNT_SUSPENDED)
+- [x] Add public `/register` page (name, email, password — role hard-coded to contributor)
+- [x] `POST /api/register` creates row with `status='pending'` + writes `user_events` audit row
+- [ ] Email notify admins + standing CC list on signup (see Phase 2)
+- [x] `/admin/users` filters pending/active/suspended; shows count per filter; Activate / Suspend / Reactivate buttons
+- [x] Audit log row written on activate / suspend / role change / delete (via `user_events`)
+- [x] Login page surfaces clear error for pending and suspended states; links to `/register`
+- [ ] Sidebar badge: count of `users.status='pending'` (filter chip on /admin/users covers it for now)
 
 ### 1.3 Submission workflow
 

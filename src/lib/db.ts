@@ -148,6 +148,85 @@ export async function migrate() {
     END $$
   `;
 
+  // ── Phase 1: role management foundation ────────────────────────────
+  // user activation status: pending → active → suspended
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'pending';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  // backfill existing users to active so they keep working after the migration
+  await sql`UPDATE users SET status = 'active' WHERE status IS NULL OR status = '' OR status = 'pending'`;
+  // legacy "user" role becomes "contributor"
+  await sql`UPDATE users SET role = 'contributor' WHERE role = 'user'`;
+
+  // publish workflow status on content tables
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE media ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  // optional: track who authored each piece (nullable so legacy rows pass)
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS author_id INTEGER;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE media ADD COLUMN IF NOT EXISTS author_id INTEGER;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE events ADD COLUMN IF NOT EXISTS author_id INTEGER;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+
+  // submission audit trail
+  await sql`
+    CREATE TABLE IF NOT EXISTS submissions (
+      id SERIAL PRIMARY KEY,
+      type VARCHAR(20) NOT NULL,         -- 'article' | 'media' | 'event'
+      ref_slug VARCHAR(500) NOT NULL,
+      author_id INTEGER,
+      reviewer_id INTEGER,
+      status VARCHAR(20) NOT NULL DEFAULT 'in_review',
+      notes TEXT DEFAULT '',
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+
+  // user lifecycle audit log
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_events (
+      id SERIAL PRIMARY KEY,
+      actor_id INTEGER,
+      target_user_id INTEGER,
+      action VARCHAR(50) NOT NULL,
+      meta JSONB DEFAULT '{}',
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+
   // Add linkedin_url to team_members if missing
   await sql`
     DO $$ BEGIN
