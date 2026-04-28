@@ -27,6 +27,8 @@ export async function getAllArticlesAsync(): Promise<Article[]> {
                 readTime: (row.read_time as string) || "5 min read",
                 author: (row.author as string) || "NADI",
                 coverColor: (row.cover_color as "crimson" | "charcoal" | "dark") || "charcoal",
+                coverImage: (row.cover_image as string) || "",
+                pdfUrl: (row.pdf_url as string) || "",
                 seo: {
                     description: (row.seo_description as string) || "",
                     keywords: (row.seo_keywords as string[]) || [],
