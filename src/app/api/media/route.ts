@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
             duration: body.duration || "",
             speakers: body.speakers || [],
             category: body.category || "Health Policy",
+            keywords: body.keywords || [],
             createdAt: new Date().toISOString(),
         };
 
@@ -72,6 +73,7 @@ export async function PUT(req: NextRequest) {
             duration: body.duration || "",
             speakers: body.speakers || [],
             category: body.category || "Health Policy",
+            keywords: body.keywords || existing?.keywords || [],
             createdAt: existing?.createdAt || new Date().toISOString(),
         };
 

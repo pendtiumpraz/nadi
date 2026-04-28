@@ -23,10 +23,15 @@ export default function EditMediaPage({ params }: Props) {
     const [duration, setDuration] = useState("");
     const [speakers, setSpeakers] = useState("");
     const [category, setCategory] = useState("Health Policy");
+    const [keywords, setKeywords] = useState("");
 
     const normalizeEmbed = (url: string): string => {
         const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
         if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+        const tiktokMatch = url.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/);
+        if (tiktokMatch) return `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`;
+        const igMatch = url.match(/instagram\.com\/(?:p|reel|tv)\/([\w-]+)/);
+        if (igMatch) return `https://www.instagram.com/p/${igMatch[1]}/embed`;
         return url;
     };
 
@@ -44,6 +49,7 @@ export default function EditMediaPage({ params }: Props) {
                 setDuration(data.duration || "");
                 setSpeakers((data.speakers || []).join(", "));
                 setCategory(data.category || "Health Policy");
+                setKeywords((data.keywords || []).join(", "));
             })
             .catch(() => setStatus("Failed to load media."))
             .finally(() => setLoading(false));
@@ -65,6 +71,7 @@ export default function EditMediaPage({ params }: Props) {
                 duration,
                 speakers: speakers.split(",").map(s => s.trim()).filter(Boolean),
                 category,
+                keywords: keywords.split(",").map(s => s.trim()).filter(Boolean),
             };
             const res = await fetch("/api/media", {
                 method: "PUT",
@@ -94,15 +101,22 @@ export default function EditMediaPage({ params }: Props) {
                     <div className="editor-grid">
                         <div className="form-group"><label>Type</label>
                             <select value={type} onChange={e => setType(e.target.value)}>
-                                <option value="video">🎬 Video</option><option value="podcast">🎙️ Podcast</option><option value="webinar">💻 Webinar</option><option value="interview">🎤 Interview</option><option value="panel">👥 Panel Discussion</option>
+                                <option value="video">🎬 Video</option>
+                                <option value="podcast">🎙️ Podcast</option>
+                                <option value="webinar">💻 Webinar</option>
+                                <option value="interview">🎤 Interview</option>
+                                <option value="panel">👥 Panel Discussion</option>
+                                <option value="tiktok">🎵 TikTok</option>
+                                <option value="instagram">📷 Instagram</option>
+                                <option value="reel">📱 Reel</option>
                             </select>
                         </div>
                         <div className="form-group"><label>Category</label><input value={category} onChange={e => setCategory(e.target.value)} /></div>
                     </div>
                     <div className="form-group">
-                        <label>YouTube / Embed URL *</label>
-                        <input value={embedUrl} onChange={e => setEmbedUrl(e.target.value)} required placeholder="https://youtube.com/watch?v=... or embed URL" />
-                        <span className="editor-hint">Paste a YouTube watch URL — it will auto-convert to embed format.</span>
+                        <label>YouTube / TikTok / Instagram / Embed URL *</label>
+                        <input value={embedUrl} onChange={e => setEmbedUrl(e.target.value)} required placeholder="https://youtube.com/... or tiktok.com/... or instagram.com/p/..." />
+                        <span className="editor-hint">Paste a YouTube, TikTok, or Instagram URL — auto-converts to embed format.</span>
                     </div>
                     {embedUrl && (
                         <div style={{ marginTop: "0.5rem", borderRadius: "6px", overflow: "hidden", border: "1px solid var(--line)", aspectRatio: "16/9", maxWidth: "500px" }}>
@@ -115,6 +129,7 @@ export default function EditMediaPage({ params }: Props) {
                     </div>
                     <div className="form-group"><label>Description</label><textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} style={{ width: "100%", padding: "10px", border: "1px solid var(--line)", borderRadius: "4px", fontFamily: "var(--font-body)", fontSize: "0.9rem", resize: "vertical" }} /></div>
                     <div className="form-group"><label>Speakers (comma-separated)</label><input value={speakers} onChange={e => setSpeakers(e.target.value)} placeholder="Dr. Smith, Prof. Lee" /></div>
+                    <div className="form-group"><label>Keywords (comma-separated)</label><input value={keywords} onChange={e => setKeywords(e.target.value)} placeholder="universal coverage, vaccine equity, financing" /><span className="editor-hint">Used for search & SEO.</span></div>
                     <div className="form-group"><label>Custom Thumbnail URL (optional)</label><input value={thumbnailUrl} onChange={e => setThumbnailUrl(e.target.value)} placeholder="https://..." /></div>
                 </div>
 

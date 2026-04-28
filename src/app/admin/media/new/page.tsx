@@ -9,11 +9,14 @@ export default function NewMediaPage() {
     const [saving, setSaving] = useState(false);
     const [embedUrl, setEmbedUrl] = useState("");
 
-    // Auto-convert YouTube watch URL to embed URL
+    // Auto-convert watch URLs (YouTube / TikTok / Instagram) to embed URLs
     const normalizeEmbed = (url: string): string => {
-        // youtube.com/watch?v=XXX → youtube.com/embed/XXX
         const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
         if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+        const tiktokMatch = url.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/);
+        if (tiktokMatch) return `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`;
+        const igMatch = url.match(/instagram\.com\/(?:p|reel|tv)\/([\w-]+)/);
+        if (igMatch) return `https://www.instagram.com/p/${igMatch[1]}/embed`;
         return url;
     };
 
@@ -33,6 +36,7 @@ export default function NewMediaPage() {
                 duration: fd.get("duration"),
                 speakers: ((fd.get("speakers") as string) || "").split(",").map(s => s.trim()).filter(Boolean),
                 category: fd.get("category"),
+                keywords: ((fd.get("keywords") as string) || "").split(",").map(s => s.trim()).filter(Boolean),
             };
             const res = await fetch("/api/media", {
                 method: "POST",
@@ -59,14 +63,23 @@ export default function NewMediaPage() {
                     <div className="form-group"><label>Title *</label><input name="title" required placeholder="e.g. NADI Policy Forum Keynote 2026" /></div>
                     <div className="editor-grid">
                         <div className="form-group"><label>Type</label>
-                            <select name="type"><option value="video">🎬 Video</option><option value="podcast">🎙️ Podcast</option><option value="webinar">💻 Webinar</option><option value="interview">🎤 Interview</option><option value="panel">👥 Panel Discussion</option></select>
+                            <select name="type">
+                                <option value="video">🎬 Video</option>
+                                <option value="podcast">🎙️ Podcast</option>
+                                <option value="webinar">💻 Webinar</option>
+                                <option value="interview">🎤 Interview</option>
+                                <option value="panel">👥 Panel Discussion</option>
+                                <option value="tiktok">🎵 TikTok</option>
+                                <option value="instagram">📷 Instagram</option>
+                                <option value="reel">📱 Reel</option>
+                            </select>
                         </div>
                         <div className="form-group"><label>Category</label><input name="category" defaultValue="Health Policy" placeholder="e.g. Health Policy, UHC" /></div>
                     </div>
                     <div className="form-group">
-                        <label>YouTube / Embed URL *</label>
-                        <input name="embedUrl" required placeholder="https://youtube.com/watch?v=... or embed URL" value={embedUrl} onChange={e => setEmbedUrl(e.target.value)} />
-                        <span className="editor-hint">Paste a YouTube watch URL — it will auto-convert to embed format.</span>
+                        <label>YouTube / TikTok / Instagram / Embed URL *</label>
+                        <input name="embedUrl" required placeholder="https://youtube.com/... or tiktok.com/... or instagram.com/p/..." value={embedUrl} onChange={e => setEmbedUrl(e.target.value)} />
+                        <span className="editor-hint">Paste a YouTube, TikTok, or Instagram URL — auto-converts to embed format.</span>
                     </div>
                     {embedUrl && (
                         <div style={{ marginTop: "0.5rem", borderRadius: "6px", overflow: "hidden", border: "1px solid var(--line)", aspectRatio: "16/9", maxWidth: "500px" }}>
@@ -79,6 +92,7 @@ export default function NewMediaPage() {
                     </div>
                     <div className="form-group"><label>Description</label><textarea name="description" rows={3} placeholder="Brief description..." style={{ width: "100%", padding: "10px", border: "1px solid var(--line)", borderRadius: "4px", fontFamily: "var(--font-body)", fontSize: "0.9rem", resize: "vertical" }} /></div>
                     <div className="form-group"><label>Speakers (comma-separated)</label><input name="speakers" placeholder="Dr. Smith, Prof. Lee" /></div>
+                    <div className="form-group"><label>Keywords (comma-separated)</label><input name="keywords" placeholder="universal coverage, vaccine equity, financing" /><span className="editor-hint">Used for search & SEO.</span></div>
                     <div className="form-group"><label>Custom Thumbnail URL (optional)</label><input name="thumbnailUrl" placeholder="https://..." /></div>
                 </div>
 

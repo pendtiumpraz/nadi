@@ -140,6 +140,14 @@ export async function migrate() {
   await sql`UPDATE articles SET category = 'POLICY ANALYSIS' WHERE category = 'STRATEGIC ANALYSIS'`;
   await sql`UPDATE articles SET category = 'OPINION' WHERE category = 'WORKING PAPER'`;
 
+  // Add keywords array to media if missing
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE media ADD COLUMN IF NOT EXISTS keywords TEXT[] DEFAULT '{}';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+
   // Add linkedin_url to team_members if missing
   await sql`
     DO $$ BEGIN

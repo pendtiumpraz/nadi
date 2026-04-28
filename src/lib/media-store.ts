@@ -17,13 +17,14 @@ export async function getMediaBySlug(slug: string): Promise<NADIMedia | null> {
 export async function saveMedia(media: NADIMedia): Promise<void> {
     const sql = getDB();
     await sql`
-    INSERT INTO media (slug, title, description, type, embed_url, thumbnail_url, date, duration, speakers, category)
-    VALUES (${media.slug}, ${media.title}, ${media.description}, ${media.type}, ${media.embedUrl}, ${media.thumbnailUrl || ""}, ${media.date}, ${media.duration || ""}, ${media.speakers || []}, ${media.category})
+    INSERT INTO media (slug, title, description, type, embed_url, thumbnail_url, date, duration, speakers, category, keywords)
+    VALUES (${media.slug}, ${media.title}, ${media.description}, ${media.type}, ${media.embedUrl}, ${media.thumbnailUrl || ""}, ${media.date}, ${media.duration || ""}, ${media.speakers || []}, ${media.category}, ${media.keywords || []})
     ON CONFLICT (slug) DO UPDATE SET
       title = EXCLUDED.title, description = EXCLUDED.description, type = EXCLUDED.type,
       embed_url = EXCLUDED.embed_url, thumbnail_url = EXCLUDED.thumbnail_url,
       date = EXCLUDED.date, duration = EXCLUDED.duration,
-      speakers = EXCLUDED.speakers, category = EXCLUDED.category
+      speakers = EXCLUDED.speakers, category = EXCLUDED.category,
+      keywords = EXCLUDED.keywords
   `;
 }
 
@@ -50,6 +51,7 @@ function rowToMedia(row: Record<string, unknown>): NADIMedia {
         duration: (row.duration as string) || "",
         speakers: (row.speakers as string[]) || [],
         category: (row.category as string) || "Health Policy",
+        keywords: (row.keywords as string[]) || [],
         createdAt: (row.created_at as string) || new Date().toISOString(),
     };
 }

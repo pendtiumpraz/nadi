@@ -16,6 +16,7 @@ export async function GET() {
             duration: r.duration || "",
             speakers: r.speakers || [],
             category: r.category || "Health Policy",
+            keywords: r.keywords || [],
         }));
         return NextResponse.json({ media });
     } catch (err) {

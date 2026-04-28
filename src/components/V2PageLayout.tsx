@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 
-export default function V2PageLayout({ title, eyebrow, children }: { title: string; eyebrow: string; children: ReactNode }) {
+export default function V2PageLayout({ title, eyebrow, subtitle, children }: { title: string; eyebrow: string; subtitle?: string; children: ReactNode }) {
     return (
         <div className="v2">
             {/* NAV */}
@@ -33,6 +33,7 @@ export default function V2PageLayout({ title, eyebrow, children }: { title: stri
                 <div className="v2-inner">
                     <p className="v2-eyebrow">{eyebrow}</p>
                     <h1 dangerouslySetInnerHTML={{ __html: title }} />
+                    {subtitle && <p className="v2-page-subtitle">{subtitle}</p>}
                 </div>
             </section>
 

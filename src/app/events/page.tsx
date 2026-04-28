@@ -23,7 +23,11 @@ export default function EventsPage() {
     }, []);
 
     return (
-        <V2PageLayout title="Events & <em>Engagements</em>" eyebrow="Conferences & Seminars">
+        <V2PageLayout
+            title="Events & <em>Engagements</em>"
+            eyebrow="Conferences & Seminars"
+            subtitle="If you want to share any events or engagements through NADI, feel free to contact us."
+        >
             {loading ? (
                 <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>Loading events...</p>
             ) : events.length === 0 ? (

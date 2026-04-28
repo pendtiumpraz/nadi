@@ -8,6 +8,7 @@ interface MediaItem {
     id: number; slug: string; title: string; description: string;
     type: string; embedUrl: string; thumbnailUrl: string;
     date: string; duration: string; category: string;
+    keywords?: string[];
 }
 
 function getYouTubeId(url: string): string {
@@ -20,9 +21,22 @@ function getYouTubeThumb(url: string) {
     return id ? `https://img.youtube.com/vi/${id}/maxresdefault.jpg` : "";
 }
 
+function isTikTok(url: string): boolean {
+    return /tiktok\.com/.test(url);
+}
+
+function isInstagram(url: string): boolean {
+    return /instagram\.com/.test(url);
+}
+
 function toEmbedUrl(url: string): string {
     const id = getYouTubeId(url);
-    return id ? `https://www.youtube.com/embed/${id}?autoplay=1` : url;
+    if (id) return `https://www.youtube.com/embed/${id}?autoplay=1`;
+    const tiktokMatch = url.match(/tiktok\.com\/(?:@[\w.-]+\/video\/|embed\/v2\/)(\d+)/);
+    if (tiktokMatch) return `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`;
+    const igMatch = url.match(/instagram\.com\/(?:p|reel|tv)\/([\w-]+)/);
+    if (igMatch) return `https://www.instagram.com/p/${igMatch[1]}/embed`;
+    return url;
 }
 
 export default function MediaPage() {
@@ -50,7 +64,11 @@ export default function MediaPage() {
     }, [active]);
 
     return (
-        <V2PageLayout title="Media & <em>Resources</em>" eyebrow="Videos & Press">
+        <V2PageLayout
+            title="Media & <em>Learning Materials</em>"
+            eyebrow="Videos, Podcasts & Reels"
+            subtitle="If you want to share any videos, podcasts, reels, webinar talks, and other materials for knowledge sharing through NADI, feel free to contact us."
+        >
             {loading ? (
                 <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>Loading media...</p>
             ) : items.length === 0 ? (
@@ -59,21 +77,26 @@ export default function MediaPage() {
                 <div className="v2-card-grid">
                     {items.map((m) => {
                         const thumb = m.thumbnailUrl || getYouTubeThumb(m.embedUrl);
-                        const hasVideo = !!getYouTubeId(m.embedUrl);
+                        const isEmbeddable = !!getYouTubeId(m.embedUrl) || isTikTok(m.embedUrl) || isInstagram(m.embedUrl);
+                        const platformBadge = isTikTok(m.embedUrl) ? "🎵 TikTok" : isInstagram(m.embedUrl) ? "📷 Instagram" : null;
                         return (
                             <button
                                 type="button"
-                                onClick={() => hasVideo ? setActive(m) : window.open(m.embedUrl, "_blank")}
+                                onClick={() => isEmbeddable ? setActive(m) : window.open(m.embedUrl, "_blank")}
                                 className="v2-card"
                                 key={m.id}
                                 style={{ textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit", color: "inherit", width: "100%" }}
                             >
-                                {thumb && (
+                                {thumb ? (
                                     <div style={{ position: "relative", borderRadius: 2, overflow: "hidden", marginBottom: "0.5rem" }}>
                                         <img src={thumb} alt={m.title} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
                                         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.25)" }}>
                                             <span style={{ fontSize: "2rem", color: "#fff" }}>▶</span>
                                         </div>
+                                    </div>
+                                ) : platformBadge && (
+                                    <div style={{ height: 160, marginBottom: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #f8f8f8, #ececec)", borderRadius: 2, fontSize: "1.3rem", color: "#666" }}>
+                                        {platformBadge}
                                     </div>
                                 )}
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -89,19 +112,21 @@ export default function MediaPage() {
                 </div>
             )}
 
-            {active && (
+            {active && (() => {
+                const vertical = isTikTok(active.embedUrl) || isInstagram(active.embedUrl);
+                return (
                 <div
                     onClick={() => setActive(null)}
                     style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}
                 >
-                    <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: "960px" }}>
+                    <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: vertical ? "420px" : "960px" }}>
                         <button
                             type="button"
                             onClick={() => setActive(null)}
                             aria-label="Close"
                             style={{ position: "absolute", top: -40, right: 0, background: "transparent", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}
                         >✕</button>
-                        <div style={{ aspectRatio: "16/9", background: "#000" }}>
+                        <div style={{ aspectRatio: vertical ? "9/16" : "16/9", background: "#000" }}>
                             <iframe
                                 src={toEmbedUrl(active.embedUrl)}
                                 width="100%"
@@ -118,7 +143,8 @@ export default function MediaPage() {
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
         </V2PageLayout>
     );
 }

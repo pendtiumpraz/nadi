@@ -57,28 +57,30 @@ Tracker for the work in `PLAN.md`. Tick boxes as items land. Keep ordering align
 
 ## Phase 3 — Copy & Category Renames
 
-- [ ] DB migration: `UPDATE articles SET category='OPINION' WHERE category='WORKING PAPER'`
-- [ ] DB migration: `UPDATE articles SET category='POLICY ANALYSIS' WHERE category='STRATEGIC ANALYSIS'`
-- [ ] Update editor `<select>` options in `src/components/ArticleEditor.tsx`
-- [ ] Update `CATEGORIES` constant in `src/app/publications/page.tsx`
-- [ ] Update any AI prompt that mentions the old names (`src/app/api/ai/*`)
-- [ ] Update admin docs page (`src/app/admin/docs/DocsClient.tsx`)
-- [ ] Add **Events & Engagements** subtitle in landing component(s)
-- [ ] Rename `Resources` → `Learning Materials` (label only — slugs stay)
-- [ ] Section title → `Media & Learning Materials`
-- [ ] Add subtitle below `Media & Learning Materials` (copy in PLAN §2.3)
-- [ ] Update navbar link label if needed (`Media` → keep short for nav, full title only on the page)
+- [x] DB migration: `UPDATE articles SET category='OPINION' WHERE category='WORKING PAPER'`
+- [x] DB migration: `UPDATE articles SET category='POLICY ANALYSIS' WHERE category='STRATEGIC ANALYSIS'`
+- [x] Update editor `<select>` options in `src/components/ArticleEditor.tsx`
+- [x] Update `CATEGORIES` constant in `src/app/publications/page.tsx` and `PublicationsList.tsx`
+- [x] Update any AI prompt that mentions the old names (`src/app/api/ai/*`)
+- [x] Update admin docs page (`src/app/admin/docs/DocsClient.tsx`)
+- [x] Add **Events & Engagements** subtitle on `/events` page
+- [x] Rename `Resources` → `Learning Materials` (label only — slugs stay)
+- [x] Section title → `Media & Learning Materials`
+- [x] Add subtitle below `Media & Learning Materials` (copy in PLAN §2.3)
+- [x] V2PageLayout extended with optional `subtitle` prop + matching CSS class
+- [x] Navbar link kept as short `Media` (full title only on page header)
 
 ---
 
 ## Phase 4 — Media: TikTok / Instagram / Keywords
 
-- [ ] Extend `MediaType` union in `src/data/media/types.ts` (add `tiktok`, `instagram`)
-- [ ] Add `keywords TEXT[]` column to `media` table (migration in `src/lib/db.ts`)
-- [ ] Editor: add Keywords field (comma-separated input, mirror article SEO pattern)
-- [ ] Editor: TikTok/IG URL validators + thumbnail extraction
-- [ ] Public renderer: render TikTok/IG embeds in `MediaListPublic.tsx`
-- [ ] `/api/public/media` returns `keywords` in response
+- [x] Extend `MediaType` union in `src/data/media/types.ts` (add `tiktok`, `instagram`, `reel`)
+- [x] Add `keywords TEXT[]` column to `media` table (migration in `src/lib/db.ts`)
+- [x] Editor: Keywords field (new + edit pages)
+- [x] Editor: TikTok/IG URL normalizer (auto-converts watch URL → embed URL)
+- [x] Public `/media` page renders TikTok/IG embeds with vertical (9:16) modal
+- [x] `/api/public/media` returns `keywords`
+- [ ] Generate thumbnails for TikTok/IG (requires oEmbed API; deferred — fallback gradient placeholder used for now)
 
 ---
 

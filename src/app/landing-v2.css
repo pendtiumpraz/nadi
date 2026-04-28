@@ -989,6 +989,14 @@
     margin-bottom: 0;
 }
 
+.v2-page-subtitle {
+    margin-top: 1.25rem;
+    max-width: 700px;
+    color: #5a5a5a;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
 /* ── V2 CONTENT CARDS ── */
 .v2-card-grid {
     display: grid;
