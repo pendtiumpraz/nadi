@@ -54,6 +54,11 @@ export default function PublicationsPage() {
                         {articles.map((a) => (
                             <a href={`/publications/${a.slug}`} className="v2-pub-item" key={a.slug}>
                                 <div className="v2-pub-meta">
+                                    {a.coverImage && (
+                                        <div style={{ width: "100%", aspectRatio: "4/3", overflow: "hidden", borderRadius: 3, background: "#f3f3f3", marginBottom: "0.5rem" }}>
+                                            <img src={a.coverImage} alt={a.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                                        </div>
+                                    )}
                                     <span className="v2-pub-type">{a.category}</span>
                                     {a.pdfUrl && (
                                         <span style={{

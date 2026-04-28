@@ -184,6 +184,10 @@ export async function migrate() {
     EXCEPTION WHEN duplicate_column THEN NULL;
     END $$
   `;
+  // Backfill legacy rows that were inserted before the column existed (NULL/empty → published).
+  // Drafts and in_review rows have explicit values and are NOT touched.
+  await sql`UPDATE articles SET status = 'published' WHERE status IS NULL OR status = ''`;
+  await sql`UPDATE media SET status = 'published' WHERE status IS NULL OR status = ''`;
   // events already use `status` for lifecycle (upcoming/completed), so publish state lives on its own column
   await sql`
     DO $$ BEGIN

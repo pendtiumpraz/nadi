@@ -55,9 +55,15 @@ export default async function ArticlePage({ params }: Props) {
                 <article className="article-page">
                     <header
                         className="article-header"
-                        style={{
-                            background: colorMap[article.coverColor] || colorMap.charcoal,
-                        }}
+                        style={
+                            article.coverImage
+                                ? {
+                                    backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url("${article.coverImage}")`,
+                                    backgroundSize: "cover",
+                                    backgroundPosition: "center",
+                                }
+                                : { background: colorMap[article.coverColor] || colorMap.charcoal }
+                        }
                     >
                         <div className="article-header-inner">
                             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
