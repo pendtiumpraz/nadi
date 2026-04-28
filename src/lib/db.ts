@@ -174,12 +174,14 @@ export async function migrate() {
     EXCEPTION WHEN duplicate_column THEN NULL;
     END $$
   `;
+  // events already use `status` for lifecycle (upcoming/completed), so publish state lives on its own column
   await sql`
     DO $$ BEGIN
-      ALTER TABLE events ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'published';
+      ALTER TABLE events ADD COLUMN IF NOT EXISTS publish_status VARCHAR(20) DEFAULT 'published';
     EXCEPTION WHEN duplicate_column THEN NULL;
     END $$
   `;
+  await sql`UPDATE events SET publish_status = 'published' WHERE publish_status IS NULL OR publish_status = ''`;
   // optional: track who authored each piece (nullable so legacy rows pass)
   await sql`
     DO $$ BEGIN

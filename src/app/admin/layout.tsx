@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AdminNav from "@/components/AdminNav";
 import { getDB } from "@/lib/db";
+import { getAllowedMenusForRole } from "@/lib/permissions-matrix";
 
 async function getAdminTheme(): Promise<string> {
     try {
@@ -23,10 +24,14 @@ export default async function AdminLayout({
     const session = await auth();
     if (!session?.user) redirect("/login");
     const theme = await getAdminTheme();
+    const allowedMenus = await getAllowedMenusForRole(session.user.role);
 
     return (
         <div className={`adm-shell${theme === "v2" ? " adm-light" : ""}`}>
-            <AdminNav user={{ name: session.user.name, email: session.user.email, role: session.user.role }} />
+            <AdminNav
+                user={{ name: session.user.name, email: session.user.email, role: session.user.role }}
+                allowedMenus={allowedMenus}
+            />
             <main className="adm-main">{children}</main>
         </div>
     );

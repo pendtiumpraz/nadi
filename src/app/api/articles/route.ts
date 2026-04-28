@@ -7,7 +7,8 @@ import {
     deleteArticle,
     articleExists,
 } from "@/lib/articles-store";
-import type { Article } from "@/data/articles/types";
+import { canPublish, canEditOwnContent } from "@/lib/permissions";
+import type { Article, ArticleStatus } from "@/data/articles/types";
 
 function slugify(text: string): string {
     return text
@@ -38,6 +39,8 @@ export async function GET(req: NextRequest) {
 }
 
 // POST create new article
+// Body may include `submit: true` to send straight to review (used by contributors).
+// Admins/reviewers can pass `status` directly.
 export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user) {
@@ -45,42 +48,44 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const article: Article = await req.json();
-        if (!article.title) {
-            return NextResponse.json(
-                { error: "Title is required" },
-                { status: 400 }
-            );
+        const body: Article & { submit?: boolean } = await req.json();
+        if (!body.title) {
+            return NextResponse.json({ error: "Title is required" }, { status: 400 });
         }
 
-        if (!article.slug) {
-            article.slug = slugify(article.title);
-        }
-
-        // Check uniqueness
-        if (await articleExists(article.slug)) {
+        if (!body.slug) body.slug = slugify(body.title);
+        if (await articleExists(body.slug)) {
             return NextResponse.json(
                 { error: "Article with this slug already exists" },
                 { status: 400 }
             );
         }
 
-        // Set defaults
-        if (!article.date) article.date = new Date().toISOString().split("T")[0];
-        if (!article.author) article.author = session.user.name || "NADI";
-        if (!article.readTime) article.readTime = "5 min read";
-        if (!article.coverColor) article.coverColor = "charcoal";
-        if (!article.category) article.category = "ARTICLE";
-        if (!article.seo) article.seo = { description: "", keywords: [] };
-        if (!article.blocks) article.blocks = [];
+        if (!body.date) body.date = new Date().toISOString().split("T")[0];
+        if (!body.author) body.author = session.user.name || "NADI";
+        if (!body.readTime) body.readTime = "5 min read";
+        if (!body.coverColor) body.coverColor = "charcoal";
+        if (!body.category) body.category = "ARTICLE";
+        if (!body.seo) body.seo = { description: "", keywords: [] };
+        if (!body.blocks) body.blocks = [];
 
-        await saveArticle(article);
-        return NextResponse.json(article, { status: 201 });
+        // Decide status: contributors/partners can never publish directly.
+        // Admins/reviewers can publish unless they explicitly chose draft/in_review.
+        let status: ArticleStatus;
+        if (canPublish(session.user)) {
+            status = (body.status as ArticleStatus) || "published";
+        } else if (body.submit) {
+            status = "in_review";
+        } else {
+            status = "draft";
+        }
+        body.status = status;
+        body.authorId = body.authorId || session.user.id;
+
+        await saveArticle(body);
+        return NextResponse.json(body, { status: 201 });
     } catch (err) {
-        return NextResponse.json(
-            { error: (err as Error).message },
-            { status: 400 }
-        );
+        return NextResponse.json({ error: (err as Error).message }, { status: 400 });
     }
 }
 
@@ -92,21 +97,41 @@ export async function PUT(req: NextRequest) {
     }
 
     try {
-        const article: Article = await req.json();
-        if (!article.slug) {
-            return NextResponse.json(
-                { error: "Slug is required" },
-                { status: 400 }
-            );
+        const body: Article & { submit?: boolean } = await req.json();
+        if (!body.slug) {
+            return NextResponse.json({ error: "Slug is required" }, { status: 400 });
         }
 
-        await saveArticle(article);
-        return NextResponse.json(article);
+        const existing = await getArticleBySlugStore(body.slug);
+        if (!existing) {
+            return NextResponse.json({ error: "Article not found" }, { status: 404 });
+        }
+
+        // Permission check: contributor can only edit own articles
+        if (!canEditOwnContent(session.user, existing.authorId)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        // Status policy on edit:
+        // - admin/reviewer: keeps existing OR caller-supplied status
+        // - contributor: editing a published/in_review article moves it back to in_review when they submit;
+        //   otherwise stays draft. They cannot publish.
+        let status: ArticleStatus;
+        if (canPublish(session.user)) {
+            status = (body.status as ArticleStatus) || existing.status || "published";
+        } else if (body.submit) {
+            status = "in_review";
+        } else {
+            // keep existing review state if it was in_review; otherwise back to draft
+            status = existing.status === "in_review" ? "in_review" : "draft";
+        }
+        body.status = status;
+        body.authorId = existing.authorId || body.authorId;
+
+        await saveArticle(body);
+        return NextResponse.json(body);
     } catch (err) {
-        return NextResponse.json(
-            { error: (err as Error).message },
-            { status: 400 }
-        );
+        return NextResponse.json({ error: (err as Error).message }, { status: 400 });
     }
 }
 
@@ -123,8 +148,14 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: "Slug required" }, { status: 400 });
     }
 
-    if (!(await articleExists(slug))) {
+    const existing = await getArticleBySlugStore(slug);
+    if (!existing) {
         return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    }
+
+    // Only admin/reviewer or original author can delete
+    if (!canEditOwnContent(session.user, existing.authorId)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     await deleteArticle(slug);

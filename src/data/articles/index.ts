@@ -16,7 +16,7 @@ const staticArticles: Article[] = [
 export async function getAllArticlesAsync(): Promise<Article[]> {
     try {
         const sql = getDB();
-        const rows = await sql`SELECT * FROM articles ORDER BY date DESC`;
+        const rows = await sql`SELECT * FROM articles WHERE status = 'published' ORDER BY date DESC`;
         if (rows.length > 0) {
             return rows.map((row) => ({
                 slug: row.slug as string,

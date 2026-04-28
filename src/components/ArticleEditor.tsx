@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface ArticleEditorProps {
     slug?: string;
@@ -9,6 +10,9 @@ interface ArticleEditorProps {
 
 export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const router = useRouter();
+    const { data: session } = useSession();
+    const role = session?.user?.role || "contributor";
+    const canPublish = role === "admin" || role === "reviewer";
     const editorRef = useRef<HTMLDivElement>(null);
     const isEdit = !!slug;
 
@@ -25,6 +29,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const [uploadingPdf, setUploadingPdf] = useState(false);
     const [status, setStatus] = useState("");
     const [saving, setSaving] = useState(false);
+    const [articleStatus, setArticleStatus] = useState<"draft" | "in_review" | "published">("draft");
     const coverInputRef = useRef<HTMLInputElement>(null);
     const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,6 +49,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     setPdfUrl(data.pdfUrl || "");
                     setSeoDesc(data.seo?.description || "");
                     setSeoKeywords(data.seo?.keywords?.join(", ") || "");
+                    setArticleStatus(data.status || "published");
                     if (data.blocks && editorRef.current) {
                         editorRef.current.innerHTML = blocksToHTML(data.blocks);
                     }
@@ -126,7 +132,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
         setUploadingPdf(false);
     };
 
-    const handleSubmit = async (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent, intent: "publish" | "submit" | "draft" = canPublish ? "publish" : "submit") => {
         e.preventDefault();
         const content = editorRef.current?.innerText || "";
         if (!title.trim()) { setStatus("Title is required."); return; }
@@ -166,7 +172,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
 
             setStatus("⏳ Saving article...");
             const articleSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-            const article = {
+            const article: Record<string, unknown> = {
                 slug: articleSlug,
                 title,
                 subtitle: "",
@@ -180,6 +186,9 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 seo: { description: finalSeoDesc, keywords: finalKeywords },
                 blocks: formatData.blocks,
             };
+            if (intent === "publish" && canPublish) article.status = "published";
+            if (intent === "draft") article.status = "draft";
+            if (intent === "submit") article.submit = true;
 
             const saveRes = await fetch("/api/articles", {
                 method: isEdit ? "PUT" : "POST",
@@ -189,7 +198,9 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             const saveData = await saveRes.json();
             if (!saveRes.ok) throw new Error(saveData.error);
 
-            setStatus(`✓ Article ${isEdit ? "updated" : "published"}!`);
+            const verbMap = { publish: "published", submit: "submitted for review", draft: "saved as draft" } as const;
+            setStatus(`✓ Article ${verbMap[intent]}!`);
+            setArticleStatus(saveData.status || (intent === "publish" ? "published" : intent === "submit" ? "in_review" : "draft"));
             if (!isEdit) setTimeout(() => router.push("/admin/articles"), 1500);
         } catch (err) {
             setStatus(`Error: ${(err as Error).message}`);
@@ -202,7 +213,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             <h1 className="admin-page-title">{isEdit ? "Edit Article" : "Write New Article"}</h1>
             <p className="admin-page-desc">Write freely with the editor below. AI will format your content into a magazine-style layout and generate SEO metadata automatically.</p>
 
-            <form onSubmit={handleSubmit} className="editor">
+            <form onSubmit={(e) => handleSubmit(e)} className="editor">
                 {/* Meta */}
                 <div className="editor-section">
                     <div className="editor-section-title">Article Details</div>
@@ -349,9 +360,42 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 </div>
 
                 {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
+                {isEdit && (
+                    <div style={{ marginBottom: "0.75rem", fontSize: "0.85rem", color: "var(--muted)" }}>
+                        Current status:{" "}
+                        <span style={{
+                            display: "inline-block",
+                            padding: "2px 10px",
+                            borderRadius: 12,
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.04em",
+                            background:
+                                articleStatus === "published" ? "rgba(40,140,80,0.12)" :
+                                    articleStatus === "in_review" ? "rgba(220,150,40,0.15)" :
+                                        "rgba(150,150,150,0.15)",
+                            color:
+                                articleStatus === "published" ? "#1a7a3e" :
+                                    articleStatus === "in_review" ? "#9a6a10" :
+                                        "#666",
+                        }}>
+                            {articleStatus.replace("_", " ")}
+                        </span>
+                    </div>
+                )}
                 <div className="editor-save">
-                    <button type="submit" className="btn-primary" disabled={saving}>
-                        {saving ? "⏳ Publishing..." : isEdit ? "Update Article" : "Publish Article"}
+                    {canPublish ? (
+                        <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "publish")}>
+                            {saving ? "⏳ Saving..." : isEdit ? "Update & Publish" : "Publish Article"}
+                        </button>
+                    ) : (
+                        <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "submit")}>
+                            {saving ? "⏳ Saving..." : "Submit for Review"}
+                        </button>
+                    )}
+                    <button type="button" className="btn-outline" disabled={saving} onClick={(e) => handleSubmit(e, "draft")}>
+                        Save as Draft
                     </button>
                     <a href="/admin/articles" className="btn-outline">Cancel</a>
                 </div>

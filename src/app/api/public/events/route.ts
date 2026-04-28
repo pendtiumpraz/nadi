@@ -24,11 +24,11 @@ export async function GET(req: NextRequest) {
         const sql = getDB();
         const slug = new URL(req.url).searchParams.get("slug");
         if (slug) {
-            const rows = await sql`SELECT * FROM events WHERE slug = ${slug} LIMIT 1`;
+            const rows = await sql`SELECT * FROM events WHERE slug = ${slug} AND publish_status = 'published' LIMIT 1`;
             if (rows.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
             return NextResponse.json({ event: mapRow(rows[0] as Record<string, unknown>) });
         }
-        const rows = await sql`SELECT * FROM events ORDER BY date DESC`;
+        const rows = await sql`SELECT * FROM events WHERE publish_status = 'published' ORDER BY date DESC`;
         const events = rows.map((r) => mapRow(r as Record<string, unknown>));
         return NextResponse.json({ events });
     } catch (err) {

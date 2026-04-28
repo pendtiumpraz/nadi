@@ -32,14 +32,24 @@ Tracker for the work in `PLAN.md`. Tick boxes as items land. Keep ordering align
 
 ### 1.3 Submission workflow
 
-- [ ] `POST /api/articles/[slug]/submit` → `status='in_review'`
-- [ ] `POST /api/articles/[slug]/approve` (reviewer/admin only) → `status='published'`
-- [ ] `POST /api/articles/[slug]/request-changes` → `status='draft'` + persist reviewer notes
-- [ ] Same trio for `/api/media/[slug]/*` and `/api/events/[slug]/*`
-- [ ] Public endpoints (`/api/public/articles`, `.../media`, `.../events`) filter `status='published'`
-- [ ] Admin "Review queue" page: `/admin/review` lists everything in `in_review` across types
-- [ ] Article/media/event editors get a **Submit for review** button (replaces direct Publish for non-admins)
-- [ ] Permission middleware (`src/lib/permissions.ts`) for `canPublish`, `canReview`, `canEdit(item, user)`
+- [x] Permission helper (`src/lib/permissions.ts`) — `canPublish`, `canReview`, `canManageUsers`, `canEditOwnContent`, `canCreateContent`
+- [x] `POST /api/articles/[slug]/transition` — handles submit / approve / request_changes in one endpoint
+- [x] Public endpoints filter to `status='published'` (`/api/public/articles`, `.../media`, `.../events` — events use `publish_status` to avoid colliding with the existing lifecycle column)
+- [x] `getAllArticlesAsync` (server-side data layer) also filters to published
+- [x] Admin "Review queue" at `/admin/review` (gated to reviewer/admin) — lists pending articles with Approve / Request Changes
+- [x] `ArticleEditor` shows current status badge + role-aware buttons (Update & Publish / Submit for Review / Save as Draft)
+- [x] `POST /api/articles` honors role: contributor saves as draft (or in_review if `submit:true`); admin/reviewer can publish directly
+- [x] `PUT /api/articles` enforces `canEditOwnContent` and same status policy
+- [ ] Mirror `transition` endpoint + editor buttons for media (`/api/media/[slug]/transition`) — DEFERRED
+- [ ] Mirror `transition` endpoint + editor buttons for events (`/api/events/[slug]/transition`) — DEFERRED
+
+### 1.4 Role × Menu access matrix (admin only)
+
+- [x] Default matrix in `src/lib/permissions-matrix.ts` (admin: all; reviewer/contributor/partner subsets)
+- [x] Persisted in `site_settings.role_menu_matrix` JSON
+- [x] `/admin/permissions` page (admin-only) — checkbox grid; admin row locked
+- [x] `GET / PUT /api/permissions` — GET open to any logged-in user; PUT admin-only
+- [x] `AdminNav` filters sidebar links by the saved matrix; new keys: review, permissions
 
 ---
 

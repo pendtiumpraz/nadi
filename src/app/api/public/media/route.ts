@@ -4,7 +4,7 @@ import { getDB } from "@/lib/db";
 export async function GET() {
     try {
         const sql = getDB();
-        const rows = await sql`SELECT * FROM media ORDER BY date DESC`;
+        const rows = await sql`SELECT * FROM media WHERE status = 'published' ORDER BY date DESC`;
         const media = rows.map((r) => ({
             slug: r.slug,
             title: r.title,

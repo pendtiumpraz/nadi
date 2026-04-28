@@ -9,25 +9,29 @@ interface AdminNavProps {
         email?: string | null;
         role: string;
     };
+    allowedMenus?: string[];
 }
 
-export default function AdminNav({ user }: AdminNavProps) {
+export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
     const pathname = usePathname();
 
-    const links = [
-        { href: "/admin", label: "Dashboard", icon: "⊞" },
-        { href: "/admin/articles", label: "Articles", icon: "✎" },
-        { href: "/admin/events", label: "Events", icon: "◈" },
-        { href: "/admin/media", label: "Media", icon: "▶" },
-        { href: "/admin/team", label: "Team", icon: "◉" },
-        { href: "/admin/newsletter", label: "Newsletter", icon: "✉" },
-        { href: "/admin/ai", label: "AI Writer", icon: "✦" },
-        { href: "/admin/docs", label: "Docs", icon: "◇" },
-        { href: "/admin/settings", label: "Settings", icon: "⚙" },
-        ...(user.role === "admin"
-            ? [{ href: "/admin/users", label: "Users", icon: "⊕" }]
-            : []),
+    const ALL_LINKS: { href: string; label: string; icon: string; key: string }[] = [
+        { key: "dashboard", href: "/admin", label: "Dashboard", icon: "⊞" },
+        { key: "articles", href: "/admin/articles", label: "Articles", icon: "✎" },
+        { key: "events", href: "/admin/events", label: "Events", icon: "◈" },
+        { key: "media", href: "/admin/media", label: "Media", icon: "▶" },
+        { key: "review", href: "/admin/review", label: "Review Queue", icon: "✓" },
+        { key: "team", href: "/admin/team", label: "Team", icon: "◉" },
+        { key: "newsletter", href: "/admin/newsletter", label: "Newsletter", icon: "✉" },
+        { key: "ai", href: "/admin/ai", label: "AI Writer", icon: "✦" },
+        { key: "docs", href: "/admin/docs", label: "Docs", icon: "◇" },
+        { key: "settings", href: "/admin/settings", label: "Settings", icon: "⚙" },
+        { key: "users", href: "/admin/users", label: "Users", icon: "⊕" },
+        { key: "permissions", href: "/admin/permissions", label: "Permissions", icon: "⊟" },
     ];
+
+    const allowedKeys = new Set(allowedMenus || ALL_LINKS.map((l) => l.key));
+    const links = ALL_LINKS.filter((l) => allowedKeys.has(l.key));
 
     const isActive = (href: string) => {
         if (href === "/admin") return pathname === "/admin";

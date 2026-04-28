@@ -100,6 +100,8 @@ export interface ArticleSEO {
     keywords: string[];
 }
 
+export type ArticleStatus = "draft" | "in_review" | "published";
+
 export interface Article {
     slug: string;
     title: string;
@@ -113,4 +115,6 @@ export interface Article {
     pdfUrl?: string;
     seo: ArticleSEO;
     blocks: ContentBlock[];
+    status?: ArticleStatus;
+    authorId?: string;
 }

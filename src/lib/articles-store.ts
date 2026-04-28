@@ -1,5 +1,5 @@
 import { getDB } from "@/lib/db";
-import type { Article } from "@/data/articles/types";
+import type { Article, ArticleStatus } from "@/data/articles/types";
 
 export async function getAllArticlesStore(): Promise<Article[]> {
     const sql = getDB();
@@ -16,9 +16,11 @@ export async function getArticleBySlugStore(slug: string): Promise<Article | nul
 
 export async function saveArticle(article: Article): Promise<void> {
     const sql = getDB();
+    const status: ArticleStatus = article.status || "published";
+    const authorId = article.authorId ? Number(article.authorId) : null;
     await sql`
-    INSERT INTO articles (slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords, blocks, updated_at)
-    VALUES (${article.slug}, ${article.title}, ${article.subtitle || ""}, ${article.category}, ${article.date}, ${article.readTime}, ${article.author}, ${article.coverColor}, ${article.coverImage || ""}, ${article.pdfUrl || ""}, ${article.seo?.description || ""}, ${article.seo?.keywords || []}, ${JSON.stringify(article.blocks)}, NOW())
+    INSERT INTO articles (slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords, blocks, status, author_id, updated_at)
+    VALUES (${article.slug}, ${article.title}, ${article.subtitle || ""}, ${article.category}, ${article.date}, ${article.readTime}, ${article.author}, ${article.coverColor}, ${article.coverImage || ""}, ${article.pdfUrl || ""}, ${article.seo?.description || ""}, ${article.seo?.keywords || []}, ${JSON.stringify(article.blocks)}, ${status}, ${authorId}, NOW())
     ON CONFLICT (slug) DO UPDATE SET
       title = EXCLUDED.title,
       subtitle = EXCLUDED.subtitle,
@@ -32,8 +34,14 @@ export async function saveArticle(article: Article): Promise<void> {
       seo_description = EXCLUDED.seo_description,
       seo_keywords = EXCLUDED.seo_keywords,
       blocks = EXCLUDED.blocks,
+      status = EXCLUDED.status,
       updated_at = NOW()
   `;
+}
+
+export async function updateArticleStatus(slug: string, status: ArticleStatus): Promise<void> {
+    const sql = getDB();
+    await sql`UPDATE articles SET status = ${status}, updated_at = NOW() WHERE slug = ${slug}`;
 }
 
 export async function deleteArticle(slug: string): Promise<void> {
@@ -65,5 +73,7 @@ function rowToArticle(row: Record<string, unknown>): Article {
             keywords: (row.seo_keywords as string[]) || [],
         },
         blocks: (row.blocks as Article["blocks"]) || [],
+        status: (row.status as ArticleStatus) || "published",
+        authorId: row.author_id != null ? String(row.author_id) : undefined,
     };
 }
