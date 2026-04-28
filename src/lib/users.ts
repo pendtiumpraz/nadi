@@ -23,7 +23,11 @@ function normalizeRole(value: unknown): UserRole {
 }
 
 function normalizeStatus(value: unknown): UserStatus {
-    return VALID_STATUSES.includes(value as UserStatus) ? (value as UserStatus) : "pending";
+    if (VALID_STATUSES.includes(value as UserStatus)) return value as UserStatus;
+    // Legacy / pre-migration rows where status column is missing or empty
+    // are treated as active so existing admins are never locked out.
+    if (value == null || value === "") return "active";
+    return "pending";
 }
 
 export async function getAllUsers(): Promise<PublicUser[]> {

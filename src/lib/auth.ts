@@ -46,9 +46,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const valid = await verifyPassword(password, user.password);
                 if (!valid) return null;
 
-                // Block accounts that are not yet activated by an admin
-                if (user.status !== "active") {
-                    throw new Error(user.status === "pending" ? "PENDING_APPROVAL" : "ACCOUNT_SUSPENDED");
+                // Block accounts that are explicitly pending or suspended.
+                // (Legacy rows with a missing/empty status are normalized to "active" in users.ts.)
+                if (user.status === "pending") {
+                    throw new Error("PENDING_APPROVAL");
+                }
+                if (user.status === "suspended") {
+                    throw new Error("ACCOUNT_SUSPENDED");
                 }
 
                 return {
