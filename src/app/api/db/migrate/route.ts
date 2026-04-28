@@ -16,6 +16,20 @@ export async function GET() {
             await sql`INSERT INTO users (email, name, password, role, status) VALUES ('admin@nadi-health.id', 'Admin', ${hash}, 'admin', 'active')`;
         }
 
+        // Seed one test account per role (password: Nadi@2025!) — only if missing
+        const testUsers = [
+            { email: "reviewer@nadi-health.id", name: "Test Reviewer", role: "reviewer" },
+            { email: "contributor@nadi-health.id", name: "Test Contributor", role: "contributor" },
+            { email: "partner@nadi-health.id", name: "Test Partner", role: "partner" },
+        ];
+        for (const u of testUsers) {
+            const found = await sql`SELECT id FROM users WHERE email = ${u.email}`;
+            if (found.length === 0) {
+                const hash = await bcrypt.hash("Nadi@2025!", 10);
+                await sql`INSERT INTO users (email, name, password, role, status) VALUES (${u.email}, ${u.name}, ${hash}, ${u.role}, 'active')`;
+            }
+        }
+
         // Seed static articles if table is empty
         const articleCount = await sql`SELECT COUNT(*) as count FROM articles`;
         if (Number(articleCount[0].count) === 0) {

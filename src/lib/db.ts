@@ -119,6 +119,16 @@ export async function migrate() {
 
   // Seed default settings
   await sql`INSERT INTO site_settings (key, value) VALUES ('landing_version', 'v2') ON CONFLICT (key) DO NOTHING`;
+  // Seed default notification CC list (Amira / Widyaretna / Soleh @inkemaris.com)
+  await sql`
+    INSERT INTO site_settings (key, value)
+    VALUES ('notification_cc', ${JSON.stringify([
+        { name: "Amira", email: "amira.hn@inkemaris.com" },
+        { name: "Widyaretna Buenastuti", email: "widyaretna.buenastuti@inkemaris.com" },
+        { name: "Soleh Ayubi", email: "soleh.ayubi@inkemaris.com" },
+    ])})
+    ON CONFLICT (key) DO NOTHING
+  `;
 
   // Add cover_image to articles if missing
   await sql`

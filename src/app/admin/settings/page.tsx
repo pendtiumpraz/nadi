@@ -13,9 +13,12 @@ const ADMIN_THEMES = [
     { value: "v2", label: "Light (V2)", desc: "Crimson topbar, white sidebar, fully light admin panel matching V2 style." },
 ];
 
+interface CCRecipient { name: string; email: string }
+
 export default function AdminSettingsPage() {
     const [landingVersion, setLandingVersion] = useState("v2");
     const [adminTheme, setAdminTheme] = useState("v1");
+    const [ccList, setCcList] = useState<CCRecipient[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [status, setStatus] = useState("");
 
@@ -25,10 +28,27 @@ export default function AdminSettingsPage() {
             .then((data) => {
                 setLandingVersion(data.settings?.landing_version || "v2");
                 setAdminTheme(data.settings?.admin_theme || "v1");
+                try {
+                    const parsed = JSON.parse(data.settings?.notification_cc || "[]");
+                    setCcList(Array.isArray(parsed) ? parsed : []);
+                } catch {
+                    setCcList([]);
+                }
                 setLoaded(true);
             })
             .catch(() => setLoaded(true));
     }, []);
+
+    const saveCcList = async (list: CCRecipient[]) => {
+        setCcList(list);
+        await saveSetting("notification_cc", JSON.stringify(list));
+    };
+    const updateCcEntry = (idx: number, patch: Partial<CCRecipient>) => {
+        const next = ccList.map((c, i) => (i === idx ? { ...c, ...patch } : c));
+        setCcList(next);
+    };
+    const addCcEntry = () => setCcList([...ccList, { name: "", email: "" }]);
+    const removeCcEntry = (idx: number) => saveCcList(ccList.filter((_, i) => i !== idx));
 
     const saveSetting = async (key: string, value: string) => {
         setStatus("Saving...");
@@ -76,6 +96,54 @@ export default function AdminSettingsPage() {
                                 </div>
                             </label>
                         ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Notification CC List */}
+            <div className="editor" style={{ marginBottom: "2rem" }}>
+                <div className="editor-section">
+                    <div className="editor-section-title">Notification CC list</div>
+                    <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem" }}>
+                        These addresses are CC&apos;d on every signup, article submission, and approval email. Editable on the fly.
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {ccList.map((c, idx) => (
+                            <div key={idx} style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                                <input
+                                    placeholder="Name"
+                                    value={c.name}
+                                    onChange={(e) => updateCcEntry(idx, { name: e.target.value })}
+                                    onBlur={() => saveCcList(ccList)}
+                                    style={{ flex: 1, padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 4 }}
+                                />
+                                <input
+                                    type="email"
+                                    placeholder="email@example.com"
+                                    value={c.email}
+                                    onChange={(e) => updateCcEntry(idx, { email: e.target.value })}
+                                    onBlur={() => saveCcList(ccList)}
+                                    style={{ flex: 2, padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 4 }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeCcEntry(idx)}
+                                    className="btn-outline"
+                                    style={{ fontSize: "0.8rem", padding: "6px 12px", color: "#c44" }}
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        ))}
+                        {ccList.length === 0 && (
+                            <p style={{ color: "var(--muted)", fontSize: "0.85rem", fontStyle: "italic" }}>
+                                No recipients yet. Add at least one.
+                            </p>
+                        )}
+                    </div>
+                    <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
+                        <button type="button" className="btn-outline" onClick={addCcEntry} style={{ fontSize: "0.8rem", padding: "6px 14px" }}>+ Add Recipient</button>
+                        <button type="button" className="btn-primary" onClick={() => saveCcList(ccList)} style={{ fontSize: "0.8rem", padding: "6px 14px" }}>Save Now</button>
                     </div>
                 </div>
             </div>

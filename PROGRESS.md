@@ -55,14 +55,14 @@ Tracker for the work in `PLAN.md`. Tick boxes as items land. Keep ordering align
 
 ## Phase 2 — Notifications
 
-- [ ] Pick mailer (Resend recommended) and add `RESEND_API_KEY` to env
-- [ ] `src/lib/notify.ts` — single entrypoint `notify({ event, payload })`
-- [ ] React Email templates in `src/emails/*.tsx` for: signup, activation, submitted, approved, changes-requested
-- [ ] `site_settings.notification_cc` stores CC list (default: Amira / Widyaretna / Soleh — see PLAN §3.2)
-- [ ] `/admin/settings` UI to edit the CC list
-- [ ] Wire `notify()` into all events from PLAN §3.1
-- [ ] Sends are async + error-logged (do **not** await in API handlers; use `waitUntil` or fire-and-forget)
-- [ ] Smoke test: signup triggers email to admins + CC list; publish triggers email to author + CC list
+- [x] Mailer: nodemailer (already installed). Reads `SMTP_HOST/PORT/USER/PASS/FROM` env. Falls back to console.log when SMTP isn't configured (so dev works).
+- [x] `src/lib/notify.ts` — typed events + helper functions (`notifyUserSignup`, `notifyUserActivated`, `notifyArticleSubmitted`, `notifyArticleApproved`, `notifyArticleChangesRequested`)
+- [x] Inline HTML/text templates per event (small, branded — same NADI dark header as the contact form template)
+- [x] `site_settings.notification_cc` seeded with Amira / Widyaretna / Soleh @inkemaris.com
+- [x] `/admin/settings` UI: CC list editor (add / remove / save)
+- [x] Wired into `/api/register`, `/api/users` PATCH (status=active), and `/api/articles/[slug]/transition`
+- [x] All sends are fire-and-forget (`.catch(() => {})`); failures logged via `console.error` and never block the request
+- [ ] Smoke test on staging once SMTP creds are set
 
 ---
 

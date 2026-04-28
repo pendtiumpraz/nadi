@@ -7,9 +7,11 @@ import {
     updateUserRole,
     updateUserStatus,
     logUserEvent,
+    getUserById,
     type UserRole,
     type UserStatus,
 } from "@/lib/users";
+import { notifyUserActivated } from "@/lib/notify";
 
 const ROLE_VALUES: UserRole[] = ["admin", "reviewer", "contributor", "partner"];
 const STATUS_VALUES: UserStatus[] = ["pending", "active", "suspended"];
@@ -107,6 +109,14 @@ export async function PATCH(req: NextRequest) {
             }
             await updateUserStatus(id, status);
             await logUserEvent(session.user.id, id, `status_${status}`);
+            // Notify the user when they get activated
+            if (status === "active") {
+                const target = await getUserById(id);
+                if (target) {
+                    const baseUrl = req.nextUrl?.origin || `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
+                    notifyUserActivated({ name: target.name, email: target.email, baseUrl }).catch(() => { /* fire-and-forget */ });
+                }
+            }
         }
         return NextResponse.json({ success: true });
     } catch (err) {

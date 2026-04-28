@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addUser, logUserEvent } from "@/lib/users";
+import { notifyUserSignup } from "@/lib/notify";
 
 // Public registration. Creates a contributor account with status='pending'.
 // Admin must activate the account before sign-in is allowed.
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
 
         const user = await addUser(email, name, password, "contributor", "pending");
         await logUserEvent(null, user.id, "self_registered", { email });
+
+        const baseUrl = req.nextUrl?.origin || `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
+        notifyUserSignup({ name, email, baseUrl }).catch(() => { /* fire-and-forget */ });
 
         return NextResponse.json(
             {
