@@ -6,7 +6,7 @@ import { saveTopics, getAllTopics, getPendingTopics, deleteTopic } from "@/lib/t
 const SYSTEM_PROMPT = `You are a research topic strategist for NADI — a health policy research institute.
 Generate article topics that are specific, researchable, and relevant to health policy.
 Each topic should have: title, description (2-3 sentences), and category.
-Categories: POLICY BRIEF, RESEARCH PAPER, STRATEGIC ANALYSIS, WORKING PAPER, RESEARCH NOTE
+Categories: POLICY BRIEF, RESEARCH PAPER, POLICY ANALYSIS, OPINION, RESEARCH NOTE
 Respond ONLY with a JSON array: [{"title":"...","description":"...","category":"..."}]`;
 
 // GET — list all topics (optionally filter by status)

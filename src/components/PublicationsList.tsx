@@ -29,8 +29,8 @@ const CATEGORIES = [
     "ALL",
     "POLICY BRIEF",
     "RESEARCH PAPER",
-    "STRATEGIC ANALYSIS",
-    "WORKING PAPER",
+    "POLICY ANALYSIS",
+    "OPINION",
     "RESEARCH NOTE",
 ];
 

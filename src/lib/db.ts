@@ -136,6 +136,10 @@ export async function migrate() {
     END $$
   `;
 
+  // Rename legacy categories: "STRATEGIC ANALYSIS" → "POLICY ANALYSIS", "WORKING PAPER" → "OPINION"
+  await sql`UPDATE articles SET category = 'POLICY ANALYSIS' WHERE category = 'STRATEGIC ANALYSIS'`;
+  await sql`UPDATE articles SET category = 'OPINION' WHERE category = 'WORKING PAPER'`;
+
   // Add linkedin_url to team_members if missing
   await sql`
     DO $$ BEGIN

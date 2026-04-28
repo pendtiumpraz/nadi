@@ -11,7 +11,7 @@ You MUST output a single JSON object matching this EXACT schema:
 {
   "title": "SEO-optimized title (60-70 chars ideal)",
   "subtitle": "Engaging subtitle",
-  "category": "POLICY BRIEF | RESEARCH PAPER | STRATEGIC ANALYSIS | WORKING PAPER | RESEARCH NOTE",
+  "category": "POLICY BRIEF | RESEARCH PAPER | POLICY ANALYSIS | OPINION | RESEARCH NOTE",
   "readTime": "X min read",
   "author": "NADI Research Team",
   "coverColor": "crimson | charcoal | dark",

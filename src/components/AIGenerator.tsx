@@ -259,8 +259,8 @@ export default function AIGenerator() {
                         <div className="form-group">
                             <label>Category</label>
                             <select value={singleCategory} onChange={e => setSingleCategory(e.target.value)}>
-                                <option>POLICY BRIEF</option><option>RESEARCH PAPER</option><option>STRATEGIC ANALYSIS</option>
-                                <option>WORKING PAPER</option><option>RESEARCH NOTE</option>
+                                <option>POLICY BRIEF</option><option>RESEARCH PAPER</option><option>POLICY ANALYSIS</option>
+                                <option>OPINION</option><option>RESEARCH NOTE</option>
                             </select>
                         </div>
                         <div className="form-group">

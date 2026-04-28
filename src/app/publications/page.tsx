@@ -12,7 +12,7 @@ interface ArticleItem {
 
 interface Pagination { page: number; totalPages: number; total: number; }
 
-const CATEGORIES = ["ALL", "POLICY BRIEF", "RESEARCH PAPER", "STRATEGIC ANALYSIS", "WORKING PAPER", "RESEARCH NOTE"];
+const CATEGORIES = ["ALL", "POLICY BRIEF", "RESEARCH PAPER", "POLICY ANALYSIS", "OPINION", "RESEARCH NOTE"];
 
 export default function PublicationsPage() {
     const [articles, setArticles] = useState<ArticleItem[]>([]);

@@ -353,7 +353,7 @@ export default function NewLanding() {
                     <div className="v2-pub-list">
                         {[
                             { type: "Policy Brief", date: "Feb 2026", title: "Rethinking Health Financing Sustainability in Post-Pandemic Indonesia", desc: "Examining structural tensions between universal coverage ambitions and fiscal reality — with a framework for long-term sustainability grounded in empirical evidence and political feasibility.", slug: "health-financing-southeast-asia" },
-                            { type: "Working Paper", date: "Jan 2026", title: "When Public-Private Partnerships Fail: A Diagnostic Framework", desc: "Misaligned incentives, not bad intentions, drive most PPP breakdowns in global health.", slug: "vaccine-governance-global-south" },
+                            { type: "Opinion", date: "Jan 2026", title: "When Public-Private Partnerships Fail: A Diagnostic Framework", desc: "Misaligned incentives, not bad intentions, drive most PPP breakdowns in global health.", slug: "vaccine-governance-global-south" },
                             { type: "Research Note", date: "Dec 2025", title: "Indonesia's Tuberculosis Challenge: A Systems Perspective", desc: "TB persists not due to lack of tools, but failure of system alignment across diagnosis, treatment, and prevention.", slug: "policy-coherence-universal-health-coverage" },
                         ].map((p) => (
                             <a href={`/publications/${p.slug}`} className="v2-pub-item" key={p.slug}>

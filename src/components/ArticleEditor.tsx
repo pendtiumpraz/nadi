@@ -214,8 +214,8 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         <div className="form-group">
                             <label htmlFor="ed-cat">Category</label>
                             <select id="ed-cat" value={category} onChange={e => setCategory(e.target.value)}>
-                                <option>POLICY BRIEF</option><option>RESEARCH PAPER</option><option>STRATEGIC ANALYSIS</option>
-                                <option>WORKING PAPER</option><option>RESEARCH NOTE</option>
+                                <option>POLICY BRIEF</option><option>RESEARCH PAPER</option><option>POLICY ANALYSIS</option>
+                                <option>OPINION</option><option>RESEARCH NOTE</option>
                             </select>
                         </div>
                         <div className="form-group">

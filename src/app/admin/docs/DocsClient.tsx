@@ -102,7 +102,7 @@ function ArticlesDocs() {
             <h3>Managing Publications</h3>
             <p>
                 The <strong>Articles</strong> page is the central hub for managing all NADI publications — from Policy Briefs, Research Papers,
-                Strategic Analyses, to Working Papers. Each article supports an elegant magazine-style layout format.
+                Policy Analyses, to Opinions. Each article supports an elegant magazine-style layout format.
             </p>
 
             <h3>How to Create a New Article</h3>
@@ -159,8 +159,8 @@ function ArticlesDocs() {
             <div className="docs-tags">
                 <span className="docs-tag">POLICY BRIEF</span>
                 <span className="docs-tag">RESEARCH PAPER</span>
-                <span className="docs-tag">STRATEGIC ANALYSIS</span>
-                <span className="docs-tag">WORKING PAPER</span>
+                <span className="docs-tag">POLICY ANALYSIS</span>
+                <span className="docs-tag">OPINION</span>
                 <span className="docs-tag">RESEARCH NOTE</span>
             </div>
         </div>
