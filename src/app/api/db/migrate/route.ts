@@ -18,6 +18,7 @@ export async function GET() {
 
         // Seed one test account per role (password: Nadi@2025!) — only if missing
         const testUsers = [
+            { email: "admin2@nadi-health.id", name: "Admin (Backup)", role: "admin" },
             { email: "reviewer@nadi-health.id", name: "Test Reviewer", role: "reviewer" },
             { email: "contributor@nadi-health.id", name: "Test Contributor", role: "contributor" },
             { email: "partner@nadi-health.id", name: "Test Partner", role: "partner" },
