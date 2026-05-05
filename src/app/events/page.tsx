@@ -26,7 +26,7 @@ export default function EventsPage() {
         <V2PageLayout
             title="Events & <em>Engagements</em>"
             eyebrow="Conferences & Seminars"
-            subtitle="If you want to share any events or engagements through NADI, feel free to contact us."
+
         >
             {loading ? (
                 <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>Loading events...</p>
@@ -63,6 +63,11 @@ export default function EventsPage() {
                     ))}
                 </div>
             )}
+
+            <p style={{ textAlign: "center", padding: "3rem 0 1rem", color: "#555", fontSize: "1rem", lineHeight: 1.6 }}>
+                If you want to share any events or engagements through NADI, feel free to{" "}
+                <a href="/contact" style={{ color: "#1a1a1a", fontWeight: 600, textDecoration: "underline" }}>contact us</a>.
+            </p>
         </V2PageLayout>
     );
 }

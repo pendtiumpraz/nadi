@@ -72,6 +72,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ slug: st
                                 </a>
                             </p>
                         )}
+
+                        <p style={{ textAlign: "center", padding: "3rem 0 1rem", color: "#555", fontSize: "1rem", lineHeight: 1.6 }}>
+                            If you want to share any events or engagements through NADI, feel free to{" "}
+                            <a href="/contact" style={{ color: "#1a1a1a", fontWeight: 600, textDecoration: "underline" }}>contact us</a>.
+                        </p>
                     </>
                 ) : null}
             </div>

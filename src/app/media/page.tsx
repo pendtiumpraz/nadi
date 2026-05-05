@@ -67,7 +67,7 @@ export default function MediaPage() {
         <V2PageLayout
             title="Media & <em>Learning Materials</em>"
             eyebrow="Videos, Podcasts & Reels"
-            subtitle="If you want to share any videos, podcasts, reels, webinar talks, and other materials for knowledge sharing through NADI, feel free to contact us."
+
         >
             {loading ? (
                 <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>Loading media...</p>
@@ -111,6 +111,11 @@ export default function MediaPage() {
                     })}
                 </div>
             )}
+
+            <p style={{ textAlign: "center", padding: "3rem 0 1rem", color: "#555", fontSize: "1rem", lineHeight: 1.6 }}>
+                If you want to share any videos, podcasts, reels, webinar talks, and other materials for knowledge sharing through NADI, feel free to{" "}
+                <a href="/contact" style={{ color: "#1a1a1a", fontWeight: 600, textDecoration: "underline" }}>contact us</a>.
+            </p>
 
             {active && (() => {
                 const vertical = isTikTok(active.embedUrl) || isInstagram(active.embedUrl);
