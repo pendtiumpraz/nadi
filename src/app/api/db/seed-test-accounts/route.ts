@@ -1,17 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
-// One-shot endpoint to (re)seed the five test accounts.
-// Idempotent: only inserts an account when its email doesn't exist.
-// If the row exists but has a different role/status, it is UPDATED so the
-// test accounts always end up in the documented state (role correct, status='active').
+const TEST_PASSWORD = "Nadi@2025!";
+
+// Diagnostic/recovery endpoint for the five test accounts.
 //
-// Useful when /api/db/migrate ran BEFORE the multi-role seed code was added,
-// or when an admin accidentally changed a test account's status.
+// DEFAULT (`/api/db/seed-test-accounts`):
+//   - Creates rows that don't exist (password: Nadi@2025!).
+//   - Updates role+status when they've drifted.
+//   - Does NOT touch existing passwords (safe default).
 //
-// Returns a summary so you can verify each account.
-export async function GET() {
+// `?reset=1` (`/api/db/seed-test-accounts?reset=1`):
+//   - Also resets the password of EVERY existing test account to
+//     Nadi@2025!. Use this when you've forgotten the password for one
+//     of the test accounts (or someone changed it from /admin/users).
+//   - This is destructive — only intended for dev/staging.
+//
+// Idempotent and safe to call repeatedly. Returns a per-account summary.
+export async function GET(req: NextRequest) {
+    const reset = req.nextUrl.searchParams.get("reset") === "1";
+
     const accounts = [
         { email: "admin@nadi-health.id", name: "Admin", role: "admin" },
         { email: "admin2@nadi-health.id", name: "Admin (Backup)", role: "admin" },
@@ -20,37 +29,58 @@ export async function GET() {
         { email: "partner@nadi-health.id", name: "Test Partner", role: "partner" },
     ];
 
-    const summary: { email: string; action: "created" | "updated" | "ok"; role: string; status: string }[] = [];
+    interface Summary {
+        email: string;
+        action: "created" | "updated" | "password_reset" | "ok";
+        role: string;
+        status: string;
+        id: number;
+    }
+    const summary: Summary[] = [];
 
     try {
         const sql = getDB();
-        const hash = await bcrypt.hash("Nadi@2025!", 10);
+        const hash = await bcrypt.hash(TEST_PASSWORD, 10);
 
         for (const a of accounts) {
             const existing = await sql`SELECT id, role, status FROM users WHERE LOWER(email) = ${a.email}`;
             if (existing.length === 0) {
-                await sql`
+                const inserted = await sql`
                     INSERT INTO users (email, name, password, role, status)
                     VALUES (${a.email}, ${a.name}, ${hash}, ${a.role}, 'active')
+                    RETURNING id
                 `;
-                summary.push({ email: a.email, action: "created", role: a.role, status: "active" });
+                summary.push({ email: a.email, action: "created", role: a.role, status: "active", id: Number(inserted[0].id) });
+                continue;
+            }
+            const row = existing[0];
+            const id = row.id as number;
+            const needsRoleStatusUpdate = row.role !== a.role || row.status !== "active";
+
+            if (reset) {
+                // Forced password reset + role/status alignment in a single UPDATE.
+                await sql`
+                    UPDATE users
+                    SET password = ${hash}, role = ${a.role}, status = 'active'
+                    WHERE id = ${id}
+                `;
+                summary.push({ email: a.email, action: "password_reset", role: a.role, status: "active", id });
+            } else if (needsRoleStatusUpdate) {
+                await sql`UPDATE users SET role = ${a.role}, status = 'active' WHERE id = ${id}`;
+                summary.push({ email: a.email, action: "updated", role: a.role, status: "active", id });
             } else {
-                const row = existing[0];
-                const needsUpdate = row.role !== a.role || row.status !== "active";
-                if (needsUpdate) {
-                    await sql`UPDATE users SET role = ${a.role}, status = 'active' WHERE id = ${row.id as number}`;
-                    summary.push({ email: a.email, action: "updated", role: a.role, status: "active" });
-                } else {
-                    summary.push({ email: a.email, action: "ok", role: row.role as string, status: row.status as string });
-                }
+                summary.push({ email: a.email, action: "ok", role: row.role as string, status: row.status as string, id });
             }
         }
 
         return NextResponse.json({
             ok: true,
-            password: "Nadi@2025!",
+            password: TEST_PASSWORD,
+            reset,
             summary,
-            note: "Password is reset only when an account is CREATED. To reset an existing account's password, use /admin/users → Change Password.",
+            tips: reset
+                ? "All test-account passwords have been reset to Nadi@2025! — try signing in again."
+                : "To reset passwords too, hit /api/db/seed-test-accounts?reset=1 (destructive).",
         });
     } catch (err) {
         return NextResponse.json({ ok: false, error: (err as Error).message }, { status: 500 });
