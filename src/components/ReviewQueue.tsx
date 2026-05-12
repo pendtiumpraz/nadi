@@ -39,6 +39,20 @@ export default function ReviewQueue() {
 
     useEffect(() => { load(); }, [load]);
 
+    const resendConsent = async (slug: string) => {
+        if (!confirm("Re-send the consent-to-publish link to the author? A fresh 30-day link is generated.")) return;
+        setActingOn(slug);
+        try {
+            const res = await fetch(`/api/articles/${slug}/resend-consent`, { method: "POST" });
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.error);
+            setMsg(`✓ Consent link re-sent to ${d.sentTo}`);
+        } catch (err) {
+            setMsg((err as Error).message);
+        }
+        setActingOn(null);
+    };
+
     const transitionArticle = async (slug: string, action: "approve" | "request_changes" | "publish") => {
         let notes = "";
         if (action === "request_changes") {
@@ -113,9 +127,19 @@ export default function ReviewQueue() {
                                     </>
                                 )}
                                 {kind === "approved" && (
-                                    <span style={{ color: "var(--muted)", fontSize: "0.78rem", fontStyle: "italic" }}>
-                                        Waiting for partner to submit consent form
-                                    </span>
+                                    <>
+                                        <span style={{ color: "var(--muted)", fontSize: "0.78rem", fontStyle: "italic", marginRight: "0.5rem" }}>
+                                            Waiting for partner to submit consent form
+                                        </span>
+                                        <button
+                                            className="admin-btn admin-btn--secondary"
+                                            disabled={actingOn === a.slug}
+                                            onClick={() => resendConsent(a.slug)}
+                                            title="Re-send the consent-to-publish email link"
+                                        >
+                                            {actingOn === a.slug ? "..." : "Resend Link"}
+                                        </button>
+                                    </>
                                 )}
                                 {kind === "publish" && (
                                     <button

@@ -587,6 +587,31 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         />
                     </div>
                 )}
+                {isEdit && slug && canPublish && articleStatus === "approved" && (
+                    <div style={{ marginBottom: "1rem" }}>
+                        <button
+                            type="button"
+                            className="btn-outline"
+                            onClick={async () => {
+                                if (!confirm("Re-send the consent-to-publish link to the author?")) return;
+                                try {
+                                    const res = await fetch(`/api/articles/${slug}/resend-consent`, { method: "POST" });
+                                    const d = await res.json();
+                                    if (!res.ok) throw new Error(d.error);
+                                    setStatus(`✓ Consent link re-sent to ${d.sentTo}`);
+                                } catch (err) {
+                                    setStatus(`Error: ${(err as Error).message}`);
+                                }
+                            }}
+                            style={{ fontSize: "0.85rem", padding: "8px 16px" }}
+                        >
+                            ✉ Resend consent link
+                        </button>
+                        <span style={{ marginLeft: "0.75rem", color: "var(--muted)", fontSize: "0.8rem", fontStyle: "italic" }}>
+                            Article is approved and waiting for the author&apos;s consent form.
+                        </span>
+                    </div>
+                )}
                 <div className="editor-save editor-save--inline">
                     <a href="/admin/articles" className="btn-outline">Cancel</a>
                 </div>
