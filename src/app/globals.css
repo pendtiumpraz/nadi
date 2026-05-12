@@ -2143,6 +2143,10 @@ footer {
   width: 20px;
   text-align: center;
   opacity: 0.6;
+  /* Inherit sidebar text color; force text-presentation so any glyph that
+     would otherwise render as a colored emoji (e.g. 📥 ✉ ⚙ ✍ ⏱) stays mono. */
+  color: inherit;
+  font-variant-emoji: text;
 }
 
 .adm-sidebar-link.active .adm-sidebar-icon {

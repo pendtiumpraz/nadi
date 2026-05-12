@@ -15,6 +15,10 @@ interface AdminNavProps {
 export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
     const pathname = usePathname();
 
+    // Icons must all be MONOCHROME — no color emoji. Glyphs that can render
+    // emoji-style on some platforms (✍ ✉ ⚙ ⏱) get the ︎ text-variation
+    // selector appended to force the text presentation. Reinforced by CSS
+    // `font-variant-emoji: text` on `.adm-sidebar-icon`.
     const ALL_LINKS: { href: string; label: string; icon: string; key: string }[] = [
         { key: "dashboard", href: "/admin", label: "Dashboard", icon: "⊞" },
         { key: "articles", href: "/admin/articles", label: "Articles", icon: "✎" },
@@ -22,16 +26,16 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
         { key: "media", href: "/admin/media", label: "Media", icon: "▶" },
         { key: "review", href: "/admin/review", label: "Review Queue", icon: "✓" },
         { key: "topics", href: "/admin/topics", label: "Topics", icon: "☷" },
-        { key: "consents", href: "/admin/consents", label: "Consents", icon: "✍" },
+        { key: "consents", href: "/admin/consents", label: "Consents", icon: "✍︎" },
         { key: "team", href: "/admin/team", label: "Team", icon: "◉" },
-        { key: "newsletter", href: "/admin/newsletter", label: "Newsletter", icon: "✉" },
+        { key: "newsletter", href: "/admin/newsletter", label: "Newsletter", icon: "✉︎" },
         { key: "ai", href: "/admin/ai", label: "AI Writer", icon: "✦" },
         { key: "docs", href: "/admin/docs", label: "Docs", icon: "◇" },
-        { key: "guidelines", href: "/admin/guidelines", label: "Guidelines", icon: "📥" },
-        { key: "settings", href: "/admin/settings", label: "Settings", icon: "⚙" },
+        { key: "guidelines", href: "/admin/guidelines", label: "Guidelines", icon: "⬇" },
+        { key: "settings", href: "/admin/settings", label: "Settings", icon: "⚙︎" },
         { key: "users", href: "/admin/users", label: "Users", icon: "⊕" },
         { key: "permissions", href: "/admin/permissions", label: "Permissions", icon: "⊟" },
-        { key: "audit", href: "/admin/audit", label: "Audit Log", icon: "⏱" },
+        { key: "audit", href: "/admin/audit", label: "Audit Log", icon: "◷" },
     ];
 
     const allowedKeys = new Set(allowedMenus || ALL_LINKS.map((l) => l.key));
