@@ -26,65 +26,67 @@ Mirror of `PLAN.md`. Tick boxes as items land. Phases map 1:1 to PLAN §10.
 ## Phase A — Comment thread (unblocks the PDF workflow)
 
 ### Schema
-- [ ] Migration: create `article_comments` table (see PLAN §3.1)
-- [ ] Migration: add `articles.feedback_pending BOOLEAN DEFAULT false`
+- [x] Migration: create `article_comments` table (PLAN §3.1)
+- [x] Migration: add `articles.feedback_pending BOOLEAN DEFAULT false`
 
 ### API
-- [ ] `GET /api/articles/[slug]/comments` — admin/reviewer OR article author only
-- [ ] `POST /api/articles/[slug]/comments` — sets `articles.feedback_pending=true` if commenter is admin/reviewer
-- [ ] When partner edits + saves, set `feedback_pending=false`
+- [x] `GET /api/articles/[slug]/comments` — admin/reviewer OR article author only; JOIN users for authorName
+- [x] `POST /api/articles/[slug]/comments` — sets `articles.feedback_pending=true` if commenter is admin/reviewer
+- [x] When partner edits + saves, `PUT /api/articles` clears `feedback_pending=false`
 
 ### UI
-- [ ] `<CommentThread>` component — list + new-comment box; shows author role badge + timestamp
-- [ ] Mount on `/admin/articles/[slug]` for both admin/reviewer (write) and partner (write own thread)
-- [ ] On admin's Comment submit → calls existing transition `request_changes` semantics OR a new "post comment" event that doesn't reset status (decision: don't reset; keep `in_review`, just flag `feedback_pending`)
+- [x] `<CommentThread>` — chat-style list + new-comment textarea + role-coloured author pills + relative timestamp + Ctrl/Cmd+Enter submit
+- [x] Mounted on `/admin/articles/[slug]` (inside `ArticleEditor` when editing)
+- [x] Admin's comment does NOT reset article status — only flags `feedback_pending=true` (per design decision)
 
 ### Email
-- [ ] Send `feedback_received` to article author on admin/reviewer comment — body: "Your work has been reviewed. Please kindly proceed with the necessary revisions at your earliest convenience"
+- [x] `feedback_received` event added to `notify.ts` — verbatim PDF copy "Your work has been reviewed. Please kindly proceed with the necessary revisions at your earliest convenience."
+- [x] Comment POST fires `notifyFeedbackReceived` only when commenter is admin/reviewer
 
 ### Verify
-- [ ] Partner can see admin comments and reply
-- [ ] Admin gets nothing — only partner is notified (per PDF arrows)
-- [ ] `feedback_pending` resets when partner re-saves
+- [ ] Manual smoke: partner can see admin comments and reply
+- [ ] Manual smoke: `feedback_pending` flips correctly through full loop
 
 ---
 
 ## Phase B — Policy Product Type + template scaffold + submit emails
 
 ### Schema
-- [ ] Migration: add `articles.policy_product_type VARCHAR(30)`
-- [ ] Migration: add `articles.ai_disclosure TEXT DEFAULT ''`
-- [ ] Migration: add `articles.contains_primary_research BOOLEAN DEFAULT false`
-- [ ] Migration: seed `site_settings.review_eta_days` = `7`
+- [x] Migration: add `articles.policy_product_type VARCHAR(30)`
+- [x] Migration: add `articles.ai_disclosure TEXT DEFAULT ''`
+- [x] Migration: add `articles.contains_primary_research BOOLEAN DEFAULT false`
+- [x] Migration: seed `site_settings.review_eta_days = '7'`
 
 ### Data
-- [ ] `src/data/policy-products.ts` — single source of truth (PLAN §4)
-- [ ] When `policy_product_type` is chosen and `category` is blank, auto-set `category` (opinion_piece → OPINION, etc.)
+- [x] `src/data/policy-products.ts` — verbatim from guideline (3 types × full section scaffold + word counts + tone + primary-research notes + Authorship rules)
+- [x] When `policy_product_type` is chosen, auto-set legacy `category` (opinion_piece → OPINION etc.)
 
 ### UI
-- [ ] `<PolicyProductPicker>` — radio cards w/ short description per type; "📥 Download guideline" link (wires to Phase F)
-- [ ] `<TemplateScaffold>` — pre-fills editor `contentEditable` with section headings + placeholder hints
-- [ ] `<AuthorshipAck>` checkbox group (3 clauses) — mandatory before submit
-- [ ] `<AiDisclosureField>` — "no AI used" toggle + textarea
-- [ ] Word counter under editor showing `current / min–max` per chosen product type (soft warning, no hard block)
-- [ ] Title char counter 0/80 (Kumparan ref)
-- [ ] "Saved as DRAFT" indicator (Kumparan ref)
-- [ ] Move Submit button to top-right of editor side panel (Kumparan ref)
-- [ ] Partner-side `/admin/articles` lists only `WHERE author_id = session.user.id` when role=partner
+- [x] `<PolicyProductPicker>` — accessible radio-card grid, selected card has crimson border + bg tint, optional "📥 Download guideline" link
+- [x] `buildScaffoldHTML(type)` injects section headings + italic placeholder hints into the editor; only replaces when content is empty or still an untouched scaffold
+- [x] `<AuthorshipAck>` — 3-checkbox tuple, gated before submit / publish
+- [x] `<AiDisclosureField>` — "no AI used" toggle + textarea; submit blocked if neither given
+- [x] `<WordCounter>` shows `current vs min–max` with amber-under / crimson-over colouring
+- [x] Partner-side `/admin/articles` lists only own articles (server + API both gated by `asRole === "partner"`)
+- [ ] Title char counter 0/80 (Kumparan ref — Phase G)
+- [ ] "Saved as DRAFT" indicator (Phase G)
+- [ ] Move Submit button to top-right of editor side panel (Phase G)
+- [x] Empty state for partners on `/admin/articles`: "Submit your first policy product"
 
 ### Settings
-- [ ] `/admin/settings` — add "Review ETA (days)" number input
-- [ ] Surface that value to partners somewhere (auto email body)
+- [x] `/admin/settings` — "Review ETA (days)" number input added next to CC list
+- [x] Value flows into auto-reply email via `getReviewEtaDays()`
 
 ### Email
-- [ ] Update `notifyArticleSubmitted`: partner receives "Thank you for submitting your work. We will review your work and get back to you in {REVIEW_ETA_DAYS} days" (verbatim from PDF)
-- [ ] Admin / CC notification on submit — link to `/admin/articles/[slug]`
+- [x] New `submission_received` event in `notify.ts` — verbatim PDF copy "Thank you for submitting your work. We will review your work and get back to you in **{X}** days"
+- [x] Wired into `/api/articles/[slug]/transition` on `action="submit"` — partner gets auto-reply, admin+CC get notification
+- [x] Helper `notifySubmissionReceived({ title, slug, authorEmail, etaDays, baseUrl })`
 
 ### Verify
-- [ ] Partner can pick a product type → editor scaffolds it
-- [ ] Partner sees authorship + AI ack before submit; cannot submit without them
-- [ ] Auto email matches PDF copy verbatim
-- [ ] Admin + standing CC get notified
+- [ ] Manual smoke: partner picks Opinion Piece → editor seeds 5 sections + ABC hint
+- [ ] Manual smoke: cannot Submit without authorship + AI ack
+- [ ] Manual smoke: auto email arrives with correct ETA number
+- [ ] Manual smoke: admin + standing CC get notified
 
 ---
 

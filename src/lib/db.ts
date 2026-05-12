@@ -243,6 +243,48 @@ export async function migrate() {
     )
   `;
 
+  // ── Phase A: comments + feedback_pending ───────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS article_comments (
+      id            SERIAL PRIMARY KEY,
+      article_slug  VARCHAR(500) NOT NULL,
+      author_id     INTEGER NOT NULL,
+      author_role   VARCHAR(20) NOT NULL,
+      body          TEXT NOT NULL,
+      section_anchor VARCHAR(100) DEFAULT NULL,
+      created_at    TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS article_comments_slug_idx ON article_comments (article_slug, created_at DESC)`;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS feedback_pending BOOLEAN DEFAULT false;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+
+  // ── Phase B: policy product type + AI / primary research flags ─────
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS policy_product_type VARCHAR(30);
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS ai_disclosure TEXT DEFAULT '';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS contains_primary_research BOOLEAN DEFAULT false;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  // Default ETA (days) for the auto-reply email on submission. Editable in /admin/settings.
+  await sql`INSERT INTO site_settings (key, value) VALUES ('review_eta_days', '7') ON CONFLICT (key) DO NOTHING`;
+
   // Add linkedin_url to team_members if missing
   await sql`
     DO $$ BEGIN

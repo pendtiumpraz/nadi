@@ -19,6 +19,7 @@ export default function AdminSettingsPage() {
     const [landingVersion, setLandingVersion] = useState("v2");
     const [adminTheme, setAdminTheme] = useState("v1");
     const [ccList, setCcList] = useState<CCRecipient[]>([]);
+    const [reviewEta, setReviewEta] = useState("7");
     const [loaded, setLoaded] = useState(false);
     const [status, setStatus] = useState("");
 
@@ -28,6 +29,7 @@ export default function AdminSettingsPage() {
             .then((data) => {
                 setLandingVersion(data.settings?.landing_version || "v2");
                 setAdminTheme(data.settings?.admin_theme || "v1");
+                setReviewEta(data.settings?.review_eta_days || "7");
                 try {
                     const parsed = JSON.parse(data.settings?.notification_cc || "[]");
                     setCcList(Array.isArray(parsed) ? parsed : []);
@@ -144,6 +146,33 @@ export default function AdminSettingsPage() {
                     <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
                         <button type="button" className="btn-outline" onClick={addCcEntry} style={{ fontSize: "0.8rem", padding: "6px 14px" }}>+ Add Recipient</button>
                         <button type="button" className="btn-primary" onClick={() => saveCcList(ccList)} style={{ fontSize: "0.8rem", padding: "6px 14px" }}>Save Now</button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Review ETA (days) */}
+            <div className="editor" style={{ marginBottom: "2rem" }}>
+                <div className="editor-section">
+                    <div className="editor-section-title">Review ETA (days)</div>
+                    <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem" }}>
+                        Sent in the auto-reply email at submit: &ldquo;We will review your work and get back to you in <strong>X</strong> days.&rdquo; Editable on the fly.
+                    </p>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                        <input
+                            type="number"
+                            min={1}
+                            value={reviewEta}
+                            onChange={(e) => setReviewEta(e.target.value)}
+                            style={{ width: 100, padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 4 }}
+                        />
+                        <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={() => saveSetting("review_eta_days", reviewEta)}
+                            style={{ fontSize: "0.8rem", padding: "6px 14px" }}
+                        >
+                            Save
+                        </button>
                     </div>
                 </div>
             </div>

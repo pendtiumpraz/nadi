@@ -3,10 +3,19 @@
 import { useState, useEffect, useRef, useCallback, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import PolicyProductPicker from "@/components/PolicyProductPicker";
+import AuthorshipAck from "@/components/AuthorshipAck";
+import AiDisclosureField from "@/components/AiDisclosureField";
+import WordCounter from "@/components/WordCounter";
+import CommentThread from "@/components/CommentThread";
+import { POLICY_PRODUCTS, type PolicyProductType } from "@/data/policy-products";
+import { buildScaffoldHTML, isUntouchedScaffold } from "@/lib/template-scaffold";
 
 interface ArticleEditorProps {
     slug?: string;
 }
+
+type ArticleStatus = "draft" | "in_review" | "approved" | "consent_received" | "published";
 
 export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const router = useRouter();
@@ -29,7 +38,15 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const [uploadingPdf, setUploadingPdf] = useState(false);
     const [status, setStatus] = useState("");
     const [saving, setSaving] = useState(false);
-    const [articleStatus, setArticleStatus] = useState<"draft" | "in_review" | "published">("draft");
+    const [articleStatus, setArticleStatus] = useState<ArticleStatus>("draft");
+    const [feedbackPending, setFeedbackPending] = useState(false);
+    // Phase B fields
+    const [policyProductType, setPolicyProductType] = useState<PolicyProductType | "">("");
+    const [aiDisclosure, setAiDisclosure] = useState("");
+    const [noAi, setNoAi] = useState(false);
+    const [containsPrimaryResearch, setContainsPrimaryResearch] = useState(false);
+    const [authorshipAck, setAuthorshipAck] = useState<[boolean, boolean, boolean]>([false, false, false]);
+    const [editorText, setEditorText] = useState("");
     const coverInputRef = useRef<HTMLInputElement>(null);
     const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,8 +67,14 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     setSeoDesc(data.seo?.description || "");
                     setSeoKeywords(data.seo?.keywords?.join(", ") || "");
                     setArticleStatus(data.status || "published");
+                    setFeedbackPending(!!data.feedbackPending);
+                    setPolicyProductType(data.policyProductType || "");
+                    setAiDisclosure(data.aiDisclosure || "");
+                    setNoAi(!data.aiDisclosure);
+                    setContainsPrimaryResearch(!!data.containsPrimaryResearch);
                     if (data.blocks && editorRef.current) {
                         editorRef.current.innerHTML = blocksToHTML(data.blocks);
+                        setEditorText(editorRef.current.innerText || "");
                     }
                 }
             })
@@ -77,6 +100,23 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             }
         }).join("");
     };
+
+    // When partner picks a product type, seed the editor with section scaffold —
+    // but only if the editor is empty or still holds an untouched scaffold from a
+    // previous pick. Also auto-set the legacy `category` field.
+    const handleProductTypeChange = useCallback((next: PolicyProductType) => {
+        setPolicyProductType(next);
+        const product = POLICY_PRODUCTS[next];
+        if (product?.legacyCategory) setCategory(product.legacyCategory);
+        const currentHTML = editorRef.current?.innerHTML || "";
+        const currentText = editorRef.current?.innerText?.trim() || "";
+        if (!currentText || isUntouchedScaffold(currentHTML)) {
+            if (editorRef.current) {
+                editorRef.current.innerHTML = buildScaffoldHTML(next);
+                setEditorText(editorRef.current.innerText || "");
+            }
+        }
+    }, []);
 
     // Rich text commands
     const exec = useCallback((cmd: string, value?: string) => {
@@ -138,6 +178,14 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
         if (!title.trim()) { setStatus("Title is required."); return; }
         if (content.trim().length < 30) { setStatus("Write some content first."); return; }
 
+        // Gate Submit-for-review (and direct Publish) on the Authorship + AI ack.
+        // Draft saves can skip — partners can still scribble and save before completing the ack.
+        if (intent !== "draft") {
+            if (!policyProductType) { setStatus("Please choose a Policy Product Type."); return; }
+            if (!authorshipAck.every(Boolean)) { setStatus("Please acknowledge all three Authorship & Research Integrity rules."); return; }
+            if (!noAi && !aiDisclosure.trim()) { setStatus("Please describe your AI use, or tick \"I did not use any AI tools\"."); return; }
+        }
+
         setSaving(true);
         setStatus("⏳ AI is formatting your article into magazine layout...");
 
@@ -185,6 +233,9 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 pdfUrl,
                 seo: { description: finalSeoDesc, keywords: finalKeywords },
                 blocks: formatData.blocks,
+                policyProductType: policyProductType || undefined,
+                aiDisclosure: noAi ? "" : aiDisclosure,
+                containsPrimaryResearch,
             };
             if (intent === "publish" && canPublish) article.status = "published";
             if (intent === "draft") article.status = "draft";
@@ -214,6 +265,39 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             <p className="admin-page-desc">Write freely with the editor below. AI will format your content into a magazine-style layout and generate SEO metadata automatically.</p>
 
             <form onSubmit={(e) => handleSubmit(e)} className="editor">
+                {feedbackPending && (
+                    <div style={{
+                        background: "rgba(220,150,40,0.12)",
+                        border: "1px solid rgba(220,150,40,0.35)",
+                        borderRadius: 4,
+                        padding: "12px 16px",
+                        marginBottom: "1rem",
+                        fontSize: "0.88rem",
+                        color: "#7a4a08",
+                    }}>
+                        💬 <strong>Feedback pending.</strong> A reviewer has posted comments — read them below, revise your article, and resubmit.
+                    </div>
+                )}
+
+                {/* Policy Product Type */}
+                <div className="editor-section">
+                    <PolicyProductPicker
+                        value={policyProductType}
+                        onChange={handleProductTypeChange}
+                        disabled={isEdit && !!policyProductType && articleStatus !== "draft" && !canPublish}
+                    />
+                    {policyProductType === "policy_brief" && (
+                        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.75rem", fontSize: "0.85rem" }}>
+                            <input
+                                type="checkbox"
+                                checked={containsPrimaryResearch}
+                                onChange={(e) => setContainsPrimaryResearch(e.target.checked)}
+                            />
+                            This brief contains primary research (will be flagged for QC verification)
+                        </label>
+                    )}
+                </div>
+
                 {/* Meta */}
                 <div className="editor-section">
                     <div className="editor-section-title">Article Details</div>
@@ -342,8 +426,33 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         contentEditable
                         data-placeholder="Start writing your article here...&#10;&#10;Use the toolbar above for formatting:&#10;• Bold, Italic, Underline for emphasis&#10;• H2, H3 for section headings&#10;• Bullet / numbered lists&#10;• Blockquotes for citations&#10;• Links, dividers, and more&#10;&#10;AI will convert your formatted text into a beautiful magazine-style layout when you publish."
                         suppressContentEditableWarning
+                        onInput={() => setEditorText(editorRef.current?.innerText || "")}
                     />
+                    {policyProductType && (
+                        <div style={{ marginTop: "0.5rem" }}>
+                            <WordCounter
+                                text={editorText}
+                                min={POLICY_PRODUCTS[policyProductType].wordCount.min}
+                                max={POLICY_PRODUCTS[policyProductType].wordCount.max}
+                            />
+                        </div>
+                    )}
                     <p className="editor-hint">✨ AI will auto-format into magazine blocks (pullquotes, stats, callouts, columns, etc.) on publish.</p>
+                </div>
+
+                {/* Authorship & Research Integrity */}
+                <div className="editor-section">
+                    <AuthorshipAck values={authorshipAck} onChange={setAuthorshipAck} />
+                </div>
+
+                {/* AI Disclosure */}
+                <div className="editor-section">
+                    <AiDisclosureField
+                        value={aiDisclosure}
+                        onChange={setAiDisclosure}
+                        noAi={noAi}
+                        onNoAiChange={setNoAi}
+                    />
                 </div>
 
                 {/* SEO */}
@@ -400,6 +509,20 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     <a href="/admin/articles" className="btn-outline">Cancel</a>
                 </div>
             </form>
+
+            {isEdit && slug && (
+                <div className="editor-section" style={{ marginTop: "2rem" }}>
+                    <CommentThread
+                        slug={slug}
+                        onPosted={() => {
+                            // When the partner replies, the server flips feedback_pending=false on next save;
+                            // for the admin posting a comment, the server flips it to true. We optimistically
+                            // refresh on next page load — for now just clear the local flag if partner posts.
+                            if (!canPublish) setFeedbackPending(false);
+                        }}
+                    />
+                </div>
+            )}
         </div>
     );
 }

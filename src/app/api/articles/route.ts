@@ -3,11 +3,12 @@ import { auth } from "@/lib/auth";
 import {
     getAllArticlesStore,
     getArticleBySlugStore,
+    getArticlesByAuthor,
     saveArticle,
     deleteArticle,
     articleExists,
 } from "@/lib/articles-store";
-import { canPublish, canEditOwnContent } from "@/lib/permissions";
+import { canPublish, canEditOwnContent, asRole } from "@/lib/permissions";
 import type { Article, ArticleStatus } from "@/data/articles/types";
 
 function slugify(text: string): string {
@@ -34,7 +35,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(article);
     }
 
-    const articles = await getAllArticlesStore();
+    // Partners can only see their own submissions; admin/reviewer/contributor see all.
+    const articles =
+        asRole(session.user.role) === "partner"
+            ? await getArticlesByAuthor(session.user.id)
+            : await getAllArticlesStore();
     return NextResponse.json(articles);
 }
 
@@ -81,6 +86,7 @@ export async function POST(req: NextRequest) {
         }
         body.status = status;
         body.authorId = body.authorId || session.user.id;
+        body.feedbackPending = false; // fresh row never has pending feedback
 
         await saveArticle(body);
         return NextResponse.json(body, { status: 201 });
@@ -127,6 +133,9 @@ export async function PUT(req: NextRequest) {
         }
         body.status = status;
         body.authorId = existing.authorId || body.authorId;
+        // Partner re-saving an article clears feedback_pending (they've addressed the comments).
+        // Admin/reviewer re-saving doesn't touch it — only commenting flips it.
+        body.feedbackPending = canPublish(session.user) ? !!existing.feedbackPending : false;
 
         await saveArticle(body);
         return NextResponse.json(body);

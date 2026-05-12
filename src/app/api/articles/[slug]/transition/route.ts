@@ -4,7 +4,7 @@ import { getArticleBySlugStore, updateArticleStatus } from "@/lib/articles-store
 import { canReview, canEditOwnContent } from "@/lib/permissions";
 import { getDB } from "@/lib/db";
 import { getUserById } from "@/lib/users";
-import { notifyArticleSubmitted, notifyArticleApproved, notifyArticleChangesRequested } from "@/lib/notify";
+import { notifyArticleSubmitted, notifyArticleApproved, notifyArticleChangesRequested, notifySubmissionReceived, getReviewEtaDays } from "@/lib/notify";
 
 type Action = "submit" | "approve" | "request_changes";
 
@@ -67,6 +67,18 @@ export async function POST(req: NextRequest, { params }: Params) {
             actorName: session.user.name || "A contributor",
             baseUrl,
         }).catch(() => { });
+        // Auto-reply to the partner/author confirming receipt
+        const author = article.authorId ? await getUserById(article.authorId) : null;
+        if (author?.email) {
+            const etaDays = await getReviewEtaDays();
+            notifySubmissionReceived({
+                title: article.title,
+                slug,
+                authorEmail: author.email,
+                etaDays,
+                baseUrl,
+            }).catch(() => { });
+        }
     } else {
         const author = article.authorId ? await getUserById(article.authorId) : null;
         if (author?.email) {

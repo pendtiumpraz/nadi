@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface ArticleSummary {
     slug: string;
@@ -11,19 +11,20 @@ interface ArticleSummary {
     readTime: string;
 }
 
-export default function ArticleList() {
-    const [articles, setArticles] = useState<ArticleSummary[]>([]);
-    const [loading, setLoading] = useState(true);
+interface ArticleListProps {
+    initialArticles?: ArticleSummary[];
+    partnerView?: boolean;
+}
+
+export default function ArticleList({ initialArticles = [], partnerView = false }: ArticleListProps) {
+    const [articles, setArticles] = useState<ArticleSummary[]>(initialArticles);
     const [msg, setMsg] = useState("");
 
     const fetchArticles = async () => {
         const res = await fetch("/api/articles");
         const data = await res.json();
         setArticles(data);
-        setLoading(false);
     };
-
-    useEffect(() => { fetchArticles(); }, []);
 
     const handleDelete = async (slug: string, title: string) => {
         if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
@@ -37,15 +38,22 @@ export default function ArticleList() {
         }
     };
 
-    if (loading) return <p style={{ color: "var(--muted)" }}>Loading articles...</p>;
-
     return (
         <div>
             {msg && <div className="admin-msg" onClick={() => setMsg("")}>{msg}</div>}
             {articles.length === 0 ? (
                 <div className="admin-empty">
-                    <p>No articles yet.</p>
-                    <a href="/admin/articles/new" className="btn-primary" style={{ marginTop: "1rem", display: "inline-block" }}>Create Your First Article</a>
+                    {partnerView ? (
+                        <>
+                            <p>You haven&apos;t submitted any policy products yet.</p>
+                            <a href="/admin/articles/new" className="btn-primary" style={{ marginTop: "1rem", display: "inline-block" }}>Submit your first policy product</a>
+                        </>
+                    ) : (
+                        <>
+                            <p>No articles yet.</p>
+                            <a href="/admin/articles/new" className="btn-primary" style={{ marginTop: "1rem", display: "inline-block" }}>Create Your First Article</a>
+                        </>
+                    )}
                 </div>
             ) : (
                 <table className="admin-table">

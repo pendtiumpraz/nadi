@@ -11,7 +11,9 @@ export type NotifyEvent =
     | "user_activated"
     | "article_submitted"
     | "article_approved"
-    | "article_changes_requested";
+    | "article_changes_requested"
+    | "feedback_received"
+    | "submission_received";
 
 interface NotifyPayload {
     actorName?: string;       // who triggered the event
@@ -147,6 +149,28 @@ function render(event: NotifyEvent, p: NotifyPayload): RenderedEmail {
                 ),
                 text: `Changes requested on "${p.title}". Notes: ${p.notes || "(none)"}. Edit at ${p.url || ""}.`,
             };
+        case "feedback_received":
+            return {
+                subject: "Your work has been reviewed",
+                html: wrap(
+                    "Feedback Received",
+                    `<p>Your work has been reviewed. Please kindly proceed with the necessary revisions at your earliest convenience.</p>
+                     ${p.title ? `<p style="color:#6B6B6B;font-size:0.85rem;">Article: <strong>${p.title}</strong>${p.actorName ? ` &middot; Reviewer: ${p.actorName}` : ""}</p>` : ""}`,
+                    p.url ? { label: "Open Article", href: p.url } : undefined
+                ),
+                text: `Your work has been reviewed. Please kindly proceed with the necessary revisions at your earliest convenience.${p.url ? ` ${p.url}` : ""}`,
+            };
+        case "submission_received":
+            return {
+                subject: "We've received your submission",
+                html: wrap(
+                    "Submission Received",
+                    `<p>Thank you for submitting your work. We will review your work and get back to you in <strong>${p.notes}</strong> days.</p>
+                     <p>Title: <em>${p.title || ""}</em></p>`,
+                    p.url ? { label: "View your submission", href: p.url } : undefined,
+                ),
+                text: `Thank you for submitting your work. We will review your work and get back to you in ${p.notes} days. Title: "${p.title}". ${p.url || ""}`,
+            };
     }
 }
 
@@ -232,6 +256,30 @@ export async function notifyArticleSubmitted(payload: { title: string; slug: str
     });
 }
 
+export async function notifySubmissionReceived(payload: { title: string; slug: string; authorEmail: string; etaDays: number; baseUrl?: string }): Promise<void> {
+    await send({
+        event: "submission_received",
+        to: payload.authorEmail,
+        payload: {
+            title: payload.title,
+            slug: payload.slug,
+            notes: String(payload.etaDays),
+            url: payload.baseUrl ? `${payload.baseUrl}/admin/articles/${payload.slug}` : undefined,
+        },
+    });
+}
+
+export async function getReviewEtaDays(): Promise<number> {
+    try {
+        const sql = getDB();
+        const rows = await sql`SELECT value FROM site_settings WHERE key = 'review_eta_days'`;
+        const n = Number(rows[0]?.value || 7);
+        return Number.isFinite(n) && n > 0 ? n : 7;
+    } catch {
+        return 7;
+    }
+}
+
 export async function notifyArticleApproved(payload: { title: string; slug: string; authorEmail: string; baseUrl?: string }): Promise<void> {
     const cc = await getNotificationCC();
     await send({
@@ -254,6 +302,19 @@ export async function notifyArticleChangesRequested(payload: { title: string; sl
             title: payload.title,
             slug: payload.slug,
             notes: payload.notes,
+            url: payload.baseUrl ? `${payload.baseUrl}/admin/articles/${payload.slug}` : undefined,
+        },
+    });
+}
+
+export async function notifyFeedbackReceived(payload: { title: string; slug: string; authorEmail: string; commenterName: string; baseUrl?: string }): Promise<void> {
+    await send({
+        event: "feedback_received",
+        to: payload.authorEmail,
+        payload: {
+            title: payload.title,
+            slug: payload.slug,
+            actorName: payload.commenterName,
             url: payload.baseUrl ? `${payload.baseUrl}/admin/articles/${payload.slug}` : undefined,
         },
     });

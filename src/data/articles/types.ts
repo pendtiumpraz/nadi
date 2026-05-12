@@ -100,7 +100,9 @@ export interface ArticleSEO {
     keywords: string[];
 }
 
-export type ArticleStatus = "draft" | "in_review" | "published";
+export type ArticleStatus = "draft" | "in_review" | "approved" | "consent_received" | "published";
+
+export type PolicyProductType = "opinion_piece" | "policy_brief" | "policy_paper";
 
 export interface Article {
     slug: string;
@@ -117,4 +119,8 @@ export interface Article {
     blocks: ContentBlock[];
     status?: ArticleStatus;
     authorId?: string;
+    policyProductType?: PolicyProductType;
+    aiDisclosure?: string;
+    containsPrimaryResearch?: boolean;
+    feedbackPending?: boolean;
 }
