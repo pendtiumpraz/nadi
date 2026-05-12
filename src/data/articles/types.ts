@@ -123,4 +123,5 @@ export interface Article {
     aiDisclosure?: string;
     containsPrimaryResearch?: boolean;
     feedbackPending?: boolean;
+    summarySocial?: string;
 }

@@ -49,8 +49,37 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const [containsPrimaryResearch, setContainsPrimaryResearch] = useState(false);
     const [authorshipAck, setAuthorshipAck] = useState<[boolean, boolean, boolean]>([false, false, false]);
     const [editorText, setEditorText] = useState("");
+    const [summarySocial, setSummarySocial] = useState("");
+    const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+    const [nowTick, setNowTick] = useState(Date.now());
     const coverInputRef = useRef<HTMLInputElement>(null);
     const pdfInputRef = useRef<HTMLInputElement>(null);
+
+    // Tick once every 15s so the "Saved as DRAFT — X ago" indicator stays fresh.
+    useEffect(() => {
+        if (!lastSavedAt) return;
+        const id = setInterval(() => setNowTick(Date.now()), 15_000);
+        return () => clearInterval(id);
+    }, [lastSavedAt]);
+
+    const formatRelative = (ts: number, now: number = nowTick): string => {
+        const diffMs = Math.max(0, now - ts);
+        const s = Math.floor(diffMs / 1000);
+        if (s < 30) return "beberapa detik";
+        if (s < 60) return `${s} detik`;
+        const m = Math.floor(s / 60);
+        if (m < 60) return `${m} menit`;
+        const h = Math.floor(m / 60);
+        if (h < 24) return `${h} jam`;
+        const d = Math.floor(h / 24);
+        return `${d} hari`;
+    };
+
+    // Char counter — coloured by state (under, ok, over).
+    const Counter = ({ value, max }: { value: number; max: number }) => {
+        const colour = value > max ? "#c44" : value > max * 0.9 ? "#9a6a10" : "var(--muted)";
+        return <span style={{ fontSize: "0.7rem", color: colour, fontFamily: "var(--font-mono, monospace)" }}>{value}/{max}</span>;
+    };
 
     // Load existing article
     useEffect(() => {
@@ -74,6 +103,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     setAiDisclosure(data.aiDisclosure || "");
                     setNoAi(!data.aiDisclosure);
                     setContainsPrimaryResearch(!!data.containsPrimaryResearch);
+                    setSummarySocial(data.summarySocial || "");
                     if (data.blocks && editorRef.current) {
                         editorRef.current.innerHTML = blocksToHTML(data.blocks);
                         setEditorText(editorRef.current.innerText || "");
@@ -238,6 +268,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 policyProductType: policyProductType || undefined,
                 aiDisclosure: noAi ? "" : aiDisclosure,
                 containsPrimaryResearch,
+                summarySocial,
             };
             if (intent === "publish" && canPublish) article.status = "published";
             if (intent === "draft") article.status = "draft";
@@ -254,6 +285,8 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             const verbMap = { publish: "published", submit: "submitted for review", draft: "saved as draft" } as const;
             setStatus(`✓ Article ${verbMap[intent]}!`);
             setArticleStatus(saveData.status || (intent === "publish" ? "published" : intent === "submit" ? "in_review" : "draft"));
+            setLastSavedAt(Date.now());
+            setNowTick(Date.now());
             if (!isEdit) setTimeout(() => router.push("/admin/articles"), 1500);
         } catch (err) {
             setStatus(`Error: ${(err as Error).message}`);
@@ -262,11 +295,12 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     };
 
     return (
-        <div className="admin-body">
+        <div className="admin-body" style={{ position: "relative" }}>
             <h1 className="admin-page-title">{isEdit ? "Edit Article" : "Write New Article"}</h1>
             <p className="admin-page-desc">Write freely with the editor below. AI will format your content into a magazine-style layout and generate SEO metadata automatically.</p>
 
-            <form onSubmit={(e) => handleSubmit(e)} className="editor">
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: "1.5rem", alignItems: "start" }} className="editor-grid-wrap">
+            <form onSubmit={(e) => handleSubmit(e)} className="editor" style={{ minWidth: 0 }}>
                 {feedbackPending && (
                     <div style={{
                         background: "rgba(220,150,40,0.12)",
@@ -304,8 +338,11 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 <div className="editor-section">
                     <div className="editor-section-title">Article Details</div>
                     <div className="form-group">
-                        <label htmlFor="ed-title">Title *</label>
-                        <input id="ed-title" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="e.g. Health Financing Sustainability in Post-Pandemic Indonesia" />
+                        <label htmlFor="ed-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                            <span>Title *</span>
+                            <Counter value={title.length} max={80} />
+                        </label>
+                        <input id="ed-title" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="e.g. Health Financing Sustainability in Post-Pandemic Indonesia" maxLength={120} />
                     </div>
                     <div className="editor-grid">
                         <div className="form-group">
@@ -457,12 +494,23 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     />
                 </div>
 
-                {/* SEO */}
+                {/* SEO + Social */}
                 <div className="editor-section">
-                    <div className="editor-section-title">SEO Settings <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— leave empty to auto-generate with AI</span></div>
+                    <div className="editor-section-title">SEO Settings <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— leave description empty to auto-generate with AI</span></div>
                     <div className="form-group">
-                        <label htmlFor="ed-seo-desc">Meta Description</label>
-                        <input id="ed-seo-desc" value={seoDesc} onChange={e => setSeoDesc(e.target.value)} placeholder="Leave empty — AI will generate a compelling meta description" />
+                        <label htmlFor="ed-seo-desc" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                            <span>Description</span>
+                            <Counter value={seoDesc.length} max={200} />
+                        </label>
+                        <input id="ed-seo-desc" value={seoDesc} onChange={e => setSeoDesc(e.target.value)} maxLength={250} placeholder="Used for the search-engine meta tag. Leave empty — AI will generate it." />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="ed-summary-social" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                            <span>Summary Social</span>
+                            <Counter value={summarySocial.length} max={200} />
+                        </label>
+                        <input id="ed-summary-social" value={summarySocial} onChange={e => setSummarySocial(e.target.value)} maxLength={250} placeholder="Used as the social-share / Open Graph preview text." />
+                        <span className="editor-hint">Shown when the article is shared on Twitter / LinkedIn / WhatsApp.</span>
                     </div>
                     <div className="form-group">
                         <label htmlFor="ed-seo-kw">Keywords (comma-separated)</label>
@@ -513,22 +561,78 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         />
                     </div>
                 )}
-                <div className="editor-save">
-                    {canPublish ? (
-                        <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "publish")}>
-                            {saving ? "⏳ Saving..." : isEdit ? "Update & Publish" : "Publish Article"}
-                        </button>
-                    ) : (
-                        <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "submit")}>
-                            {saving ? "⏳ Saving..." : "Submit for Review"}
-                        </button>
-                    )}
-                    <button type="button" className="btn-outline" disabled={saving} onClick={(e) => handleSubmit(e, "draft")}>
-                        Save as Draft
-                    </button>
+                <div className="editor-save editor-save--inline">
                     <a href="/admin/articles" className="btn-outline">Cancel</a>
                 </div>
             </form>
+
+            {/* Sticky side panel — Kumparan-style */}
+            <aside className="editor-side" style={{
+                position: "sticky",
+                top: "1rem",
+                alignSelf: "start",
+                padding: "1.25rem",
+                border: "1px solid var(--line)",
+                borderRadius: 8,
+                background: "#fff",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+            }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--line)" }}>
+                    <span style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", fontWeight: 600 }}>Status</span>
+                    {lastSavedAt ? (
+                        <span style={{ fontSize: "0.85rem" }}>
+                            Saved as <strong style={{ color: "var(--crimson)" }}>{articleStatus.replace(/_/g, " ").toUpperCase()}</strong>
+                            <br />
+                            <span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>{formatRelative(lastSavedAt)} yang lalu</span>
+                        </span>
+                    ) : (
+                        <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+                            {isEdit ? articleStatus.replace(/_/g, " ").toUpperCase() : "Unsaved draft"}
+                        </span>
+                    )}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", fontSize: "0.78rem", color: "var(--muted)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span>Title</span><Counter value={title.length} max={80} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span>Description</span><Counter value={seoDesc.length} max={200} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span>Summary social</span><Counter value={summarySocial.length} max={200} />
+                    </div>
+                    {policyProductType && (
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Words</span>
+                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem" }}>
+                                {editorText.trim().split(/\s+/).filter(Boolean).length}
+                                {" / "}
+                                {POLICY_PRODUCTS[policyProductType].wordCount.min}
+                                {POLICY_PRODUCTS[policyProductType].wordCount.max ? `–${POLICY_PRODUCTS[policyProductType].wordCount.max}` : "+"}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", paddingTop: "0.5rem", borderTop: "1px solid var(--line)" }}>
+                    {canPublish ? (
+                        <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "publish")} style={{ width: "100%" }}>
+                            {saving ? "⏳ Saving..." : isEdit ? "Update & Publish" : "Publish Article"}
+                        </button>
+                    ) : (
+                        <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "submit")} style={{ width: "100%" }}>
+                            {saving ? "⏳ Saving..." : "Submit for Review"}
+                        </button>
+                    )}
+                    <button type="button" className="btn-outline" disabled={saving} onClick={(e) => handleSubmit(e, "draft")} style={{ width: "100%" }}>
+                        Save as Draft
+                    </button>
+                </div>
+            </aside>
+            </div>
 
             {isEdit && slug && (
                 <div className="editor-section" style={{ marginTop: "2rem" }}>

@@ -22,9 +22,10 @@ export async function saveArticle(article: Article): Promise<void> {
     const aiDisclosure = article.aiDisclosure || "";
     const primaryResearch = !!article.containsPrimaryResearch;
     const feedbackPending = !!article.feedbackPending;
+    const summarySocial = article.summarySocial || "";
     await sql`
-    INSERT INTO articles (slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords, blocks, status, author_id, policy_product_type, ai_disclosure, contains_primary_research, feedback_pending, updated_at)
-    VALUES (${article.slug}, ${article.title}, ${article.subtitle || ""}, ${article.category}, ${article.date}, ${article.readTime}, ${article.author}, ${article.coverColor}, ${article.coverImage || ""}, ${article.pdfUrl || ""}, ${article.seo?.description || ""}, ${article.seo?.keywords || []}, ${JSON.stringify(article.blocks)}, ${status}, ${authorId}, ${productType}, ${aiDisclosure}, ${primaryResearch}, ${feedbackPending}, NOW())
+    INSERT INTO articles (slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords, blocks, status, author_id, policy_product_type, ai_disclosure, contains_primary_research, feedback_pending, summary_social, updated_at)
+    VALUES (${article.slug}, ${article.title}, ${article.subtitle || ""}, ${article.category}, ${article.date}, ${article.readTime}, ${article.author}, ${article.coverColor}, ${article.coverImage || ""}, ${article.pdfUrl || ""}, ${article.seo?.description || ""}, ${article.seo?.keywords || []}, ${JSON.stringify(article.blocks)}, ${status}, ${authorId}, ${productType}, ${aiDisclosure}, ${primaryResearch}, ${feedbackPending}, ${summarySocial}, NOW())
     ON CONFLICT (slug) DO UPDATE SET
       title = EXCLUDED.title,
       subtitle = EXCLUDED.subtitle,
@@ -43,6 +44,7 @@ export async function saveArticle(article: Article): Promise<void> {
       ai_disclosure = EXCLUDED.ai_disclosure,
       contains_primary_research = EXCLUDED.contains_primary_research,
       feedback_pending = EXCLUDED.feedback_pending,
+      summary_social = EXCLUDED.summary_social,
       updated_at = NOW()
   `;
 }
@@ -108,5 +110,6 @@ function rowToArticle(row: Record<string, unknown>): Article {
         aiDisclosure: (row.ai_disclosure as string) || "",
         containsPrimaryResearch: !!row.contains_primary_research,
         feedbackPending: !!row.feedback_pending,
+        summarySocial: (row.summary_social as string) || "",
     };
 }

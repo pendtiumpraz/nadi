@@ -2619,6 +2619,23 @@ footer {
   padding: 1.5rem 0;
 }
 
+.editor-save--inline {
+  padding: 1rem 0;
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+}
+
+/* Editor grid — main content + sticky side panel */
+@media (max-width: 1024px) {
+  .editor-grid-wrap {
+    grid-template-columns: 1fr !important;
+  }
+  .editor-side {
+    position: static !important;
+    margin-top: 1.5rem;
+  }
+}
+
 .editor-hint {
   font-size: 0.75rem;
   color: var(--muted);

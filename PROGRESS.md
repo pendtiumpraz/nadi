@@ -200,12 +200,12 @@ Mirror of `PLAN.md`. Tick boxes as items land. Phases map 1:1 to PLAN §10.
 
 ## Phase G — Kumparan-style editor polish
 
-- [ ] Move action buttons (Submit / Save Draft) to a sticky side panel, top-right of `/admin/articles/new`
-- [ ] "Saved as DRAFT" indicator with relative-time "beberapa detik" updating every 30s
-- [ ] Title character counter `0/80`
-- [ ] Description field (separate from subtitle) — 0/200 char counter, used for SEO meta
-- [ ] "Summary Social" field — 0/200 char counter, used for OG description
-- [ ] Channel selector (replaces or alongside our existing Category select) — the user-visible label is "Channel"
+- [x] Action buttons (Publish/Submit + Save Draft) moved to a sticky right side panel (280px col); main form is the left column. Mobile breakpoint <1024px collapses to single column.
+- [x] "Saved as ..." indicator in the side panel with relative time ("beberapa detik / N menit / N jam yang lalu") — `formatRelative()` helper, 15s tick interval
+- [x] Title character counter `0/80` — shown both inline next to the Title label and in the side panel meta row
+- [x] Description field (`seoDesc`) — 0/200 counter inline + side panel
+- [x] "Summary Social" field — new `articles.summary_social TEXT` column + new editor field with 0/200 counter, persisted via store/API
+- [ ] Channel selector renaming (existing `category` select stays as "Category" for now — `policy_product_type` already supersedes its role) — DEFERRED, not strictly needed since Phase B picker handles product type
 
 ---
 

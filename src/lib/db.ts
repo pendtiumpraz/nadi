@@ -313,6 +313,14 @@ export async function migrate() {
     ON CONFLICT (key) DO NOTHING
   `;
 
+  // ── Phase G: editor side panel — summary social (OG description) ───
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS summary_social TEXT DEFAULT '';
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+
   // ── Phase D: consent-to-publish form ───────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS article_consents (
