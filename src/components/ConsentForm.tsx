@@ -27,7 +27,9 @@ interface ConsentFormProps {
     onUploadSignature: (file: File) => Promise<string>;
 }
 
-const CLAUSES: { key: keyof ConsentFormPayload; text: string }[] = [
+// Items 1-4 are AUTHOR AFFIRMATIONS — partner actively confirms each one about
+// their own work. These must be checked manually before submission.
+const AUTHOR_CLAUSES: { key: keyof ConsentFormPayload; text: string }[] = [
     {
         key: "ackEthical",
         text:
@@ -48,6 +50,11 @@ const CLAUSES: { key: keyof ConsentFormPayload; text: string }[] = [
         text:
             "The policy product has used artificial intelligence (AI) tools in a responsible and transparent manner, with all AI-assisted content reviewed and verified by the author;",
     },
+];
+
+// Items 5-6 are NADI TERMS OF SERVICE — non-negotiable. Shown as locked &
+// auto-checked so the partner sees them but can't pretend to opt out.
+const NADI_TERMS_CLAUSES: { key: keyof ConsentFormPayload; text: string }[] = [
     {
         key: "ackMayReject",
         text:
@@ -76,8 +83,9 @@ export default function ConsentForm({
     const [ackOriginal, setAckOriginal] = useState(!!prefill?.ackOriginal);
     const [ackEdited, setAckEdited] = useState(!!prefill?.ackEdited);
     const [ackAiDisclosure, setAckAiDisclosure] = useState(!!prefill?.ackAiDisclosure);
-    const [ackMayReject, setAckMayReject] = useState(!!prefill?.ackMayReject);
-    const [ackNoLiability, setAckNoLiability] = useState(!!prefill?.ackNoLiability);
+    // Items 5-6 are non-negotiable NADI terms — always true, locked in the UI.
+    const ackMayReject = true;
+    const ackNoLiability = true;
     const [agreeOnBehalf, setAgreeOnBehalf] = useState(!!prefill?.agreeOnBehalf);
 
     const [titleOfPaper, setTitleOfPaper] = useState(prefill?.titleOfPaper || "");
@@ -98,13 +106,12 @@ export default function ConsentForm({
     const dateRef = useRef<HTMLInputElement>(null);
     const declarationsRef = useRef<HTMLDivElement>(null);
 
+    // Only the 4 author affirmations are interactive — items 5-6 are locked-true.
     const clauseState: Record<string, [boolean, (v: boolean) => void]> = {
         ackEthical: [ackEthical, setAckEthical],
         ackOriginal: [ackOriginal, setAckOriginal],
         ackEdited: [ackEdited, setAckEdited],
         ackAiDisclosure: [ackAiDisclosure, setAckAiDisclosure],
-        ackMayReject: [ackMayReject, setAckMayReject],
-        ackNoLiability: [ackNoLiability, setAckNoLiability],
     };
 
     const updateAuthor = (idx: number, patch: Partial<{ surnameFirstName: string; affiliation: string }>) => {
@@ -149,9 +156,10 @@ export default function ConsentForm({
         const missing: string[] = [];
         let firstMissingRef: React.RefObject<HTMLElement | null> | null = null;
 
-        const allDeclarations = ackEthical && ackOriginal && ackEdited && ackAiDisclosure && ackMayReject && ackNoLiability;
-        if (!allDeclarations) {
-            missing.push("All six declaration checkboxes must be ticked.");
+        // Items 5-6 are locked-true (NADI terms — non-negotiable). Only validate items 1-4.
+        const allAuthorAffirmations = ackEthical && ackOriginal && ackEdited && ackAiDisclosure;
+        if (!allAuthorAffirmations) {
+            missing.push("Please confirm all four author declarations (items 1-4).");
             if (!firstMissingRef) firstMissingRef = declarationsRef;
         }
         if (!agreeOnBehalf) {
@@ -253,7 +261,10 @@ export default function ConsentForm({
             </p>
 
             <form onSubmit={handleSubmit} noValidate>
-                {/* Six declarations */}
+                {/* Author affirmations (items 1-4) — interactive */}
+                <p style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted, #666)", margin: "0 0 0.5rem", fontWeight: 600 }}>
+                    Author Declarations — please confirm each
+                </p>
                 <div
                     ref={declarationsRef}
                     style={{
@@ -263,7 +274,7 @@ export default function ConsentForm({
                         marginBottom: "1.5rem",
                     }}
                 >
-                    {CLAUSES.map((clause, idx) => {
+                    {AUTHOR_CLAUSES.map((clause, idx) => {
                         const [checked, setChecked] = clauseState[clause.key as string];
                         return (
                             <label
@@ -295,6 +306,43 @@ export default function ConsentForm({
                             </label>
                         );
                     })}
+                </div>
+
+                {/* NADI terms (items 5-6) — locked, non-negotiable */}
+                <p style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted, #666)", margin: "0 0 0.5rem", fontWeight: 600 }}>
+                    NADI Terms <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontStyle: "italic" }}>— acknowledged on submission, cannot be modified</span>
+                </p>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.5rem",
+                        marginBottom: "1.5rem",
+                    }}
+                >
+                    {NADI_TERMS_CLAUSES.map((clause, idx) => (
+                        <div
+                            key={clause.key}
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: "0.75rem",
+                                padding: "0.85rem 1rem",
+                                border: "1px solid var(--line, #ddd)",
+                                borderRadius: 4,
+                                background: "rgba(0,0,0,0.025)",
+                                fontSize: "0.85rem",
+                                lineHeight: 1.55,
+                                color: "#555",
+                            }}
+                        >
+                            <span style={{ marginTop: 1, color: "#888", flexShrink: 0 }} title="Locked — NADI's standard terms">🔒</span>
+                            <span>
+                                <span style={{ fontWeight: 600, marginRight: "0.4rem" }}>{idx + 5}.</span>
+                                {clause.text}
+                            </span>
+                        </div>
+                    ))}
                 </div>
 
                 <hr
