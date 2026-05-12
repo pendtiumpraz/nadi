@@ -13,8 +13,8 @@ export async function GET() {
 
     const sql = getDB();
     const articles = await sql`
-        SELECT slug, title, category, author, date, author_id, updated_at
-        FROM articles WHERE status = 'in_review' ORDER BY updated_at DESC
+        SELECT slug, title, category, author, date, author_id, updated_at, status
+        FROM articles WHERE status IN ('in_review', 'approved', 'consent_received') ORDER BY updated_at DESC
     `;
     const media = await sql`
         SELECT slug, title, type, category, author_id, date
@@ -33,6 +33,7 @@ export async function GET() {
             author: r.author,
             date: r.date ? new Date(r.date as string).toISOString().split("T")[0] : "",
             updatedAt: r.updated_at,
+            status: r.status,
         })),
         media: media.map((r) => ({
             slug: r.slug,

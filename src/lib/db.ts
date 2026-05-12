@@ -285,6 +285,33 @@ export async function migrate() {
   // Default ETA (days) for the auto-reply email on submission. Editable in /admin/settings.
   await sql`INSERT INTO site_settings (key, value) VALUES ('review_eta_days', '7') ON CONFLICT (key) DO NOTHING`;
 
+  // ── Phase D: consent-to-publish form ───────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS article_consents (
+      id                       SERIAL PRIMARY KEY,
+      article_slug             VARCHAR(500) NOT NULL UNIQUE,
+      title_of_paper           VARCHAR(500) NOT NULL,
+      authors                  JSONB NOT NULL DEFAULT '[]',
+      signatory_full_name      VARCHAR(255) NOT NULL,
+      signatory_signature_url  TEXT DEFAULT '',
+      signatory_date           DATE NOT NULL,
+      ack_ethical              BOOLEAN NOT NULL,
+      ack_original             BOOLEAN NOT NULL,
+      ack_edited               BOOLEAN NOT NULL,
+      ack_ai_disclosure        BOOLEAN NOT NULL,
+      ack_may_reject           BOOLEAN NOT NULL,
+      ack_no_liability         BOOLEAN NOT NULL,
+      agree_on_behalf          BOOLEAN NOT NULL,
+      created_at               TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE articles ADD COLUMN IF NOT EXISTS consent_id INTEGER;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+
   // Add linkedin_url to team_members if missing
   await sql`
     DO $$ BEGIN

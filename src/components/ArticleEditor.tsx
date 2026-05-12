@@ -8,6 +8,8 @@ import AuthorshipAck from "@/components/AuthorshipAck";
 import AiDisclosureField from "@/components/AiDisclosureField";
 import WordCounter from "@/components/WordCounter";
 import CommentThread from "@/components/CommentThread";
+import ApproveButton from "@/components/ApproveButton";
+import PublishButton from "@/components/PublishButton";
 import { POLICY_PRODUCTS, type PolicyProductType } from "@/data/policy-products";
 import { buildScaffoldHTML, isUntouchedScaffold } from "@/lib/template-scaffold";
 
@@ -482,15 +484,33 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                             letterSpacing: "0.04em",
                             background:
                                 articleStatus === "published" ? "rgba(40,140,80,0.12)" :
-                                    articleStatus === "in_review" ? "rgba(220,150,40,0.15)" :
-                                        "rgba(150,150,150,0.15)",
+                                    articleStatus === "consent_received" ? "rgba(30,90,170,0.12)" :
+                                        articleStatus === "approved" ? "rgba(140,90,200,0.15)" :
+                                            articleStatus === "in_review" ? "rgba(220,150,40,0.15)" :
+                                                "rgba(150,150,150,0.15)",
                             color:
                                 articleStatus === "published" ? "#1a7a3e" :
-                                    articleStatus === "in_review" ? "#9a6a10" :
-                                        "#666",
+                                    articleStatus === "consent_received" ? "#1d4a8a" :
+                                        articleStatus === "approved" ? "#6a3a9a" :
+                                            articleStatus === "in_review" ? "#9a6a10" :
+                                                "#666",
                         }}>
-                            {articleStatus.replace("_", " ")}
+                            {articleStatus.replace(/_/g, " ")}
                         </span>
+                    </div>
+                )}
+                {isEdit && slug && canPublish && (articleStatus === "in_review" || articleStatus === "consent_received") && (
+                    <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", marginBottom: "1rem" }}>
+                        <ApproveButton
+                            slug={slug}
+                            currentStatus={articleStatus}
+                            onApproved={() => setArticleStatus("approved")}
+                        />
+                        <PublishButton
+                            slug={slug}
+                            currentStatus={articleStatus}
+                            onPublished={() => setArticleStatus("published")}
+                        />
                     </div>
                 )}
                 <div className="editor-save">

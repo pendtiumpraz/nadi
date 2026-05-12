@@ -57,6 +57,11 @@ export async function setFeedbackPending(slug: string): Promise<void> {
     await sql`UPDATE articles SET feedback_pending = true WHERE slug = ${slug}`;
 }
 
+export async function setConsentReceived(slug: string, consentId: number): Promise<void> {
+    const sql = getDB();
+    await sql`UPDATE articles SET consent_id = ${consentId}, status = 'consent_received', updated_at = NOW() WHERE slug = ${slug}`;
+}
+
 export async function getArticlesByAuthor(authorId: string): Promise<Article[]> {
     const sql = getDB();
     const rows = await sql`SELECT * FROM articles WHERE author_id = ${Number(authorId)} ORDER BY date DESC`;

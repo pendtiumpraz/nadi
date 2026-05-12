@@ -93,65 +93,63 @@ Mirror of `PLAN.md`. Tick boxes as items land. Phases map 1:1 to PLAN §10.
 ## Phase C — State machine extension (Approve / Publish split)
 
 ### Schema
-- [ ] Allow `articles.status` values: `draft | in_review | approved | consent_received | published` (just app-level check; column stays VARCHAR)
-- [ ] Backfill: existing `in_review` and `published` rows stay; nothing else to migrate
+- [x] `articles.status` widened in app: `draft | in_review | approved | consent_received | published` (column stays VARCHAR; permitted values enforced in TS types + transition route)
+- [x] Backfill not needed — DEFAULT 'published' on legacy rows still works
 
 ### API
-- [ ] Extend `POST /api/articles/[slug]/transition`:
-  - new action `approve` → `in_review → approved` (admin/reviewer only); sends `article_approved` email w/ consent link
-  - new action `publish` → `consent_received → published` (admin only)
-  - existing `submit` / `request_changes` keep their semantics
-- [ ] Public APIs unchanged — still filter `status='published'`
+- [x] `POST /api/articles/[slug]/transition` now handles: `submit`, `request_changes`, `approve` (→ approved + consent email), `publish` (→ published, requires `consent_received`)
+- [x] State gates: approve only valid from `in_review`; publish only valid from `consent_received`
+- [x] Public APIs unchanged — still filter `status='published'`
 
 ### UI
-- [ ] `<ApproveButton>` on `/admin/articles/[slug]` — only visible to admin/reviewer, only when `status='in_review'`
-- [ ] `<PublishButton>` — only visible to admin, only when `status='consent_received'`
-- [ ] Status badge expanded to show all 5 states (different colours)
-- [ ] `/admin/review` lists `in_review` AND `consent_received` (with section headers)
+- [x] `<ApproveButton>` (green) mounted on `/admin/articles/[slug]` — enabled only when `status='in_review'`, admin/reviewer only
+- [x] `<PublishButton>` (crimson) — enabled only when `status='consent_received'`
+- [x] Status badge handles all 5 states with distinct colours (amber/purple/blue/green for in_review/approved/consent_received/published)
+- [x] `/admin/review` splits into 3 buckets: "Pending QC / Review", "Awaiting Consent Form", "Ready to Publish" — each with appropriate action buttons
 
 ### Email
-- [ ] `article_approved`: to partner + standing CC. Subject "Your work has been approved". Body must include `/consent/[slug]?token=…` link
-- [ ] `article_published`: to partner + standing CC after admin clicks Publish
+- [x] `article_approved`: subject "Your work has been approved", body verbatim PDF copy, CTA links to `/consent/[slug]?token=`
+- [x] `article_published`: subject "Your article is now live", CTA links to `/publications/[slug]`
 
 ### Verify
-- [ ] After approve: partner gets email with link; article is invisible to public
-- [ ] Article moves to public only after admin clicks Publish
+- [ ] Manual smoke: full Approve → email arrives → click link → consent form → publish → article live
 
 ---
 
 ## Phase D — Consent-to-publish form
 
 ### Schema
-- [ ] Migration: create `article_consents` table (PLAN §3.2)
-- [ ] Migration: add `articles.consent_id INTEGER REFERENCES article_consents(id)`
+- [x] `article_consents` table created (PLAN §3.2 shape — 6 ack booleans + effect clause + title + authors JSONB + signatory name + signature URL + date)
+- [x] `articles.consent_id` column added
 
 ### Pages
-- [ ] `/consent/[slug]` — public route, token-gated (HMAC signed URL from email)
-- [ ] `/consent/[slug]/done` — thank-you page
-- [ ] `/admin/consents` — list of submitted consents (admin/reviewer)
-- [ ] `/admin/consents/[id]` — single consent detail view
+- [x] `/consent/[slug]` — public, token-gated; fetches prefill from API; submits to API; redirects to `/done` on success
+- [x] `/consent/[slug]/done` — thank-you page, no nav chrome
+- [x] `/admin/consents` — list of submitted consents (admin/reviewer)
+- [x] `/admin/consents/[id]` — printable-style detail view with all 7 acks rendered + signature image
 
 ### Components
-- [ ] `<ConsentForm>` (PLAN §9): 6 declaration checkboxes + effect-clause checkbox + title + dynamic authors table + signature upload + full name + date
-- [ ] Sig upload: drag/drop image OR (deferred to v2) canvas draw
+- [x] `<ConsentForm>` — 6 numbered declaration checkboxes (verbatim docx copy) + effect-clause checkbox + title + dynamic authors table + signature image upload (max 2MB, jpg/png/webp) + full name + date
+- [ ] Sig upload: image upload only (canvas-draw deferred to v2)
 
 ### API
-- [ ] `GET /api/consent/[slug]?token=` — verifies token, returns prefill data
-- [ ] `POST /api/consent/[slug]?token=` — verifies token, validates required fields, saves consent, sets `articles.status='consent_received'` and `articles.consent_id`
-- [ ] `POST /api/upload/signature` — multipart, image only, max 2MB
-- [ ] `GET /api/admin/consents` — list for admin dashboard
+- [x] `GET /api/consent/[slug]?token=` — verifies token, returns prefill `{ titleOfPaper, authors }` and `alreadySubmitted` flag
+- [x] `POST /api/consent/[slug]?token=` — verifies token + status='approved', validates 7 acks + ≥1 author + signature + name + date, INSERTs row, sets article status to `consent_received` via `setConsentReceived(slug, id)`, fires consent_received notification
+- [x] `POST /api/upload/signature` — multipart, image/* only, 2MB cap; Vercel Blob on prod, public/uploads/signatures locally
+- [x] `GET /api/admin/consents` — list endpoint
+- [x] `GET /api/admin/consents/[id]` — single detail endpoint
 
 ### Token
-- [ ] `src/lib/consent-token.ts` — `sign(slug, expiresAt)` + `verify(token, slug)`; HMAC over `AUTH_SECRET`; default TTL 30 days
+- [x] `src/lib/consent-token.ts` — HMAC SHA-256 over `slug:expiresMs` using `AUTH_SECRET`, base64url-encoded; 30-day default TTL; `verifyConsentToken` returns typed reason on failure (malformed / bad_signature / expired / slug_mismatch)
 
 ### Email
-- [ ] `consent_received` notification — to standing CC list on submit, subject "Consent received: {title}"
+- [x] `consent_received` notification — to admins + reviewers + standing CC list; subject "Consent received: {title}"
 
 ### Verify
-- [ ] Email link opens `/consent/[slug]?token=` and prefills title + author 1 from session
-- [ ] All 7 checkboxes + ≥1 author + signature + full name + date required
-- [ ] After submit, article moves to `consent_received` and is listed in `/admin/consents`
-- [ ] Token expires after 30 days → "Link expired. Contact admin." (admin can resend from `/admin/articles/[slug]`)
+- [ ] Manual smoke: email link opens form, prefills title + author 1
+- [ ] Manual smoke: form requires 7 acks + ≥1 author + signature image + name + date
+- [ ] Manual smoke: after submit, article appears in /admin/consents and Publish button enabled on /admin/articles/[slug]
+- [ ] Manual smoke: expired token shows friendly error
 
 ---
 

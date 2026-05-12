@@ -13,7 +13,9 @@ export type NotifyEvent =
     | "article_approved"
     | "article_changes_requested"
     | "feedback_received"
-    | "submission_received";
+    | "submission_received"
+    | "consent_received"
+    | "article_published";
 
 interface NotifyPayload {
     actorName?: string;       // who triggered the event
@@ -129,13 +131,35 @@ function render(event: NotifyEvent, p: NotifyPayload): RenderedEmail {
             };
         case "article_approved":
             return {
-                subject: `Approved & published: ${p.title}`,
+                subject: `Your work has been approved: ${p.title}`,
                 html: wrap(
-                    "Article Approved",
-                    `<p>Your article <strong>${p.title}</strong> has been approved and is now live on the site.</p>`,
+                    "Approved — Consent Required",
+                    `<p>Your work <strong>${p.title}</strong> has been approved. Please kindly complete and submit the consent form for publication.</p>`,
+                    p.url ? { label: "Open Consent Form", href: p.url } : undefined
+                ),
+                text: `Your work "${p.title}" has been approved. Please kindly complete and submit the consent form for publication. ${p.url || ""}`,
+            };
+        case "consent_received":
+            return {
+                subject: `Consent received: ${p.title}`,
+                html: wrap(
+                    "Consent Form Submitted",
+                    `<p>The consent-to-publish form has been submitted for <strong>${p.title}</strong>.</p>
+                     <p>Signed by: <strong>${p.actorName || "—"}</strong></p>
+                     <p>The article is now ready to publish — open the admin article page and click <em>Publish</em>.</p>`,
+                    p.url ? { label: "Open Article", href: p.url } : undefined
+                ),
+                text: `Consent received for "${p.title}" signed by ${p.actorName || "—"}. Ready to publish. ${p.url || ""}`,
+            };
+        case "article_published":
+            return {
+                subject: `Your article is now live: ${p.title}`,
+                html: wrap(
+                    "Article Published",
+                    `<p>Your article <strong>${p.title}</strong> is now live on the NADI publications page.</p>`,
                     p.url ? { label: "View Article", href: p.url } : undefined
                 ),
-                text: `Your article "${p.title}" has been approved and published. ${p.url || ""}`,
+                text: `Your article "${p.title}" is now live. ${p.url || ""}`,
             };
         case "article_changes_requested":
             return {
@@ -280,10 +304,42 @@ export async function getReviewEtaDays(): Promise<number> {
     }
 }
 
-export async function notifyArticleApproved(payload: { title: string; slug: string; authorEmail: string; baseUrl?: string }): Promise<void> {
+export async function notifyArticleApproved(payload: { title: string; slug: string; authorEmail: string; consentUrl: string; baseUrl?: string }): Promise<void> {
     const cc = await getNotificationCC();
     await send({
         event: "article_approved",
+        to: payload.authorEmail,
+        cc,
+        payload: {
+            title: payload.title,
+            slug: payload.slug,
+            // The CTA in the approval email MUST link to the consent form, not the article.
+            url: payload.consentUrl,
+        },
+    });
+}
+
+export async function notifyConsentReceived(payload: { title: string; slug: string; signatoryName: string; baseUrl?: string }): Promise<void> {
+    const admins = await getEmailsByRole("admin");
+    const reviewers = await getEmailsByRole("reviewer");
+    const cc = await getNotificationCC();
+    await send({
+        event: "consent_received",
+        to: [...new Set([...admins, ...reviewers])],
+        cc,
+        payload: {
+            title: payload.title,
+            slug: payload.slug,
+            actorName: payload.signatoryName,
+            url: payload.baseUrl ? `${payload.baseUrl}/admin/articles/${payload.slug}` : undefined,
+        },
+    });
+}
+
+export async function notifyArticlePublished(payload: { title: string; slug: string; authorEmail: string; baseUrl?: string }): Promise<void> {
+    const cc = await getNotificationCC();
+    await send({
+        event: "article_published",
         to: payload.authorEmail,
         cc,
         payload: {
