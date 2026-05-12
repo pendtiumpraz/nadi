@@ -2,52 +2,74 @@
 
 import { useState, useEffect } from "react";
 import V2PageLayout from "@/components/V2PageLayout";
+import { POLICY_PRODUCT_LIST, getProduct, type PolicyProductType } from "@/data/policy-products";
 import "@/app/landing-v2.css";
 
 interface ArticleItem {
     slug: string; title: string; subtitle: string; category: string;
     date: string; readTime: string; author: string; coverImage?: string;
     pdfUrl?: string;
+    policyProductType?: PolicyProductType | null;
 }
 
 interface Pagination { page: number; totalPages: number; total: number; }
 
-const CATEGORIES = ["ALL", "POLICY BRIEF", "RESEARCH PAPER", "POLICY ANALYSIS", "OPINION", "RESEARCH NOTE"];
+// Filter chips: "All" + the 3 canonical policy product types from the guideline.
+// Legacy `category` strings remain in the data for backwards compat but the
+// filter UX surfaces only product types per the NADI guideline doc.
+const FILTERS: { key: "ALL" | PolicyProductType; label: string }[] = [
+    { key: "ALL", label: "All" },
+    ...POLICY_PRODUCT_LIST.map((p) => ({ key: p.key, label: p.label })),
+];
 
 export default function PublicationsPage() {
     const [articles, setArticles] = useState<ArticleItem[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [page, setPage] = useState(1);
-    const [category, setCategory] = useState("ALL");
+    const [filter, setFilter] = useState<"ALL" | PolicyProductType>("ALL");
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         setLoading(true);
+        setError(false);
         const params = new URLSearchParams({ page: String(page), limit: "9" });
-        if (category !== "ALL") params.set("category", category);
+        // Filter by policy_product_type via the API. Falls back to legacy
+        // `category` query if the type isn't matched (back-compat for old rows).
+        if (filter !== "ALL") {
+            params.set("policy_product_type", filter);
+            // Also set legacy category so older articles still appear in the bucket
+            const product = POLICY_PRODUCT_LIST.find((p) => p.key === filter);
+            if (product) params.set("category", product.legacyCategory);
+        }
         fetch(`/api/public/articles?${params}`)
-            .then((r) => r.json())
+            .then((r) => {
+                if (!r.ok) throw new Error("fetch failed");
+                return r.json();
+            })
             .then((data) => { setArticles(data.articles || []); setPagination(data.pagination || null); })
-            .catch(() => setArticles([]))
+            .catch(() => { setArticles([]); setError(true); })
             .finally(() => setLoading(false));
-    }, [page, category]);
+    }, [page, filter]);
 
     return (
         <V2PageLayout title="Publications & <em>Insights</em>" eyebrow="Research & Analysis">
-            {/* Category Filter */}
+            {/* Policy Product Type Filter */}
             <div className="v2-filters">
-                {CATEGORIES.map((cat) => (
-                    <button key={cat} className={`v2-filter-btn${category === cat ? " active" : ""}`}
-                        onClick={() => { setCategory(cat); setPage(1); }}>
-                        {cat === "ALL" ? "All" : cat.split(" ").map(w => w[0] + w.slice(1).toLowerCase()).join(" ")}
+                {FILTERS.map((f) => (
+                    <button key={f.key} className={`v2-filter-btn${filter === f.key ? " active" : ""}`}
+                        onClick={() => { setFilter(f.key); setPage(1); }}>
+                        {f.label}
                     </button>
                 ))}
             </div>
 
             {loading ? (
                 <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>Loading publications...</p>
+            ) : error ? (
+                <p style={{ textAlign: "center", padding: "3rem 0", color: "#c44" }}>Couldn&apos;t load publications. Please refresh or try again later.</p>
             ) : articles.length === 0 ? (
-                <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>No publications found{category !== "ALL" ? ` in this category` : ""}.</p>
+                <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>No publications found{filter !== "ALL" ? ` in this category` : ""}.</p>
             ) : (
                 <>
                     <div className="v2-pub-list">
@@ -59,7 +81,7 @@ export default function PublicationsPage() {
                                             <img src={a.coverImage} alt={a.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                                         </div>
                                     )}
-                                    <span className="v2-pub-type">{a.category}</span>
+                                    <span className="v2-pub-type">{getProduct(a.policyProductType)?.label || a.category}</span>
                                     {a.pdfUrl && (
                                         <span style={{
                                             display: "inline-flex",

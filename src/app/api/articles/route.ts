@@ -200,6 +200,16 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Non-publishers can ONLY delete their own DRAFTS. Anything in review,
+    // approved, consent_received, or published is locked — only an admin
+    // or reviewer can delete those (e.g. takedown of published content).
+    if (!canPublish(session.user) && existing.status && existing.status !== "draft") {
+        return NextResponse.json(
+            { error: "Cannot delete an article once submitted. Contact an admin to take it down." },
+            { status: 403 }
+        );
+    }
+
     await deleteArticle(slug);
     return NextResponse.json({ success: true });
 }

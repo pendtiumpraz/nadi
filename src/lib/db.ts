@@ -321,6 +321,36 @@ export async function migrate() {
     END $$
   `;
 
+  // ── Security: login attempt log + throttle settings ────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      id            SERIAL PRIMARY KEY,
+      email         VARCHAR(255) NOT NULL,
+      ip_address    VARCHAR(100) DEFAULT '',
+      success       BOOLEAN NOT NULL,
+      attempted_at  TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS login_attempts_email_idx ON login_attempts (email, attempted_at DESC)`;
+  // Default escalating lockout (configurable in /admin/settings).
+  // After N failures within windowSeconds, the next sign-in attempt is blocked
+  // for lockoutSeconds. The highest-N threshold matched wins.
+  await sql`
+    INSERT INTO site_settings (key, value)
+    VALUES (
+      'security_throttle',
+      ${JSON.stringify({
+          windowSeconds: 3600,
+          thresholds: [
+              { after: 3, lockoutSeconds: 30 },
+              { after: 5, lockoutSeconds: 300 },
+              { after: 10, lockoutSeconds: 3600 },
+          ],
+      })}
+    )
+    ON CONFLICT (key) DO NOTHING
+  `;
+
   // ── Phase D: consent-to-publish form ───────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS article_consents (

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { put } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
+import { validateUpload, PRESET_IMAGE_5MB, PRESET_PDF_20MB } from "@/lib/upload-security";
 
 // POST — upload article cover image or PDF
 export async function POST(req: NextRequest) {
@@ -12,28 +13,20 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const file = (formData.get("image") || formData.get("pdf")) as File | null;
-        const slug = formData.get("slug") as string;
+        const slug = (formData.get("slug") as string) || "file";
         const fileType = formData.get("fileType") as string | null; // "pdf" or "image"
 
-        if (!file || file.size === 0) {
-            return NextResponse.json({ error: "No file provided" }, { status: 400 });
+        const isPdf = fileType === "pdf" || file?.type === "application/pdf";
+        const validation = validateUpload(file, isPdf ? PRESET_PDF_20MB : PRESET_IMAGE_5MB);
+        if (!validation.ok) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
 
-        // Validate file type
-        const isPdf = fileType === "pdf" || file.type === "application/pdf";
-        if (isPdf && file.type !== "application/pdf") {
-            return NextResponse.json({ error: "File must be a PDF" }, { status: 400 });
-        }
-
-        // 20MB limit for PDFs, 5MB for images
-        const maxSize = isPdf ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
-        if (file.size > maxSize) {
-            return NextResponse.json({ error: `File too large (max ${isPdf ? "20" : "5"}MB)` }, { status: 400 });
-        }
-
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const ext = file.name.split(".").pop() || (isPdf ? "pdf" : "jpg");
-        const filename = `${slug || "file"}-${Date.now()}.${ext}`;
+        const buffer = Buffer.from(await file!.arrayBuffer());
+        // Use slug-based prefix for human-friendliness; the helper already
+        // generated `<sanitised>-<ts>.<ext>` but we replace its base with the slug.
+        const safeSlug = slug.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80) || "file";
+        const filename = `${safeSlug}-${Date.now()}.${validation.extension}`;
         const folder = isPdf ? "pdfs" : "covers";
 
         let url: string;

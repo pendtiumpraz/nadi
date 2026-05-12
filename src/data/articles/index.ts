@@ -1,4 +1,4 @@
-import { Article } from "./types";
+import type { Article, ArticleStatus, PolicyProductType } from "./types";
 import { getDB } from "@/lib/db";
 
 // Static articles (fallback)
@@ -34,6 +34,13 @@ export async function getAllArticlesAsync(): Promise<Article[]> {
                     keywords: (row.seo_keywords as string[]) || [],
                 },
                 blocks: (row.blocks as Article["blocks"]) || [],
+                status: (row.status as ArticleStatus) || "published",
+                authorId: row.author_id != null ? String(row.author_id) : undefined,
+                policyProductType: (row.policy_product_type as PolicyProductType) || undefined,
+                aiDisclosure: (row.ai_disclosure as string) || "",
+                containsPrimaryResearch: !!row.contains_primary_research,
+                feedbackPending: !!row.feedback_pending,
+                summarySocial: (row.summary_social as string) || "",
             }));
         }
     } catch { /* fallback to static */ }

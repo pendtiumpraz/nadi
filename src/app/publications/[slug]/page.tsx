@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleRenderer from "@/components/ArticleRenderer";
 import { getAllArticlesAsync } from "@/data/articles";
+import { getProduct } from "@/data/policy-products";
 
 // Dynamic — articles can come from blob storage
 export const dynamic = "force-dynamic";
@@ -17,21 +18,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const articles = await getAllArticlesAsync();
     const article = articles.find((a) => a.slug === slug);
     if (!article) return { title: "Article Not Found" };
+    // Prefer summarySocial for social previews — falls back to seo.description
+    // (which is itself often AI-generated from the body).
+    const socialDescription = article.summarySocial?.trim() || article.seo.description;
+    const ogImages = article.coverImage
+        ? [{ url: article.coverImage, width: 1200, height: 630, alt: article.title }]
+        : undefined;
     return {
         title: `${article.title} — NADI`,
         description: article.seo.description,
         keywords: article.seo.keywords,
         openGraph: {
             title: article.title,
-            description: article.seo.description,
+            description: socialDescription,
             type: "article",
             publishedTime: article.date,
             authors: [article.author],
+            images: ogImages,
         },
         twitter: {
             card: "summary_large_image",
             title: article.title,
-            description: article.seo.description,
+            description: socialDescription,
+            images: ogImages,
         },
     };
 }
@@ -67,7 +76,9 @@ export default async function ArticlePage({ params }: Props) {
                     >
                         <div className="article-header-inner">
                             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                                <span className="article-category">{article.category}</span>
+                                <span className="article-category">
+                                    {getProduct(article.policyProductType)?.label || article.category}
+                                </span>
                                 {article.pdfUrl && (
                                     <span style={{
                                         display: "inline-flex",

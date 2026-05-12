@@ -15,13 +15,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${SITE_URL}/publications`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
         { url: `${SITE_URL}/events`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
         { url: `${SITE_URL}/media`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
+        { url: `${SITE_URL}/team`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
+        { url: `${SITE_URL}/policy-guideline`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
         { url: `${SITE_URL}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     ];
 
-    // Dynamic: articles
+    // Dynamic: articles — only published rows are crawlable
     let articlePages: MetadataRoute.Sitemap = [];
     try {
-        const articles = await sql`SELECT slug, updated_at, created_at FROM articles ORDER BY date DESC`;
+        const articles = await sql`SELECT slug, updated_at, created_at FROM articles WHERE status = 'published' ORDER BY date DESC`;
         articlePages = articles.map((a) => ({
             url: `${SITE_URL}/publications/${a.slug}`,
             lastModified: new Date((a.updated_at || a.created_at) as string),

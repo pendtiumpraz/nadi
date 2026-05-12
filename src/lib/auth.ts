@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { getUserByEmail, verifyPassword } from "@/lib/users";
+import { checkLoginThrottle, recordLoginAttempt } from "@/lib/login-throttle";
 import authConfig from "@/lib/auth.config";
 
 declare module "next-auth" {
@@ -40,11 +41,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const password = credentials?.password as string | undefined;
                 if (!email || !password) return null;
 
+                // ── Throttle check (escalating lockout per failed attempts) ──
+                // Configurable in /admin/settings → site_settings.security_throttle.
+                // Defaults: 3 failures → 30s, 5 → 5min, 10 → 1hr.
+                const throttle = await checkLoginThrottle(email);
+                if (throttle.blocked) {
+                    throw new Error(`THROTTLED:${throttle.retryAfterSeconds}`);
+                }
+
                 const user = await getUserByEmail(email);
-                if (!user) return null;
+                if (!user) {
+                    await recordLoginAttempt(email, false);
+                    return null;
+                }
 
                 const valid = await verifyPassword(password, user.password);
-                if (!valid) return null;
+                if (!valid) {
+                    await recordLoginAttempt(email, false);
+                    return null;
+                }
 
                 // Allowlist: only an explicit "active" status passes the gate.
                 // Legacy rows with a missing/empty status are normalized to "active"
@@ -59,6 +74,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     // Defensive: an unknown future status (e.g. "archived") blocks too.
                     throw new Error("ACCOUNT_SUSPENDED");
                 }
+
+                // Successful sign-in — clears the failure chain in the throttle check.
+                await recordLoginAttempt(email, true);
 
                 return {
                     id: user.id,

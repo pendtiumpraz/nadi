@@ -4,6 +4,9 @@ import PrivacyPopupGate from "@/components/PrivacyPopupGate";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // metadataBase resolves relative URLs in OG/Twitter image tags. Without it,
+  // social previews of articles whose coverImage is a relative path fail.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://nadi-health.id"),
   title: "NADI — Network for Advancing Development & Innovation in Health",
   description:
     "A Research & Policy Institute dedicated to advancing systemic, evidence-informed solutions to complex healthcare challenges. NADI works at the intersection of policy, financing, governance, and implementation.",

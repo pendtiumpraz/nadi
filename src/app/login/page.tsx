@@ -31,6 +31,11 @@ export default function LoginPage() {
                 setError("Account is pending admin approval. You'll receive an email once activated.");
             } else if (code?.includes("ACCOUNT_SUSPENDED")) {
                 setError("Account is suspended. Contact an administrator.");
+            } else if (code?.includes("THROTTLED")) {
+                const seconds = Number(code.split(":")[1]) || 0;
+                const mins = Math.ceil(seconds / 60);
+                const wait = seconds < 60 ? `${seconds} seconds` : mins === 1 ? "about a minute" : `${mins} minutes`;
+                setError(`Too many failed attempts. Please wait ${wait} before trying again.`);
             } else {
                 setError("Invalid email or password.");
             }

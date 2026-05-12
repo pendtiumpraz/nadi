@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/db";
 
-// Public endpoint — no auth needed, reads all published articles
+// Public endpoint — no auth needed, reads all published articles.
+// Filters supported (query params):
+//   - category: legacy category string (e.g. "POLICY BRIEF")
+//   - policy_product_type: canonical type ("opinion_piece" | "policy_brief" | "policy_paper")
+// Both are OR'd together so legacy rows that have a `category` but no
+// `policy_product_type` still appear in the right product bucket.
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") || 9)));
     const offset = (page - 1) * limit;
     const category = searchParams.get("category") || "";
+    const productType = searchParams.get("policy_product_type") || "";
 
     try {
         const sql = getDB();
@@ -15,14 +21,22 @@ export async function GET(req: NextRequest) {
         let total: number;
         let rows;
 
-        if (category) {
-            const countResult = await sql`SELECT COUNT(*) as total FROM articles WHERE category = ${category} AND status = 'published'`;
+        if (category && productType) {
+            const countResult = await sql`SELECT COUNT(*) as total FROM articles WHERE status = 'published' AND (category = ${category} OR policy_product_type = ${productType})`;
             total = Number(countResult[0].total);
-            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords FROM articles WHERE category = ${category} AND status = 'published' ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords, summary_social, policy_product_type FROM articles WHERE status = 'published' AND (category = ${category} OR policy_product_type = ${productType}) ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+        } else if (productType) {
+            const countResult = await sql`SELECT COUNT(*) as total FROM articles WHERE status = 'published' AND policy_product_type = ${productType}`;
+            total = Number(countResult[0].total);
+            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords, summary_social, policy_product_type FROM articles WHERE status = 'published' AND policy_product_type = ${productType} ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+        } else if (category) {
+            const countResult = await sql`SELECT COUNT(*) as total FROM articles WHERE status = 'published' AND category = ${category}`;
+            total = Number(countResult[0].total);
+            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords, summary_social, policy_product_type FROM articles WHERE status = 'published' AND category = ${category} ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
         } else {
             const countResult = await sql`SELECT COUNT(*) as total FROM articles WHERE status = 'published'`;
             total = Number(countResult[0].total);
-            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords FROM articles WHERE status = 'published' ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
+            rows = await sql`SELECT slug, title, subtitle, category, date, read_time, author, cover_color, cover_image, pdf_url, seo_description, seo_keywords, summary_social, policy_product_type FROM articles WHERE status = 'published' ORDER BY date DESC LIMIT ${limit} OFFSET ${offset}`;
         }
 
         const articles = rows.map((row) => ({
@@ -36,6 +50,8 @@ export async function GET(req: NextRequest) {
             coverColor: row.cover_color || "charcoal",
             coverImage: row.cover_image || "",
             pdfUrl: row.pdf_url || "",
+            summarySocial: row.summary_social || "",
+            policyProductType: row.policy_product_type || null,
             seo: {
                 description: row.seo_description || "",
                 keywords: row.seo_keywords || [],

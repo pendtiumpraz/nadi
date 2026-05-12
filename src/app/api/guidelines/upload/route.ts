@@ -5,9 +5,7 @@ import { getDB } from "@/lib/db";
 import { put } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
-
-const MAX_BYTES = 25 * 1024 * 1024;
-const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+import { validateUpload, PRESET_GUIDELINE_25MB } from "@/lib/upload-security";
 
 // POST — upload policy product guideline (PDF or DOCX). Admin only.
 export async function POST(req: NextRequest) {
@@ -18,31 +16,13 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
-
-        if (!file || file.size === 0) {
-            return NextResponse.json({ error: "No file provided" }, { status: 400 });
-        }
-        if (file.size > MAX_BYTES) {
-            return NextResponse.json({ error: "File too large (max 25 MB)" }, { status: 400 });
+        const validation = validateUpload(file, PRESET_GUIDELINE_25MB);
+        if (!validation.ok) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
 
-        const originalName = file.name || "guideline";
-        const extRaw = originalName.includes(".") ? originalName.split(".").pop()!.toLowerCase() : "";
-        const isPdfByMime = file.type === "application/pdf";
-        const isDocxByMime = file.type === DOCX_MIME;
-        const isPdfByExt = extRaw === "pdf";
-        const isDocxByExt = extRaw === "docx";
-
-        const isPdf = isPdfByMime || isPdfByExt;
-        const isDocx = isDocxByMime || isDocxByExt;
-
-        if (!isPdf && !isDocx) {
-            return NextResponse.json({ error: "File must be a PDF or DOCX" }, { status: 400 });
-        }
-
-        const ext = isPdf ? "pdf" : "docx";
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = `policy-guideline-${Date.now()}.${ext}`;
+        const buffer = Buffer.from(await file!.arrayBuffer());
+        const filename = `policy-guideline-${Date.now()}.${validation.extension}`;
 
         let url: string;
         if (process.env.VERCEL) {
