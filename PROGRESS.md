@@ -1,147 +1,252 @@
-# Implementation Progress
+# Implementation Progress (v2 — strict match to PDF + docx)
 
-Tracker for the work in `PLAN.md`. Tick boxes as items land. Keep ordering aligned with `PLAN.md` §5 (Implementation Order).
+Mirror of `PLAN.md`. Tick boxes as items land. Phases map 1:1 to PLAN §10.
 
 **Status legend** — `[ ]` not started · `[~]` in progress · `[x]` done · `[!]` blocked / needs decision
 
 ---
 
-## Phase 1 — Roles & Approval Foundation
+## Foundation (carry-over from v1 — already shipped)
 
-### 1.1 Database
-
-- [x] Add `status VARCHAR(20) DEFAULT 'pending'` to `users` (values: `pending|active|suspended`)
-- [x] Widen `users.role` allowed values: `admin | reviewer | contributor | partner` (enforced in app via union type)
-- [x] Backfill existing users → `status='active'` and remap `role='user'` → `role='contributor'`
-- [x] Add `status VARCHAR(20) DEFAULT 'published'` to `articles`, `media`, `events` (existing rows backfilled to `published` via DEFAULT)
-- [x] Add nullable `author_id` to articles/media/events for tracking
-- [x] Create `submissions` table (`id, type, ref_slug, author_id, reviewer_id, status, notes, created_at, updated_at`)
-- [x] Create `user_events` audit table (`id, actor_id, target_user_id, action, meta JSONB, created_at`)
-- [x] Wire all of the above into `src/lib/db.ts → migrate()`; idempotent (uses ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS)
-
-### 1.2 Auth & registration
-
-- [x] Reject sign-in if `users.status !== 'active'` in `src/lib/auth.ts` authorize callback (throws PENDING_APPROVAL or ACCOUNT_SUSPENDED)
-- [x] Add public `/register` page (name, email, password — role hard-coded to contributor)
-- [x] `POST /api/register` creates row with `status='pending'` + writes `user_events` audit row
-- [ ] Email notify admins + standing CC list on signup (see Phase 2)
-- [x] `/admin/users` filters pending/active/suspended; shows count per filter; Activate / Suspend / Reactivate buttons
-- [x] Audit log row written on activate / suspend / role change / delete (via `user_events`)
-- [x] Login page surfaces clear error for pending and suspended states; links to `/register`
-- [ ] Sidebar badge: count of `users.status='pending'` (filter chip on /admin/users covers it for now)
-
-### 1.3 Submission workflow
-
-- [x] Permission helper (`src/lib/permissions.ts`) — `canPublish`, `canReview`, `canManageUsers`, `canEditOwnContent`, `canCreateContent`
-- [x] `POST /api/articles/[slug]/transition` — handles submit / approve / request_changes in one endpoint
-- [x] Public endpoints filter to `status='published'` (`/api/public/articles`, `.../media`, `.../events` — events use `publish_status` to avoid colliding with the existing lifecycle column)
-- [x] `getAllArticlesAsync` (server-side data layer) also filters to published
-- [x] Admin "Review queue" at `/admin/review` (gated to reviewer/admin) — lists pending articles with Approve / Request Changes
-- [x] `ArticleEditor` shows current status badge + role-aware buttons (Update & Publish / Submit for Review / Save as Draft)
-- [x] `POST /api/articles` honors role: contributor saves as draft (or in_review if `submit:true`); admin/reviewer can publish directly
-- [x] `PUT /api/articles` enforces `canEditOwnContent` and same status policy
-- [ ] Mirror `transition` endpoint + editor buttons for media (`/api/media/[slug]/transition`) — DEFERRED
-- [ ] Mirror `transition` endpoint + editor buttons for events (`/api/events/[slug]/transition`) — DEFERRED
-
-### 1.4 Role × Menu access matrix (admin only)
-
-- [x] Default matrix in `src/lib/permissions-matrix.ts` (admin: all; reviewer/contributor/partner subsets)
-- [x] Persisted in `site_settings.role_menu_matrix` JSON
-- [x] `/admin/permissions` page (admin-only) — checkbox grid; admin row locked
-- [x] `GET / PUT /api/permissions` — GET open to any logged-in user; PUT admin-only
-- [x] `AdminNav` filters sidebar links by the saved matrix; new keys: review, permissions
+- [x] Roles `admin / reviewer / contributor / partner` + status `pending|active|suspended`
+- [x] Registration approval flow (`/register`, auth gate, `/admin/users` activation)
+- [x] `user_events` audit log
+- [x] Standing CC list seeded (Amira / Widya / Soleh @inkemaris.com)
+- [x] Article state machine `draft → in_review → published`
+- [x] `/admin/review` queue page (article approve / request-changes)
+- [x] Public APIs filter to `status='published'` (+ events use `publish_status`)
+- [x] Role × menu access matrix at `/admin/permissions`
+- [x] `src/lib/notify.ts` + nodemailer + fire-and-forget
+- [x] Test seed accounts for every role
+- [x] Backfill SQL so legacy article/media rows show in public listings
+- [x] coverImage rendered on `/publications` listing + detail hero
 
 ---
 
-## Phase 2 — Notifications
+## Phase A — Comment thread (unblocks the PDF workflow)
 
-- [x] Mailer: nodemailer (already installed). Reads `SMTP_HOST/PORT/USER/PASS/FROM` env. Falls back to console.log when SMTP isn't configured (so dev works).
-- [x] `src/lib/notify.ts` — typed events + helper functions (`notifyUserSignup`, `notifyUserActivated`, `notifyArticleSubmitted`, `notifyArticleApproved`, `notifyArticleChangesRequested`)
-- [x] Inline HTML/text templates per event (small, branded — same NADI dark header as the contact form template)
-- [x] `site_settings.notification_cc` seeded with Amira / Widyaretna / Soleh @inkemaris.com
-- [x] `/admin/settings` UI: CC list editor (add / remove / save)
-- [x] Wired into `/api/register`, `/api/users` PATCH (status=active), and `/api/articles/[slug]/transition`
-- [x] All sends are fire-and-forget (`.catch(() => {})`); failures logged via `console.error` and never block the request
-- [ ] Smoke test on staging once SMTP creds are set
+### Schema
+- [ ] Migration: create `article_comments` table (see PLAN §3.1)
+- [ ] Migration: add `articles.feedback_pending BOOLEAN DEFAULT false`
 
----
+### API
+- [ ] `GET /api/articles/[slug]/comments` — admin/reviewer OR article author only
+- [ ] `POST /api/articles/[slug]/comments` — sets `articles.feedback_pending=true` if commenter is admin/reviewer
+- [ ] When partner edits + saves, set `feedback_pending=false`
 
-## Phase 3 — Copy & Category Renames
+### UI
+- [ ] `<CommentThread>` component — list + new-comment box; shows author role badge + timestamp
+- [ ] Mount on `/admin/articles/[slug]` for both admin/reviewer (write) and partner (write own thread)
+- [ ] On admin's Comment submit → calls existing transition `request_changes` semantics OR a new "post comment" event that doesn't reset status (decision: don't reset; keep `in_review`, just flag `feedback_pending`)
 
-- [x] DB migration: `UPDATE articles SET category='OPINION' WHERE category='WORKING PAPER'`
-- [x] DB migration: `UPDATE articles SET category='POLICY ANALYSIS' WHERE category='STRATEGIC ANALYSIS'`
-- [x] Update editor `<select>` options in `src/components/ArticleEditor.tsx`
-- [x] Update `CATEGORIES` constant in `src/app/publications/page.tsx` and `PublicationsList.tsx`
-- [x] Update any AI prompt that mentions the old names (`src/app/api/ai/*`)
-- [x] Update admin docs page (`src/app/admin/docs/DocsClient.tsx`)
-- [x] Add **Events & Engagements** subtitle on `/events` page
-- [x] Rename `Resources` → `Learning Materials` (label only — slugs stay)
-- [x] Section title → `Media & Learning Materials`
-- [x] Add subtitle below `Media & Learning Materials` (copy in PLAN §2.3)
-- [x] V2PageLayout extended with optional `subtitle` prop + matching CSS class
-- [x] Navbar link kept as short `Media` (full title only on page header)
+### Email
+- [ ] Send `feedback_received` to article author on admin/reviewer comment — body: "Your work has been reviewed. Please kindly proceed with the necessary revisions at your earliest convenience"
+
+### Verify
+- [ ] Partner can see admin comments and reply
+- [ ] Admin gets nothing — only partner is notified (per PDF arrows)
+- [ ] `feedback_pending` resets when partner re-saves
 
 ---
 
-## Phase 4 — Media: TikTok / Instagram / Keywords
+## Phase B — Policy Product Type + template scaffold + submit emails
 
-- [x] Extend `MediaType` union in `src/data/media/types.ts` (add `tiktok`, `instagram`, `reel`)
-- [x] Add `keywords TEXT[]` column to `media` table (migration in `src/lib/db.ts`)
-- [x] Editor: Keywords field (new + edit pages)
-- [x] Editor: TikTok/IG URL normalizer (auto-converts watch URL → embed URL)
-- [x] Public `/media` page renders TikTok/IG embeds with vertical (9:16) modal
-- [x] `/api/public/media` returns `keywords`
-- [ ] Generate thumbnails for TikTok/IG (requires oEmbed API; deferred — fallback gradient placeholder used for now)
+### Schema
+- [ ] Migration: add `articles.policy_product_type VARCHAR(30)`
+- [ ] Migration: add `articles.ai_disclosure TEXT DEFAULT ''`
+- [ ] Migration: add `articles.contains_primary_research BOOLEAN DEFAULT false`
+- [ ] Migration: seed `site_settings.review_eta_days` = `7`
 
----
+### Data
+- [ ] `src/data/policy-products.ts` — single source of truth (PLAN §4)
+- [ ] When `policy_product_type` is chosen and `category` is blank, auto-set `category` (opinion_piece → OPINION, etc.)
 
-## Phase 5 — Opinion Templates (download / upload)
+### UI
+- [ ] `<PolicyProductPicker>` — radio cards w/ short description per type; "📥 Download guideline" link (wires to Phase F)
+- [ ] `<TemplateScaffold>` — pre-fills editor `contentEditable` with section headings + placeholder hints
+- [ ] `<AuthorshipAck>` checkbox group (3 clauses) — mandatory before submit
+- [ ] `<AiDisclosureField>` — "no AI used" toggle + textarea
+- [ ] Word counter under editor showing `current / min–max` per chosen product type (soft warning, no hard block)
+- [ ] Title char counter 0/80 (Kumparan ref)
+- [ ] "Saved as DRAFT" indicator (Kumparan ref)
+- [ ] Move Submit button to top-right of editor side panel (Kumparan ref)
+- [ ] Partner-side `/admin/articles` lists only `WHERE author_id = session.user.id` when role=partner
 
-- [ ] Author Opinion `.docx` template, save to `public/templates/opinion-template.docx`
-- [ ] (Optional) PDF preview at `public/templates/opinion-template-preview.pdf`
-- [ ] Editor button: **Download Opinion Template**
-- [ ] Editor button: **Upload Filled Template**
-- [ ] `POST /api/articles/parse-template` — parse uploaded `.docx` (mammoth) → block array
-- [ ] Pre-populate editor state from parsed blocks
-- [ ] (Future) replicate for Policy Analysis / Research Paper / Policy Brief — defer until Opinion ships
+### Settings
+- [ ] `/admin/settings` — add "Review ETA (days)" number input
+- [ ] Surface that value to partners somewhere (auto email body)
 
----
+### Email
+- [ ] Update `notifyArticleSubmitted`: partner receives "Thank you for submitting your work. We will review your work and get back to you in {REVIEW_ETA_DAYS} days" (verbatim from PDF)
+- [ ] Admin / CC notification on submit — link to `/admin/articles/[slug]`
 
-## Phase 6 — Dashboard Topic Chat
-
-- [ ] DB: `topic_threads`, `topic_messages` tables (migration)
-- [ ] `/admin/topics/[id]` page renders thread + message list
-- [ ] `POST /api/topics/[id]/messages` — auth required
-- [ ] `GET /api/topics/[id]/messages?since=...` — for polling
-- [ ] Markdown rendering with sanitization
-- [ ] @mention parsing → trigger email notify
-- [ ] Poll every 15s on the page (no websockets in v1)
-
----
-
-## Phase 7 — Contributor / Partner Event posting
-
-- [ ] Allow contributor to create event, with the < 7-day fast-path described in PLAN §1.2
-- [ ] Allow partner to create event (always goes through review queue)
-- [ ] Audit log entries on both paths
+### Verify
+- [ ] Partner can pick a product type → editor scaffolds it
+- [ ] Partner sees authorship + AI ack before submit; cannot submit without them
+- [ ] Auto email matches PDF copy verbatim
+- [ ] Admin + standing CC get notified
 
 ---
 
-## Sign-off Checklist (before declaring "done")
+## Phase C — State machine extension (Approve / Publish split)
 
-- [ ] All migrations applied on staging DB; `/api/db/migrate` re-run verified idempotent
-- [ ] Manual QA: sign up → admin activate → contributor submits article → reviewer approves → public sees it; emails received at every step
-- [ ] Manual QA: TikTok + Instagram embeds render on `/media` and on detail pages
-- [ ] Manual QA: Opinion template round-trip (download → fill → upload → publish) produces a valid article
-- [ ] All public APIs verified to return only `status='published'` rows
-- [ ] No regressions on existing newsletter, contact, AI generation flows
-- [ ] CC list is editable from `/admin/settings`, not hardcoded
-- [ ] `PLAN.md` and this `PROGRESS.md` updated with anything that drifted during implementation
+### Schema
+- [ ] Allow `articles.status` values: `draft | in_review | approved | consent_received | published` (just app-level check; column stays VARCHAR)
+- [ ] Backfill: existing `in_review` and `published` rows stay; nothing else to migrate
+
+### API
+- [ ] Extend `POST /api/articles/[slug]/transition`:
+  - new action `approve` → `in_review → approved` (admin/reviewer only); sends `article_approved` email w/ consent link
+  - new action `publish` → `consent_received → published` (admin only)
+  - existing `submit` / `request_changes` keep their semantics
+- [ ] Public APIs unchanged — still filter `status='published'`
+
+### UI
+- [ ] `<ApproveButton>` on `/admin/articles/[slug]` — only visible to admin/reviewer, only when `status='in_review'`
+- [ ] `<PublishButton>` — only visible to admin, only when `status='consent_received'`
+- [ ] Status badge expanded to show all 5 states (different colours)
+- [ ] `/admin/review` lists `in_review` AND `consent_received` (with section headers)
+
+### Email
+- [ ] `article_approved`: to partner + standing CC. Subject "Your work has been approved". Body must include `/consent/[slug]?token=…` link
+- [ ] `article_published`: to partner + standing CC after admin clicks Publish
+
+### Verify
+- [ ] After approve: partner gets email with link; article is invisible to public
+- [ ] Article moves to public only after admin clicks Publish
 
 ---
 
-## Notes / Open Questions
+## Phase D — Consent-to-publish form
 
-_Use this section to log decisions, blockers, and follow-ups as work proceeds._
+### Schema
+- [ ] Migration: create `article_consents` table (PLAN §3.2)
+- [ ] Migration: add `articles.consent_id INTEGER REFERENCES article_consents(id)`
+
+### Pages
+- [ ] `/consent/[slug]` — public route, token-gated (HMAC signed URL from email)
+- [ ] `/consent/[slug]/done` — thank-you page
+- [ ] `/admin/consents` — list of submitted consents (admin/reviewer)
+- [ ] `/admin/consents/[id]` — single consent detail view
+
+### Components
+- [ ] `<ConsentForm>` (PLAN §9): 6 declaration checkboxes + effect-clause checkbox + title + dynamic authors table + signature upload + full name + date
+- [ ] Sig upload: drag/drop image OR (deferred to v2) canvas draw
+
+### API
+- [ ] `GET /api/consent/[slug]?token=` — verifies token, returns prefill data
+- [ ] `POST /api/consent/[slug]?token=` — verifies token, validates required fields, saves consent, sets `articles.status='consent_received'` and `articles.consent_id`
+- [ ] `POST /api/upload/signature` — multipart, image only, max 2MB
+- [ ] `GET /api/admin/consents` — list for admin dashboard
+
+### Token
+- [ ] `src/lib/consent-token.ts` — `sign(slug, expiresAt)` + `verify(token, slug)`; HMAC over `AUTH_SECRET`; default TTL 30 days
+
+### Email
+- [ ] `consent_received` notification — to standing CC list on submit, subject "Consent received: {title}"
+
+### Verify
+- [ ] Email link opens `/consent/[slug]?token=` and prefills title + author 1 from session
+- [ ] All 7 checkboxes + ≥1 author + signature + full name + date required
+- [ ] After submit, article moves to `consent_received` and is listed in `/admin/consents`
+- [ ] Token expires after 30 days → "Link expired. Contact admin." (admin can resend from `/admin/articles/[slug]`)
+
+---
+
+## Phase E — Privacy Policy popup (Kumparan-style)
+
+### Schema
+- [ ] Migration: create `privacy_consents` table (PLAN §3.3)
+- [ ] Migration: seed `site_settings.privacy_terms_md` with placeholder copy (NADI legal will edit)
+
+### UI
+- [ ] `<PrivacyPopup>` — Kumparan-style modal: title, callout banner, scrollable body (markdown), "Nanti Saja" / "Setujui Semua" buttons
+- [ ] Mount in `src/app/layout.tsx`; suppress on `/admin/*`
+- [ ] Shows on first page load (check `localStorage.privacy_ack`); session-suppress on "Nanti Saja"
+- [ ] Mobile: full-width bottom sheet on <600px
+
+### Admin
+- [ ] `/admin/settings` — add markdown editor for "Privacy Policy + Terms of Service" body
+
+### API
+- [ ] `POST /api/privacy-consent` — body `{ token }`; inserts a row with IP
+
+### Verify
+- [ ] Popup appears on first visit, hides after Setujui Semua
+- [ ] Returning visitor (same browser) doesn't see it
+- [ ] Admin can edit body, change reflects after page reload
+
+---
+
+## Phase F — Downloadable Policy Product Guideline
+
+### Pages
+- [ ] `/policy-guideline` — public download page with short blurb + download button
+- [ ] `/admin/guidelines` — upload page (admin only); shows current active version, lets admin upload new one
+
+### Storage
+- [ ] Vercel Blob bucket `guidelines/` (on Vercel); `public/uploads/guidelines/` locally
+- [ ] `site_settings.guideline_url` updated on each upload
+
+### API
+- [ ] `POST /api/guidelines/upload` (admin only) — multipart PDF/DOCX
+- [ ] `GET /api/policy-guideline` — redirects to `site_settings.guideline_url`
+
+### UI
+- [ ] `<PolicyProductPicker>` "📥 Download guideline" link → `/api/policy-guideline`
+- [ ] Optional: also expose `/policy-guideline` link in main nav (Footer "Resources" column)
+
+---
+
+## Phase G — Kumparan-style editor polish
+
+- [ ] Move action buttons (Submit / Save Draft) to a sticky side panel, top-right of `/admin/articles/new`
+- [ ] "Saved as DRAFT" indicator with relative-time "beberapa detik" updating every 30s
+- [ ] Title character counter `0/80`
+- [ ] Description field (separate from subtitle) — 0/200 char counter, used for SEO meta
+- [ ] "Summary Social" field — 0/200 char counter, used for OG description
+- [ ] Channel selector (replaces or alongside our existing Category select) — the user-visible label is "Channel"
+
+---
+
+## Phase H — Final wiring & QA
+
+- [ ] All emails on the workflow send to standing CC list per PDF arrows
+- [ ] Audit: `submission_received`, `feedback_received`, `article_approved`, `consent_received`, `article_published` all fire correctly
+- [ ] `/admin/review` page label updated to "Pending QC / Review"
+- [ ] Smoke test (end-to-end):
+  - [ ] Partner registers → admin activates → partner logs in
+  - [ ] Partner accepts Privacy Popup
+  - [ ] Partner clicks Create Article → picks Opinion Piece → editor scaffolds 5 sections + authorship ack + AI disclosure
+  - [ ] Partner submits → receives auto email "We'll review in 7 days" → admin + CC get notified
+  - [ ] Admin opens `/admin/review` → opens article → posts comment
+  - [ ] Partner gets "Your work has been reviewed" email → opens "Submitted Article" → reads comment → edits → resubmits
+  - [ ] Admin clicks Approve → partner gets email with consent-form link
+  - [ ] Partner clicks link → fills consent form → submits → admin + CC notified
+  - [ ] Admin opens article → clicks Publish → article appears on `/publications`
+  - [ ] All emails arrived; all states transitioned correctly; audit log has rows
+
+---
+
+## Open Questions / Decisions Needed
+
+_Mirror of PLAN §12 — fill in answers as they come from NADI._
+
+- [ ] REVIEW_ETA_DAYS default = ?
+- [ ] Consent token TTL = 30 days OK?
+- [ ] E-signature: image upload only, or also canvas draw?
+- [ ] Privacy Policy + ToS final wording (legal)
+- [ ] Guideline file: PDF only or PDF + DOCX template?
+- [ ] Email FROM address + SPF/DKIM check
+- [ ] Resend-consent-link button on admin side?
+- [ ] Should partners be allowed to delete own drafts?
+- [ ] Consent-step inactivity policy?
+- [ ] Multiple-submission cap per partner?
+
+---
+
+## Notes / Log
+
+_Use this section to log decisions and surprises as work proceeds._
 
 - (none yet)
