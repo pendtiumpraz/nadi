@@ -44,7 +44,11 @@ export async function getAllUsers(): Promise<PublicUser[]> {
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
     const sql = getDB();
-    const rows = await sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`;
+    // Email is case-insensitive in spec (RFC) and the DB column has no
+    // case-folding collation — lowercase both sides so "Reviewer@..." matches
+    // a seeded "reviewer@..." row.
+    const normalized = email.trim().toLowerCase();
+    const rows = await sql`SELECT * FROM users WHERE LOWER(email) = ${normalized} LIMIT 1`;
     if (rows.length === 0) return undefined;
     return rowToUser(rows[0]);
 }
