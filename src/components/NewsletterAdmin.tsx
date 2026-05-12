@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Pagination from "@/components/Pagination";
 
 interface Subscriber {
     id: number;
@@ -8,6 +9,8 @@ interface Subscriber {
     isActive: boolean;
     subscribedAt: string;
 }
+
+const PER_PAGE = 25;
 
 export default function NewsletterAdmin() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -18,6 +21,11 @@ export default function NewsletterAdmin() {
     const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
     const [total, setTotal] = useState(0);
     const [active, setActive] = useState(0);
+    const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        setPage(1);
+    }, [search, filter]);
 
     const fetchSubscribers = async () => {
         try {
@@ -86,6 +94,8 @@ export default function NewsletterAdmin() {
     };
 
     if (loading) return <p style={{ color: "var(--muted)" }}>Loading subscribers...</p>;
+
+    const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
     return (
         <div>
@@ -167,7 +177,7 @@ export default function NewsletterAdmin() {
                         </tr>
                     </thead>
                     <tbody>
-                        {filtered.map((s) => (
+                        {paginated.map((s) => (
                             <tr key={s.id}>
                                 <td><strong>{s.email}</strong></td>
                                 <td>
@@ -196,6 +206,16 @@ export default function NewsletterAdmin() {
                         ))}
                     </tbody>
                 </table>
+            )}
+
+            {filtered.length > 0 && (
+                <Pagination
+                    page={page}
+                    total={filtered.length}
+                    perPage={PER_PAGE}
+                    onPageChange={setPage}
+                    itemLabel="subscribers"
+                />
             )}
 
             <p style={{ marginTop: "1rem", fontSize: "0.8rem", color: "var(--muted)" }}>

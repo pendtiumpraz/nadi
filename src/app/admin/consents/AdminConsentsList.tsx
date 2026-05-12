@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Pagination from "@/components/Pagination";
+
+const PER_PAGE = 20;
 
 interface ConsentRow {
     id: number;
@@ -22,6 +25,7 @@ function formatDate(value: string | null | undefined): string {
 export default function AdminConsentsList() {
     const [consents, setConsents] = useState<ConsentRow[] | null>(null);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
     const [msg, setMsg] = useState("");
 
     const load = useCallback(async () => {
@@ -73,7 +77,7 @@ export default function AdminConsentsList() {
                             </tr>
                         </thead>
                         <tbody>
-                            {(consents || []).map((c) => (
+                            {(consents || []).slice((page - 1) * PER_PAGE, page * PER_PAGE).map((c) => (
                                 <tr key={c.id}>
                                     <td>
                                         <a
@@ -108,6 +112,13 @@ export default function AdminConsentsList() {
                             ))}
                         </tbody>
                     </table>
+                    <Pagination
+                        page={page}
+                        total={consents?.length || 0}
+                        perPage={PER_PAGE}
+                        onPageChange={setPage}
+                        itemLabel="consent forms"
+                    />
                 </section>
             )}
         </div>

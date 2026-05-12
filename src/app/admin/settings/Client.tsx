@@ -34,6 +34,7 @@ export default function AdminSettingsPage() {
     const [topSubmitters, setTopSubmitters] = useState<TopSubmitter[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [status, setStatus] = useState("");
+    const [tab, setTab] = useState<"general" | "notifications" | "security">("general");
 
     useEffect(() => {
         fetch("/api/settings")
@@ -166,14 +167,52 @@ export default function AdminSettingsPage() {
 
     if (!loaded) return <div className="admin-body"><p className="admin-page-desc">Loading settings...</p></div>;
 
+    const TABS: { key: "general" | "notifications" | "security"; label: string }[] = [
+        { key: "general", label: "General" },
+        { key: "notifications", label: "Notifications & Privacy" },
+        { key: "security", label: "Security & Limits" },
+    ];
+
     return (
         <div className="admin-body">
             <h1 className="admin-page-title">Site Settings</h1>
             <p className="admin-page-desc">Configure how the public-facing site and admin panel look.</p>
 
+            {/* Tab bar */}
+            <div style={{
+                display: "flex",
+                gap: "0.25rem",
+                borderBottom: "1px solid var(--line)",
+                marginBottom: "1.5rem",
+                flexWrap: "wrap",
+            }}>
+                {TABS.map((t) => (
+                    <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => setTab(t.key)}
+                        style={{
+                            padding: "0.6rem 1.1rem",
+                            background: "transparent",
+                            border: "none",
+                            borderBottom: tab === t.key ? "2px solid var(--crimson)" : "2px solid transparent",
+                            color: tab === t.key ? "var(--crimson)" : "var(--muted)",
+                            fontWeight: tab === t.key ? 600 : 400,
+                            fontSize: "0.88rem",
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                            marginBottom: -1,
+                        }}
+                    >
+                        {t.label}
+                    </button>
+                ))}
+            </div>
+
             {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
 
-            {/* Landing Page Mode */}
+            {/* Landing Page Mode — General tab */}
+            {tab === "general" && (
             <div className="editor" style={{ marginBottom: "2rem" }}>
                 <div className="editor-section">
                     <div className="editor-section-title">Landing Page Mode</div>
@@ -202,8 +241,10 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+            )}
 
-            {/* Notification CC List */}
+            {/* Notification CC List — Notifications tab */}
+            {tab === "notifications" && (
             <div className="editor" style={{ marginBottom: "2rem" }}>
                 <div className="editor-section">
                     <div className="editor-section-title">Notification CC list</div>
@@ -252,8 +293,10 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+            )}
 
-            {/* Review ETA (days) */}
+            {/* Review ETA (days) — Notifications tab */}
+            {tab === "notifications" && (
             <div className="editor" style={{ marginBottom: "2rem" }}>
                 <div className="editor-section">
                     <div className="editor-section-title">Review ETA (days)</div>
@@ -279,8 +322,10 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+            )}
 
-            {/* Security — login throttle */}
+            {/* Security — login throttle — Security tab */}
+            {tab === "security" && (
             <div className="editor" style={{ marginBottom: "2rem" }}>
                 <div className="editor-section">
                     <div className="editor-section-title">Security — Login Throttle</div>
@@ -360,8 +405,10 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+            )}
 
-            {/* AI Limits — anti-token-burn defense */}
+            {/* AI Limits — Security tab */}
+            {tab === "security" && (
             <div className="editor" style={{ marginBottom: "2rem" }}>
                 <div className="editor-section">
                     <div className="editor-section-title">AI Limits</div>
@@ -416,8 +463,10 @@ export default function AdminSettingsPage() {
                     </p>
                 </div>
             </div>
+            )}
 
-            {/* Submission Limits — anti-spam for partner / contributor submits */}
+            {/* Submission Limits — Security tab */}
+            {tab === "security" && (
             <div className="editor" style={{ marginBottom: "2rem" }}>
                 <div className="editor-section">
                     <div className="editor-section-title">Submission Limits</div>
@@ -472,8 +521,10 @@ export default function AdminSettingsPage() {
                     )}
                 </div>
             </div>
+            )}
 
-            {/* Privacy & Terms body */}
+            {/* Privacy & Terms body — Notifications tab */}
+            {tab === "notifications" && (
             <div className="editor" style={{ marginBottom: "2rem" }}>
                 <div className="editor-section">
                     <div className="editor-section-title">Privacy &amp; Terms body (popup content)</div>
@@ -504,8 +555,10 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+            )}
 
-            {/* Admin Theme */}
+            {/* Admin Theme — General tab */}
+            {tab === "general" && (
             <div className="editor">
                 <div className="editor-section">
                     <div className="editor-section-title">Admin Panel Theme</div>
@@ -534,6 +587,7 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+            )}
         </div>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Pagination from "@/components/Pagination";
 
 // TODO: CSV export — defer. Plan: add an "Export CSV" button that hits
 // /api/admin/audit?format=csv with the current filter range, streams a
@@ -239,30 +240,16 @@ export default function AuditLogViewer() {
                 </tbody>
             </table>
 
-            {total > PAGE_SIZE && (
-                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", justifyContent: "center", marginTop: "1.5rem" }}>
-                    <button
-                        type="button"
-                        className="btn-outline"
-                        style={{ fontSize: "0.8rem", padding: "5px 12px" }}
-                        disabled={page <= 1 || loading}
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    >
-                        ← Prev
-                    </button>
-                    <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
-                        Page {page} of {totalPages}
-                    </span>
-                    <button
-                        type="button"
-                        className="btn-outline"
-                        style={{ fontSize: "0.8rem", padding: "5px 12px" }}
-                        disabled={page >= totalPages || loading}
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    >
-                        Next →
-                    </button>
-                </div>
+            <Pagination
+                page={page}
+                total={total}
+                perPage={PAGE_SIZE}
+                onPageChange={setPage}
+                itemLabel="audit rows"
+            />
+            {/* `loading` indicator just dims this whole table during refetch — the Pagination itself stays interactive. */}
+            {loading && totalPages > 1 && (
+                <p style={{ textAlign: "center", color: "var(--muted)", fontSize: "0.78rem", marginTop: "-1rem" }}>Loading…</p>
             )}
         </div>
     );

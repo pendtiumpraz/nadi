@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
+import Pagination from "@/components/Pagination";
 
 type UserRole = "admin" | "reviewer" | "contributor" | "partner";
 type UserStatus = "pending" | "active" | "suspended";
+
+const PER_PAGE = 20;
 
 interface UserRow {
     id: string;
@@ -28,6 +31,11 @@ export default function UserManagement() {
     const [passwordModal, setPasswordModal] = useState<UserRow | null>(null);
     const [filter, setFilter] = useState<"all" | UserStatus>("all");
     const [msg, setMsg] = useState("");
+    const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        setPage(1);
+    }, [filter]);
 
     const fetchUsers = async () => {
         const res = await fetch("/api/users");
@@ -129,6 +137,7 @@ export default function UserManagement() {
 
     const pendingCount = users.filter((u) => u.status === "pending").length;
     const visibleUsers = filter === "all" ? users : users.filter((u) => u.status === filter);
+    const paginatedUsers = visibleUsers.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
     return (
         <div>
@@ -206,7 +215,7 @@ export default function UserManagement() {
                     </tr>
                 </thead>
                 <tbody>
-                    {visibleUsers.map((user) => (
+                    {paginatedUsers.map((user) => (
                         <tr key={user.id}>
                             <td>{user.name}</td>
                             <td>{user.email}</td>
@@ -297,6 +306,16 @@ export default function UserManagement() {
                     )}
                 </tbody>
             </table>
+
+            {visibleUsers.length > 0 && (
+                <Pagination
+                    page={page}
+                    total={visibleUsers.length}
+                    perPage={PER_PAGE}
+                    onPageChange={setPage}
+                    itemLabel="users"
+                />
+            )}
 
             {passwordModal && (
                 <div

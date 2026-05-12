@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import Pagination from "@/components/Pagination";
+
+const PER_PAGE = 15;
 
 type Status = "draft" | "in_review" | "approved" | "consent_received" | "published";
 
@@ -48,7 +51,11 @@ const FILTERS: { key: "all" | Status; label: string }[] = [
 export default function ArticleList({ initialArticles = [], partnerView = false }: ArticleListProps) {
     const [articles, setArticles] = useState<ArticleSummary[]>(initialArticles);
     const [filter, setFilter] = useState<"all" | Status>("all");
+    const [page, setPage] = useState(1);
     const [msg, setMsg] = useState("");
+
+    // Reset to page 1 whenever the filter changes
+    useEffect(() => { setPage(1); }, [filter]);
 
     const fetchArticles = async () => {
         const res = await fetch("/api/articles");
@@ -77,7 +84,8 @@ export default function ArticleList({ initialArticles = [], partnerView = false 
         return c;
     }, [articles]);
 
-    const visible = filter === "all" ? articles : articles.filter((a) => (a.status || "published") === filter);
+    const filtered = filter === "all" ? articles : articles.filter((a) => (a.status || "published") === filter);
+    const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
     return (
         <div>
@@ -181,6 +189,16 @@ export default function ArticleList({ initialArticles = [], partnerView = false 
                         })}
                     </tbody>
                 </table>
+            )}
+
+            {filtered.length > 0 && (
+                <Pagination
+                    page={page}
+                    total={filtered.length}
+                    perPage={PER_PAGE}
+                    onPageChange={setPage}
+                    itemLabel={partnerView ? "submissions" : "articles"}
+                />
             )}
         </div>
     );
