@@ -8,6 +8,7 @@ export const MENU_ITEMS: { key: string; label: string }[] = [
     { key: "events", label: "Events" },
     { key: "media", label: "Media" },
     { key: "review", label: "Review Queue" },
+    { key: "topics", label: "Topics" },
     { key: "consents", label: "Consents" },
     { key: "team", label: "Team" },
     { key: "newsletter", label: "Newsletter" },
@@ -17,6 +18,7 @@ export const MENU_ITEMS: { key: string; label: string }[] = [
     { key: "settings", label: "Settings" },
     { key: "users", label: "Users" },
     { key: "permissions", label: "Permissions" },
+    { key: "audit", label: "Audit Log" },
 ];
 
 export const ROLES: UserRole[] = ["admin", "reviewer", "contributor", "partner"];
@@ -26,8 +28,8 @@ export type RoleMenuMatrix = Record<UserRole, string[]>;
 // Defaults — admin always sees everything; other roles see a sensible subset.
 export const DEFAULT_MATRIX: RoleMenuMatrix = {
     admin: MENU_ITEMS.map((m) => m.key),
-    reviewer: ["dashboard", "articles", "events", "media", "review", "consents", "docs"],
-    contributor: ["dashboard", "articles", "events", "media", "ai", "docs"],
+    reviewer: ["dashboard", "articles", "events", "media", "review", "topics", "consents", "docs"],
+    contributor: ["dashboard", "articles", "events", "media", "topics", "ai", "docs"],
     partner: ["dashboard", "articles", "events", "docs"],
 };
 

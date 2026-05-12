@@ -12,6 +12,10 @@ export type MediaType =
     | "instagram"
     | "reel";
 
+// Mirrors article workflow but skips the consent step:
+// draft → in_review → published.
+export type MediaStatus = "draft" | "in_review" | "published";
+
 export interface NADIMedia {
     slug: string;
     title: string;
@@ -25,4 +29,7 @@ export interface NADIMedia {
     category: string;       // e.g. "Health Policy", "UHC", etc.
     keywords?: string[];    // SEO/search keywords
     createdAt: string;
+    status?: MediaStatus;
+    authorId?: string;
+    feedbackPending?: boolean;
 }

@@ -17,12 +17,16 @@ export async function GET() {
         FROM articles WHERE status IN ('in_review', 'approved', 'consent_received') ORDER BY updated_at DESC
     `;
     const media = await sql`
-        SELECT slug, title, type, category, author_id, date
-        FROM media WHERE status = 'in_review' ORDER BY date DESC
+        SELECT m.slug, m.title, m.type, m.category, m.author_id, m.date, m.status, u.name AS author_name
+        FROM media m
+        LEFT JOIN users u ON u.id = m.author_id
+        WHERE m.status = 'in_review' ORDER BY m.date DESC
     `;
     const events = await sql`
-        SELECT slug, title, category, date, author_id
-        FROM events WHERE publish_status = 'in_review' ORDER BY date DESC
+        SELECT e.slug, e.title, e.category, e.date, e.author_id, e.publish_status, u.name AS author_name
+        FROM events e
+        LEFT JOIN users u ON u.id = e.author_id
+        WHERE e.publish_status = 'in_review' ORDER BY e.date DESC
     `;
 
     return NextResponse.json({
@@ -40,13 +44,17 @@ export async function GET() {
             title: r.title,
             type: r.type,
             category: r.category,
+            author: (r.author_name as string) || "",
             date: r.date ? new Date(r.date as string).toISOString().split("T")[0] : "",
+            status: r.status,
         })),
         events: events.map((r) => ({
             slug: r.slug,
             title: r.title,
             category: r.category,
+            author: (r.author_name as string) || "",
             date: r.date ? new Date(r.date as string).toISOString().split("T")[0] : "",
+            publishStatus: r.publish_status,
         })),
     });
 }

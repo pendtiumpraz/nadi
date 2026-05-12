@@ -248,6 +248,7 @@ export default function PrivacyPopup() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="nadi-privacy-title"
+                tabIndex={-1}
             >
                 <div className="nadi-privacy-card">
                     <h2 id="nadi-privacy-title" className="nadi-privacy-title">

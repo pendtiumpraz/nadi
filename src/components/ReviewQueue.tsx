@@ -10,6 +10,7 @@ interface ReviewItem {
     date?: string;
     type?: string;
     status?: "in_review" | "approved" | "consent_received";
+    publishStatus?: "draft" | "in_review" | "published";
 }
 
 interface QueueData {
@@ -74,6 +75,64 @@ export default function ReviewQueue() {
                 approve: "✓ Approved. Consent email sent to the author.",
                 request_changes: "✓ Sent back to author",
                 publish: "✓ Published. Article is now live.",
+            }[action];
+            setMsg(successMsg);
+            await load();
+        } catch (err) {
+            setMsg((err as Error).message);
+        }
+        setActingOn(null);
+    };
+
+    const transitionMedia = async (slug: string, action: "approve" | "request_changes") => {
+        let notes = "";
+        if (action === "request_changes") {
+            notes = prompt("What changes are needed? (sent back to author)") || "";
+            if (!notes.trim()) return;
+        } else if (action === "approve") {
+            if (!confirm("Approve and publish this media? It will become visible on the public site.")) return;
+        }
+        setActingOn(slug);
+        try {
+            const res = await fetch(`/api/media/${slug}/transition`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, notes }),
+            });
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.error);
+            const successMsg = {
+                approve: "✓ Approved & published. Media is now live.",
+                request_changes: "✓ Sent back to author",
+            }[action];
+            setMsg(successMsg);
+            await load();
+        } catch (err) {
+            setMsg((err as Error).message);
+        }
+        setActingOn(null);
+    };
+
+    const transitionEvent = async (slug: string, action: "approve" | "request_changes") => {
+        let notes = "";
+        if (action === "request_changes") {
+            notes = prompt("What changes are needed? (sent back to author)") || "";
+            if (!notes.trim()) return;
+        } else if (action === "approve") {
+            if (!confirm("Approve and publish this event? It will become visible on the public site.")) return;
+        }
+        setActingOn(slug);
+        try {
+            const res = await fetch(`/api/events/${slug}/transition`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, notes }),
+            });
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.error);
+            const successMsg = {
+                approve: "✓ Approved & published. Event is now live.",
+                request_changes: "✓ Sent back to author",
             }[action];
             setMsg(successMsg);
             await load();
@@ -198,18 +257,80 @@ export default function ReviewQueue() {
             {data.media.length > 0 && (
                 <section style={{ marginTop: "2rem" }}>
                     <h2 style={{ fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: "0.75rem" }}>
-                        Media ({data.media.length})
+                        Media — Pending QC / Review ({data.media.length})
                     </h2>
-                    <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Media review actions coming soon — manage from Media admin for now.</p>
+                    <table className="admin-table">
+                        <thead><tr><th>Title</th><th>Type</th><th>Author</th><th>Date</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            {data.media.map((m) => (
+                                <tr key={m.slug}>
+                                    <td><a href={`/admin/media/${m.slug}`} style={{ color: "var(--crimson)", textDecoration: "none", fontWeight: 600 }}>{m.title}</a></td>
+                                    <td>{m.type || m.category}</td>
+                                    <td>{m.author || "—"}</td>
+                                    <td>{m.date}</td>
+                                    <td>
+                                        <div className="admin-actions">
+                                            <button
+                                                className="admin-btn"
+                                                style={{ background: "#1a7a3e", color: "#fff" }}
+                                                disabled={actingOn === m.slug}
+                                                onClick={() => transitionMedia(m.slug, "approve")}
+                                            >
+                                                {actingOn === m.slug ? "..." : "Approve & Publish"}
+                                            </button>
+                                            <button
+                                                className="admin-btn admin-btn--secondary"
+                                                disabled={actingOn === m.slug}
+                                                onClick={() => transitionMedia(m.slug, "request_changes")}
+                                            >
+                                                Request Changes
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </section>
             )}
 
             {data.events.length > 0 && (
                 <section style={{ marginTop: "2rem" }}>
                     <h2 style={{ fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: "0.75rem" }}>
-                        Events ({data.events.length})
+                        Events — Pending QC / Review ({data.events.length})
                     </h2>
-                    <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Event review actions coming soon — manage from Events admin for now.</p>
+                    <table className="admin-table">
+                        <thead><tr><th>Title</th><th>Category</th><th>Author</th><th>Date</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            {data.events.map((e) => (
+                                <tr key={e.slug}>
+                                    <td><a href={`/admin/events/${e.slug}`} style={{ color: "var(--crimson)", textDecoration: "none", fontWeight: 600 }}>{e.title}</a></td>
+                                    <td>{e.category}</td>
+                                    <td>{e.author || "—"}</td>
+                                    <td>{e.date}</td>
+                                    <td>
+                                        <div className="admin-actions">
+                                            <button
+                                                className="admin-btn"
+                                                style={{ background: "#1a7a3e", color: "#fff" }}
+                                                disabled={actingOn === e.slug}
+                                                onClick={() => transitionEvent(e.slug, "approve")}
+                                            >
+                                                {actingOn === e.slug ? "..." : "Approve & Publish"}
+                                            </button>
+                                            <button
+                                                className="admin-btn admin-btn--secondary"
+                                                disabled={actingOn === e.slug}
+                                                onClick={() => transitionEvent(e.slug, "request_changes")}
+                                            >
+                                                Request Changes
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </section>
             )}
         </div>

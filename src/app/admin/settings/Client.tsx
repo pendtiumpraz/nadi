@@ -17,6 +17,8 @@ interface CCRecipient { name: string; email: string }
 interface ThrottleThreshold { after: number; lockoutSeconds: number }
 interface ThrottleSettings { windowSeconds: number; thresholds: ThrottleThreshold[] }
 interface AiLimits { maxInputChars: number; maxOutputTokens: number; perUserPerHour: number }
+interface SubmissionLimits { perDayPerUser: number }
+interface TopSubmitter { user_id: number | null; name: string; count: number }
 
 export default function AdminSettingsPage() {
     const [landingVersion, setLandingVersion] = useState("v2");
@@ -28,6 +30,8 @@ export default function AdminSettingsPage() {
     const [recentFailures, setRecentFailures] = useState(0);
     const [aiLimits, setAiLimits] = useState<AiLimits>({ maxInputChars: 8000, maxOutputTokens: 4096, perUserPerHour: 30 });
     const [aiLast24h, setAiLast24h] = useState(0);
+    const [submissionLimits, setSubmissionLimits] = useState<SubmissionLimits>({ perDayPerUser: 5 });
+    const [topSubmitters, setTopSubmitters] = useState<TopSubmitter[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [status, setStatus] = useState("");
 
@@ -64,6 +68,14 @@ export default function AdminSettingsPage() {
                 if (typeof d.last24h === "number") setAiLast24h(d.last24h);
             })
             .catch(() => { /* keep defaults */ });
+        // Submission limits + today's top submitters
+        fetch("/api/admin/submission-limits")
+            .then((r) => r.json())
+            .then((d) => {
+                if (d.limits) setSubmissionLimits(d.limits);
+                if (Array.isArray(d.todayBySubmitter)) setTopSubmitters(d.todayBySubmitter);
+            })
+            .catch(() => { /* keep defaults */ });
     }, []);
 
     const saveAiLimits = async () => {
@@ -77,6 +89,24 @@ export default function AdminSettingsPage() {
             const d = await res.json();
             if (d.limits) setAiLimits(d.limits);
             setStatus("✓ AI limits updated.");
+            setTimeout(() => setStatus(""), 3000);
+        } else {
+            const d = await res.json();
+            setStatus(`Error: ${d.error || "Failed to save"}`);
+        }
+    };
+
+    const saveSubmissionLimits = async () => {
+        setStatus("Saving submission limits...");
+        const res = await fetch("/api/admin/submission-limits", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ limits: submissionLimits }),
+        });
+        if (res.ok) {
+            const d = await res.json();
+            if (d.limits) setSubmissionLimits(d.limits);
+            setStatus("✓ Submission limits updated.");
             setTimeout(() => setStatus(""), 3000);
         } else {
             const d = await res.json();
@@ -185,6 +215,7 @@ export default function AdminSettingsPage() {
                             <div key={idx} style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
                                 <input
                                     placeholder="Name"
+                                    aria-label="Recipient name"
                                     value={c.name}
                                     onChange={(e) => updateCcEntry(idx, { name: e.target.value })}
                                     onBlur={() => saveCcList(ccList)}
@@ -193,6 +224,7 @@ export default function AdminSettingsPage() {
                                 <input
                                     type="email"
                                     placeholder="email@example.com"
+                                    aria-label="Recipient email"
                                     value={c.email}
                                     onChange={(e) => updateCcEntry(idx, { email: e.target.value })}
                                     onBlur={() => saveCcList(ccList)}
@@ -382,6 +414,62 @@ export default function AdminSettingsPage() {
                     <p style={{ marginTop: "1rem", fontSize: "0.78rem", color: "var(--muted)", fontStyle: "italic" }}>
                         Topic-generation count is also clamped to 1–20 regardless of these settings.
                     </p>
+                </div>
+            </div>
+
+            {/* Submission Limits — anti-spam for partner / contributor submits */}
+            <div className="editor" style={{ marginBottom: "2rem" }}>
+                <div className="editor-section">
+                    <div className="editor-section-title">Submission Limits</div>
+                    <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem", lineHeight: 1.55 }}>
+                        Caps how many article submissions a single partner / contributor can fire per day.
+                        Admins and reviewers are exempt. Counted from UTC midnight against the <code>submissions</code>
+                        audit trail. Hitting the cap returns <code>429</code> with a clear &ldquo;try again tomorrow&rdquo; message.
+                    </p>
+                    <div className="form-group" style={{ maxWidth: 360, marginBottom: "1rem" }}>
+                        <label>Max submissions per day per user</label>
+                        <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={submissionLimits.perDayPerUser}
+                            onChange={(e) => setSubmissionLimits({ perDayPerUser: Number(e.target.value) || 0 })}
+                        />
+                        <span className="editor-hint">Range 1–100. Default 5.</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+                        <button type="button" className="btn-primary" onClick={saveSubmissionLimits} style={{ fontSize: "0.8rem", padding: "6px 14px" }}>Save submission limits</button>
+                    </div>
+                    <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: "0.4rem" }}>
+                        <strong>Top submitters today (UTC)</strong>
+                    </div>
+                    {topSubmitters.length === 0 ? (
+                        <p style={{ color: "var(--muted)", fontSize: "0.82rem", fontStyle: "italic", margin: 0 }}>
+                            No submissions yet today.
+                        </p>
+                    ) : (
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th style={{ width: 140 }}>Submissions today</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {topSubmitters.map((s) => (
+                                    <tr key={`${s.user_id ?? "anon"}-${s.name}`}>
+                                        <td>{s.name} {s.user_id ? <span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>#{s.user_id}</span> : null}</td>
+                                        <td style={{ fontFamily: "var(--font-mono, monospace)" }}>
+                                            {s.count} / {submissionLimits.perDayPerUser}
+                                            {s.count >= submissionLimits.perDayPerUser ? (
+                                                <span style={{ marginLeft: 8, color: "#c44", fontSize: "0.75rem" }}>BLOCKED</span>
+                                            ) : null}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
 

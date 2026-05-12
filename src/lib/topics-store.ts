@@ -17,6 +17,13 @@ export async function getAllTopics(): Promise<Topic[]> {
     return rows.map(rowToTopic);
 }
 
+export async function getTopicById(id: number): Promise<Topic | null> {
+    const sql = getDB();
+    const rows = await sql`SELECT * FROM topics WHERE id = ${id} LIMIT 1`;
+    if (rows.length === 0) return null;
+    return rowToTopic(rows[0]);
+}
+
 export async function getPendingTopics(): Promise<Topic[]> {
     const sql = getDB();
     const rows = await sql`SELECT * FROM topics WHERE status = 'pending' ORDER BY created_at DESC`;

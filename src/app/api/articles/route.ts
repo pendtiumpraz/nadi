@@ -11,6 +11,8 @@ import {
 import { canPublish, canEditOwnContent, asRole } from "@/lib/permissions";
 import { getUserById } from "@/lib/users";
 import { notifyArticleSubmitted, notifySubmissionReceived, getReviewEtaDays } from "@/lib/notify";
+import { checkSubmissionAllowed } from "@/lib/submission-throttle";
+import { getDB } from "@/lib/db";
 import type { Article, ArticleStatus } from "@/data/articles/types";
 
 function buildBaseUrl(req: NextRequest): string {
@@ -106,9 +108,25 @@ export async function POST(req: NextRequest) {
         body.authorId = body.authorId || session.user.id;
         body.feedbackPending = false; // fresh row never has pending feedback
 
+        // Daily submission cap — only enforced on non-publisher submits.
+        if (status === "in_review" && !canPublish(session.user)) {
+            const check = await checkSubmissionAllowed(session.user.id);
+            if (!check.ok) {
+                return NextResponse.json({ error: check.error }, { status: 429 });
+            }
+        }
+
         await saveArticle(body);
         // Fire submission emails when a non-publisher creates a row that lands in_review
         if (status === "in_review" && !canPublish(session.user)) {
+            // Audit-row so the daily cap counts this submit (mirrors the transition route).
+            try {
+                const sql = getDB();
+                await sql`
+                    INSERT INTO submissions (type, ref_slug, author_id, status, notes)
+                    VALUES ('article', ${body.slug}, ${Number(session.user.id)}, 'in_review', 'created via POST /api/articles')
+                `;
+            } catch { /* non-fatal — don't block the create on audit failure */ }
             fireSubmitEmails(req, body, session.user.name || "A contributor").catch(() => { });
         }
         return NextResponse.json(body, { status: 201 });
@@ -165,10 +183,27 @@ export async function PUT(req: NextRequest) {
         // Admin/reviewer re-saving doesn't touch it — only commenting flips it.
         body.feedbackPending = canPublish(session.user) ? !!existing.feedbackPending : false;
 
+        // Daily submission cap — only enforced when a non-publisher actually
+        // transitions an article TO in_review (first submit OR resubmit).
+        if (status === "in_review" && !wasInReview && !canPublish(session.user)) {
+            const check = await checkSubmissionAllowed(session.user.id);
+            if (!check.ok) {
+                return NextResponse.json({ error: check.error }, { status: 429 });
+            }
+        }
+
         await saveArticle(body);
         // Fire submission emails when a non-publisher transitions an article TO in_review
         // (resubmit-after-feedback OR first submit from a draft).
         if (status === "in_review" && !wasInReview && !canPublish(session.user)) {
+            // Audit-row so the daily cap counts this submit (mirrors the transition route).
+            try {
+                const sql = getDB();
+                await sql`
+                    INSERT INTO submissions (type, ref_slug, author_id, status, notes)
+                    VALUES ('article', ${body.slug}, ${Number(session.user.id)}, 'in_review', 'resubmit via PUT /api/articles')
+                `;
+            } catch { /* non-fatal */ }
             fireSubmitEmails(req, body, session.user.name || "A contributor").catch(() => { });
         }
         return NextResponse.json(body);

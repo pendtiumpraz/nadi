@@ -112,6 +112,7 @@ export default function NewsletterAdmin() {
                 <input
                     type="text"
                     placeholder="Search by email..."
+                    aria-label="Search subscribers"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     style={{

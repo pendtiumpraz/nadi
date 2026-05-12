@@ -60,10 +60,10 @@ export default function NewMediaPage() {
             <form onSubmit={handleSubmit} className="editor">
                 <div className="editor-section">
                     <div className="editor-section-title">Media Details</div>
-                    <div className="form-group"><label>Title *</label><input name="title" required placeholder="e.g. NADI Policy Forum Keynote 2026" /></div>
+                    <div className="form-group"><label htmlFor="media-title">Title *</label><input id="media-title" name="title" required placeholder="e.g. NADI Policy Forum Keynote 2026" /></div>
                     <div className="editor-grid">
-                        <div className="form-group"><label>Type</label>
-                            <select name="type">
+                        <div className="form-group"><label htmlFor="media-type">Type</label>
+                            <select id="media-type" name="type">
                                 <option value="video">🎬 Video</option>
                                 <option value="podcast">🎙️ Podcast</option>
                                 <option value="webinar">💻 Webinar</option>
@@ -74,11 +74,11 @@ export default function NewMediaPage() {
                                 <option value="reel">📱 Reel</option>
                             </select>
                         </div>
-                        <div className="form-group"><label>Category</label><input name="category" defaultValue="Health Policy" placeholder="e.g. Health Policy, UHC" /></div>
+                        <div className="form-group"><label htmlFor="media-category">Category</label><input id="media-category" name="category" defaultValue="Health Policy" placeholder="e.g. Health Policy, UHC" /></div>
                     </div>
                     <div className="form-group">
-                        <label>YouTube / TikTok / Instagram / Embed URL *</label>
-                        <input name="embedUrl" required placeholder="https://youtube.com/... or tiktok.com/... or instagram.com/p/..." value={embedUrl} onChange={e => setEmbedUrl(e.target.value)} />
+                        <label htmlFor="media-embed-url">YouTube / TikTok / Instagram / Embed URL *</label>
+                        <input id="media-embed-url" name="embedUrl" required placeholder="https://youtube.com/... or tiktok.com/... or instagram.com/p/..." value={embedUrl} onChange={e => setEmbedUrl(e.target.value)} />
                         <span className="editor-hint">Paste a YouTube, TikTok, or Instagram URL — auto-converts to embed format.</span>
                     </div>
                     {embedUrl && (
@@ -87,13 +87,13 @@ export default function NewMediaPage() {
                         </div>
                     )}
                     <div className="editor-grid">
-                        <div className="form-group"><label>Date</label><input name="date" type="date" defaultValue={new Date().toISOString().split("T")[0]} /></div>
-                        <div className="form-group"><label>Duration</label><input name="duration" placeholder="e.g. 45 min" /></div>
+                        <div className="form-group"><label htmlFor="media-date">Date</label><input id="media-date" name="date" type="date" defaultValue={new Date().toISOString().split("T")[0]} /></div>
+                        <div className="form-group"><label htmlFor="media-duration">Duration</label><input id="media-duration" name="duration" placeholder="e.g. 45 min" /></div>
                     </div>
-                    <div className="form-group"><label>Description</label><textarea name="description" rows={3} placeholder="Brief description..." style={{ width: "100%", padding: "10px", border: "1px solid var(--line)", borderRadius: "4px", fontFamily: "var(--font-body)", fontSize: "0.9rem", resize: "vertical" }} /></div>
-                    <div className="form-group"><label>Speakers (comma-separated)</label><input name="speakers" placeholder="Dr. Smith, Prof. Lee" /></div>
-                    <div className="form-group"><label>Keywords (comma-separated)</label><input name="keywords" placeholder="universal coverage, vaccine equity, financing" /><span className="editor-hint">Used for search & SEO.</span></div>
-                    <div className="form-group"><label>Custom Thumbnail URL (optional)</label><input name="thumbnailUrl" placeholder="https://..." /></div>
+                    <div className="form-group"><label htmlFor="media-description">Description</label><textarea id="media-description" name="description" rows={3} placeholder="Brief description..." style={{ width: "100%", padding: "10px", border: "1px solid var(--line)", borderRadius: "4px", fontFamily: "var(--font-body)", fontSize: "0.9rem", resize: "vertical" }} /></div>
+                    <div className="form-group"><label htmlFor="media-speakers">Speakers (comma-separated)</label><input id="media-speakers" name="speakers" placeholder="Dr. Smith, Prof. Lee" /></div>
+                    <div className="form-group"><label htmlFor="media-keywords">Keywords (comma-separated)</label><input id="media-keywords" name="keywords" placeholder="universal coverage, vaccine equity, financing" /><span className="editor-hint">Used for search & SEO.</span></div>
+                    <div className="form-group"><label htmlFor="media-thumbnail">Custom Thumbnail URL (optional)</label><input id="media-thumbnail" name="thumbnailUrl" placeholder="https://..." /></div>
                 </div>
 
                 {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}

@@ -70,21 +70,21 @@ export default function AdminTeamPage() {
                     <div className="editor-section">
                         <div className="editor-section-title">{editing.id ? "Edit" : "Add"} Team Member</div>
                         <div className="editor-grid">
-                            <div className="form-group"><label>Full Name *</label><input value={editing.name} required onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
-                            <div className="form-group"><label>Title / Role</label><input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></div>
+                            <div className="form-group"><label htmlFor="team-name">Full Name *</label><input id="team-name" value={editing.name} required onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
+                            <div className="form-group"><label htmlFor="team-title">Title / Role</label><input id="team-title" value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></div>
                         </div>
                         <div className="editor-grid">
-                            <div className="form-group"><label>Initials</label><input value={editing.initials} placeholder="e.g. WB" onChange={(e) => setEditing({ ...editing, initials: e.target.value.toUpperCase() })} /></div>
-                            <div className="form-group"><label>Display Order</label><input type="number" value={editing.orderNum} onChange={(e) => setEditing({ ...editing, orderNum: Number(e.target.value) })} /></div>
+                            <div className="form-group"><label htmlFor="team-initials">Initials</label><input id="team-initials" value={editing.initials} placeholder="e.g. WB" onChange={(e) => setEditing({ ...editing, initials: e.target.value.toUpperCase() })} /></div>
+                            <div className="form-group"><label htmlFor="team-order">Display Order</label><input id="team-order" type="number" value={editing.orderNum} onChange={(e) => setEditing({ ...editing, orderNum: Number(e.target.value) })} /></div>
                         </div>
                         <div className="form-group">
-                            <label>Bio</label>
-                            <textarea rows={3} value={editing.bio} onChange={(e) => setEditing({ ...editing, bio: e.target.value })}
+                            <label htmlFor="team-bio">Bio</label>
+                            <textarea id="team-bio" rows={3} value={editing.bio} onChange={(e) => setEditing({ ...editing, bio: e.target.value })}
                                 style={{ width: "100%", padding: "10px", border: "1px solid var(--line)", borderRadius: "4px", fontFamily: "var(--font-body)", fontSize: "0.9rem", resize: "vertical" }} />
                         </div>
                         <div className="editor-grid">
-                            <div className="form-group"><label>Photo URL</label><input value={editing.photoUrl} placeholder="Optional — leave blank for initials avatar" onChange={(e) => setEditing({ ...editing, photoUrl: e.target.value })} /></div>
-                            <div className="form-group"><label>LinkedIn URL</label><input value={editing.linkedinUrl} placeholder="https://linkedin.com/in/..." onChange={(e) => setEditing({ ...editing, linkedinUrl: e.target.value })} /></div>
+                            <div className="form-group"><label htmlFor="team-photo">Photo URL</label><input id="team-photo" value={editing.photoUrl} placeholder="Optional — leave blank for initials avatar" onChange={(e) => setEditing({ ...editing, photoUrl: e.target.value })} /></div>
+                            <div className="form-group"><label htmlFor="team-linkedin">LinkedIn URL</label><input id="team-linkedin" value={editing.linkedinUrl} placeholder="https://linkedin.com/in/..." onChange={(e) => setEditing({ ...editing, linkedinUrl: e.target.value })} /></div>
                         </div>
                         <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                             <input type="checkbox" id="featured" checked={editing.isFeatured} onChange={(e) => setEditing({ ...editing, isFeatured: e.target.checked })} />

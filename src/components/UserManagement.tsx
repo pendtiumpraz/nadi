@@ -40,6 +40,16 @@ export default function UserManagement() {
         fetchUsers();
     }, []);
 
+    // Escape-to-close for the change-password modal.
+    useEffect(() => {
+        if (!passwordModal) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setPasswordModal(null);
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [passwordModal]);
+
     const handleAdd = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setMsg("");
@@ -289,9 +299,16 @@ export default function UserManagement() {
             </table>
 
             {passwordModal && (
-                <div className="admin-modal-overlay" onClick={() => setPasswordModal(null)}>
+                <div
+                    className="admin-modal-overlay"
+                    onClick={() => setPasswordModal(null)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="change-pw-title"
+                    tabIndex={-1}
+                >
                     <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>Change Password for {passwordModal.name}</h3>
+                        <h3 id="change-pw-title">Change Password for {passwordModal.name}</h3>
                         <form onSubmit={handleChangePassword}>
                             <div className="form-group">
                                 <label htmlFor="new-pw">New Password</label>

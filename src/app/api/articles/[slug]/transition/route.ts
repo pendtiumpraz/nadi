@@ -13,6 +13,7 @@ import {
     getReviewEtaDays,
 } from "@/lib/notify";
 import { signConsentToken } from "@/lib/consent-token";
+import { checkSubmissionAllowed } from "@/lib/submission-throttle";
 import type { ArticleStatus } from "@/data/articles/types";
 
 type Action = "submit" | "approve" | "request_changes" | "publish";
@@ -50,6 +51,13 @@ export async function POST(req: NextRequest, { params }: Params) {
         // Only valid source states: draft (first submit) or in_review (resubmit-after-feedback).
         if (article.status !== "draft" && article.status !== "in_review") {
             return NextResponse.json({ error: `Cannot submit from status='${article.status}'` }, { status: 400 });
+        }
+        // Daily submission cap — exempts publishers (admin/reviewer).
+        if (!canPublish(session.user)) {
+            const check = await checkSubmissionAllowed(session.user.id);
+            if (!check.ok) {
+                return NextResponse.json({ error: check.error }, { status: 429 });
+            }
         }
         nextStatus = "in_review";
     } else if (action === "approve") {

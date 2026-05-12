@@ -196,6 +196,13 @@ export async function migrate() {
     END $$
   `;
   await sql`UPDATE events SET publish_status = 'published' WHERE publish_status IS NULL OR publish_status = ''`;
+  // events feedback_pending flag — mirrors articles.feedback_pending for the review workflow
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE events ADD COLUMN IF NOT EXISTS feedback_pending BOOLEAN DEFAULT false;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
   // optional: track who authored each piece (nullable so legacy rows pass)
   await sql`
     DO $$ BEGIN
@@ -259,6 +266,13 @@ export async function migrate() {
   await sql`
     DO $$ BEGIN
       ALTER TABLE articles ADD COLUMN IF NOT EXISTS feedback_pending BOOLEAN DEFAULT false;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$
+  `;
+  // Mirror feedback_pending on media for the same partner-resubmit UX.
+  await sql`
+    DO $$ BEGIN
+      ALTER TABLE media ADD COLUMN IF NOT EXISTS feedback_pending BOOLEAN DEFAULT false;
     EXCEPTION WHEN duplicate_column THEN NULL;
     END $$
   `;
@@ -349,6 +363,20 @@ export async function migrate() {
     ON CONFLICT (key) DO NOTHING
   `;
 
+  // ── Security: per-user submission cap (anti-spam) ──────────────────
+  // Counts rows in the existing `submissions` table to throttle non-publishers.
+  // Configurable in /admin/settings.
+  await sql`
+    INSERT INTO site_settings (key, value)
+    VALUES (
+      'submission_limits',
+      ${JSON.stringify({ perDayPerUser: 5 })}
+    )
+    ON CONFLICT (key) DO NOTHING
+  `;
+  // Helps the daily-count query stay fast as the audit trail grows.
+  await sql`CREATE INDEX IF NOT EXISTS submissions_author_created_idx ON submissions (author_id, created_at DESC)`;
+
   // ── Security: login attempt log + throttle settings ────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS login_attempts (
@@ -432,4 +460,17 @@ export async function migrate() {
     EXCEPTION WHEN duplicate_column THEN NULL;
     END $$
   `;
+
+  // ── Topic discussion thread (mirrors article_comments) ─────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS topic_messages (
+      id SERIAL PRIMARY KEY,
+      topic_id INTEGER NOT NULL,
+      author_id INTEGER NOT NULL,
+      author_role VARCHAR(20) NOT NULL,
+      body TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS topic_messages_topic_idx ON topic_messages (topic_id, created_at DESC)`;
 }

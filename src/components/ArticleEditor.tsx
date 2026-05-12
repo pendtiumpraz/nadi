@@ -459,30 +459,30 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     <div className="editor-section-title">Content</div>
                     <div className="rte-toolbar">
                         <div className="rte-toolbar-group">
-                            <button type="button" className="rte-btn" onClick={() => exec("bold")} title="Bold"><b>B</b></button>
-                            <button type="button" className="rte-btn" onClick={() => exec("italic")} title="Italic"><i>I</i></button>
-                            <button type="button" className="rte-btn" onClick={() => exec("underline")} title="Underline"><u>U</u></button>
-                            <button type="button" className="rte-btn" onClick={() => exec("strikeThrough")} title="Strikethrough"><s>S</s></button>
+                            <button type="button" className="rte-btn" onClick={() => exec("bold")} title="Bold" aria-label="Bold"><b>B</b></button>
+                            <button type="button" className="rte-btn" onClick={() => exec("italic")} title="Italic" aria-label="Italic"><i>I</i></button>
+                            <button type="button" className="rte-btn" onClick={() => exec("underline")} title="Underline" aria-label="Underline"><u>U</u></button>
+                            <button type="button" className="rte-btn" onClick={() => exec("strikeThrough")} title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
                         </div>
                         <div className="rte-toolbar-group">
-                            <button type="button" className="rte-btn" onClick={() => exec("formatBlock", "H2")} title="Heading 2">H2</button>
-                            <button type="button" className="rte-btn" onClick={() => exec("formatBlock", "H3")} title="Heading 3">H3</button>
-                            <button type="button" className="rte-btn" onClick={() => exec("formatBlock", "P")} title="Paragraph">¶</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("formatBlock", "H2")} title="Heading 2" aria-label="Heading 2">H2</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("formatBlock", "H3")} title="Heading 3" aria-label="Heading 3">H3</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("formatBlock", "P")} title="Paragraph" aria-label="Paragraph">¶</button>
                         </div>
                         <div className="rte-toolbar-group">
-                            <button type="button" className="rte-btn" onClick={() => exec("insertUnorderedList")} title="Bullet List">•</button>
-                            <button type="button" className="rte-btn" onClick={() => exec("insertOrderedList")} title="Numbered List">1.</button>
-                            <button type="button" className="rte-btn" onClick={() => exec("formatBlock", "BLOCKQUOTE")} title="Quote">&ldquo;</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("insertUnorderedList")} title="Bullet List" aria-label="Bullet List">•</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("insertOrderedList")} title="Numbered List" aria-label="Numbered List">1.</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("formatBlock", "BLOCKQUOTE")} title="Quote" aria-label="Quote">&ldquo;</button>
                         </div>
                         <div className="rte-toolbar-group">
-                            <button type="button" className="rte-btn" onClick={insertLink} title="Insert Link">🔗</button>
-                            <button type="button" className="rte-btn" onClick={() => exec("insertHorizontalRule")} title="Divider">—</button>
-                            <button type="button" className="rte-btn" onClick={() => exec("removeFormat")} title="Clear Formatting">✕</button>
+                            <button type="button" className="rte-btn" onClick={insertLink} title="Insert Link" aria-label="Insert Link">🔗</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("insertHorizontalRule")} title="Divider" aria-label="Divider">—</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("removeFormat")} title="Clear Formatting" aria-label="Clear Formatting">✕</button>
                         </div>
                         <div className="rte-toolbar-group">
-                            <button type="button" className="rte-btn" onClick={() => exec("justifyLeft")} title="Align Left">⫷</button>
-                            <button type="button" className="rte-btn" onClick={() => exec("justifyCenter")} title="Align Center">⫿</button>
-                            <button type="button" className="rte-btn" onClick={() => exec("justifyRight")} title="Align Right">⫸</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("justifyLeft")} title="Align Left" aria-label="Align Left">⫷</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("justifyCenter")} title="Align Center" aria-label="Align Center">⫿</button>
+                            <button type="button" className="rte-btn" onClick={() => exec("justifyRight")} title="Align Right" aria-label="Align Right">⫸</button>
                         </div>
                     </div>
                     <div

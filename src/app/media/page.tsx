@@ -122,6 +122,10 @@ export default function MediaPage() {
                 return (
                 <div
                     onClick={() => setActive(null)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="media-lightbox-title"
+                    tabIndex={-1}
                     style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}
                 >
                     <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxWidth: vertical ? "420px" : "960px" }}>
@@ -143,7 +147,7 @@ export default function MediaPage() {
                             />
                         </div>
                         <div style={{ color: "#fff", padding: "0.75rem 0" }}>
-                            <h3 style={{ margin: 0 }}>{active.title}</h3>
+                            <h3 id="media-lightbox-title" style={{ margin: 0 }}>{active.title}</h3>
                             {active.description && <p style={{ margin: "0.25rem 0 0", color: "#bbb", fontSize: "0.9rem" }}>{active.description}</p>}
                         </div>
                     </div>
