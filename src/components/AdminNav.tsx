@@ -26,6 +26,7 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
         { key: "newsletter", href: "/admin/newsletter", label: "Newsletter", icon: "✉" },
         { key: "ai", href: "/admin/ai", label: "AI Writer", icon: "✦" },
         { key: "docs", href: "/admin/docs", label: "Docs", icon: "◇" },
+        { key: "guidelines", href: "/admin/guidelines", label: "Guidelines", icon: "📥" },
         { key: "settings", href: "/admin/settings", label: "Settings", icon: "⚙" },
         { key: "users", href: "/admin/users", label: "Users", icon: "⊕" },
         { key: "permissions", href: "/admin/permissions", label: "Permissions", icon: "⊟" },

@@ -20,6 +20,7 @@ export default function AdminSettingsPage() {
     const [adminTheme, setAdminTheme] = useState("v1");
     const [ccList, setCcList] = useState<CCRecipient[]>([]);
     const [reviewEta, setReviewEta] = useState("7");
+    const [privacyTermsMd, setPrivacyTermsMd] = useState("");
     const [loaded, setLoaded] = useState(false);
     const [status, setStatus] = useState("");
 
@@ -30,6 +31,7 @@ export default function AdminSettingsPage() {
                 setLandingVersion(data.settings?.landing_version || "v2");
                 setAdminTheme(data.settings?.admin_theme || "v1");
                 setReviewEta(data.settings?.review_eta_days || "7");
+                setPrivacyTermsMd(data.settings?.privacy_terms_md || "");
                 try {
                     const parsed = JSON.parse(data.settings?.notification_cc || "[]");
                     setCcList(Array.isArray(parsed) ? parsed : []);
@@ -172,6 +174,38 @@ export default function AdminSettingsPage() {
                             style={{ fontSize: "0.8rem", padding: "6px 14px" }}
                         >
                             Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Privacy & Terms body */}
+            <div className="editor" style={{ marginBottom: "2rem" }}>
+                <div className="editor-section">
+                    <div className="editor-section-title">Privacy &amp; Terms body (popup content)</div>
+                    <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem" }}>
+                        Markdown content rendered inside the Privacy Policy popup that visitors see on first page load. Supports headings (# / ##), paragraphs, and line breaks.
+                    </p>
+                    <textarea
+                        rows={12}
+                        value={privacyTermsMd}
+                        onChange={(e) => setPrivacyTermsMd(e.target.value)}
+                        style={{
+                            width: "100%",
+                            fontFamily: "monospace",
+                            padding: "12px",
+                            border: "1px solid var(--line)",
+                            borderRadius: 4,
+                        }}
+                    />
+                    <div style={{ marginTop: "0.75rem" }}>
+                        <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={() => saveSetting("privacy_terms_md", privacyTermsMd)}
+                            style={{ fontSize: "0.8rem", padding: "6px 14px" }}
+                        >
+                            Save Privacy &amp; Terms
                         </button>
                     </div>
                 </div>

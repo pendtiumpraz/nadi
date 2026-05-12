@@ -13,6 +13,7 @@ export const MENU_ITEMS: { key: string; label: string }[] = [
     { key: "newsletter", label: "Newsletter" },
     { key: "ai", label: "AI Writer" },
     { key: "docs", label: "Docs" },
+    { key: "guidelines", label: "Guidelines" },
     { key: "settings", label: "Settings" },
     { key: "users", label: "Users" },
     { key: "permissions", label: "Permissions" },

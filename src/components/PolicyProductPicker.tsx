@@ -10,7 +10,11 @@ import {
 export interface PolicyProductPickerProps {
     value: PolicyProductType | "";
     onChange: (next: PolicyProductType) => void;
-    /** Optional: URL to download the guideline PDF, shown as "📥 Download guideline" */
+    /**
+     * Optional: URL to download the guideline PDF. Kept for backwards compatibility,
+     * but the picker now always links to the public `/policy-guideline` explainer
+     * page (which itself handles the empty / not-uploaded state gracefully).
+     */
     guidelineUrl?: string;
     /** If true, picker becomes read-only (e.g. when editing an article whose type is fixed). */
     disabled?: boolean;
@@ -25,7 +29,10 @@ function formatWordRange(wc: PolicyProductDef["wordCount"]): string {
 export default function PolicyProductPicker(
     props: PolicyProductPickerProps
 ): React.JSX.Element {
-    const { value, onChange, guidelineUrl, disabled = false } = props;
+    // `guidelineUrl` is intentionally ignored — we always route to the public
+    // /policy-guideline page so users see the explainer (and the empty-state
+    // message) before downloading. The prop is preserved for API compatibility.
+    const { value, onChange, disabled = false } = props;
 
     const selected: PolicyProductDef | null = React.useMemo(() => {
         if (!value) return null;
@@ -56,24 +63,22 @@ export default function PolicyProductPicker(
                 >
                     Policy Product Type *
                 </div>
-                {guidelineUrl && (
-                    <a
-                        href={guidelineUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                            fontSize: "0.78rem",
-                            color: "var(--crimson, #8B1C1C)",
-                            textDecoration: "none",
-                            padding: "4px 10px",
-                            border: "1px solid var(--line, #ddd)",
-                            borderRadius: 4,
-                            whiteSpace: "nowrap",
-                        }}
-                    >
-                        📥 Download guideline
-                    </a>
-                )}
+                <a
+                    href="/policy-guideline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        fontSize: "0.78rem",
+                        color: "var(--crimson, #8B1C1C)",
+                        textDecoration: "none",
+                        padding: "4px 10px",
+                        border: "1px solid var(--line, #ddd)",
+                        borderRadius: 4,
+                        whiteSpace: "nowrap",
+                    }}
+                >
+                    📥 Download guideline
+                </a>
             </div>
 
             {/* Cards grid */}

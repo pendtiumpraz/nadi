@@ -285,6 +285,34 @@ export async function migrate() {
   // Default ETA (days) for the auto-reply email on submission. Editable in /admin/settings.
   await sql`INSERT INTO site_settings (key, value) VALUES ('review_eta_days', '7') ON CONFLICT (key) DO NOTHING`;
 
+  // ── Phase E: Privacy Policy popup tracking ─────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS privacy_consents (
+      id            SERIAL PRIMARY KEY,
+      user_id       INTEGER,
+      client_token  VARCHAR(64) NOT NULL,
+      ip_address    VARCHAR(100) DEFAULT '',
+      accepted_at   TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS privacy_consents_token_idx ON privacy_consents (client_token)`;
+  // Seed default Terms + Privacy body (admin can edit in /admin/settings).
+  await sql`
+    INSERT INTO site_settings (key, value)
+    VALUES (
+      'privacy_terms_md',
+      ${"# Ketentuan Penggunaan & Kebijakan Privasi\n\nSelamat datang di NADI — Network for Advancing Development & Innovation in Health.\n\nDengan menggunakan situs ini, Anda menyetujui pengumpulan dan penggunaan data sebagaimana dijelaskan dalam Kebijakan Privasi kami. Kami menggunakan cookies untuk meningkatkan pengalaman Anda dan menganalisis traffic.\n\n## Ketentuan Penggunaan Layanan\n\nKonten di situs ini disediakan untuk tujuan informasi dan edukasi. Reproduksi atau distribusi memerlukan izin tertulis dari NADI.\n\n## Kebijakan Privasi\n\nKami mengumpulkan informasi minimal yang diperlukan untuk menjalankan situs (alamat IP, cookie sesi). Kami tidak menjual data Anda kepada pihak ketiga.\n\nTerakhir diperbarui: 2026."}
+    )
+    ON CONFLICT (key) DO NOTHING
+  `;
+
+  // ── Phase F: Policy product guideline file URL ─────────────────────
+  await sql`
+    INSERT INTO site_settings (key, value)
+    VALUES ('guideline_url', '')
+    ON CONFLICT (key) DO NOTHING
+  `;
+
   // ── Phase D: consent-to-publish form ───────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS article_consents (

@@ -156,45 +156,45 @@ Mirror of `PLAN.md`. Tick boxes as items land. Phases map 1:1 to PLAN §10.
 ## Phase E — Privacy Policy popup (Kumparan-style)
 
 ### Schema
-- [ ] Migration: create `privacy_consents` table (PLAN §3.3)
-- [ ] Migration: seed `site_settings.privacy_terms_md` with placeholder copy (NADI legal will edit)
+- [x] Migration: create `privacy_consents` table (PLAN §3.3)
+- [x] Migration: seed `site_settings.privacy_terms_md` with placeholder Indonesian copy
 
 ### UI
-- [ ] `<PrivacyPopup>` — Kumparan-style modal: title, callout banner, scrollable body (markdown), "Nanti Saja" / "Setujui Semua" buttons
-- [ ] Mount in `src/app/layout.tsx`; suppress on `/admin/*`
-- [ ] Shows on first page load (check `localStorage.privacy_ack`); session-suppress on "Nanti Saja"
-- [ ] Mobile: full-width bottom sheet on <600px
+- [x] `<PrivacyPopup>` — Kumparan-style modal: title, callout banner, scrollable body (markdown rendered inline), "Nanti Saja" / "Setujui Semua" buttons
+- [x] Mounted globally via `<PrivacyPopupGate>` in root layout; suppressed on `/admin/*` via `usePathname()`
+- [x] Shows on first page load (localStorage.privacy_ack check); session-suppressed on "Nanti Saja"
+- [x] Mobile: full-width bottom sheet on <600px
 
 ### Admin
-- [ ] `/admin/settings` — add markdown editor for "Privacy Policy + Terms of Service" body
+- [x] `/admin/settings` — markdown textarea (rows=12, monospace) for the popup body, Save button
 
 ### API
-- [ ] `POST /api/privacy-consent` — body `{ token }`; inserts a row with IP
+- [x] `POST /api/privacy-consent` — body `{ token }`; inserts row with IP + optional user_id
 
 ### Verify
-- [ ] Popup appears on first visit, hides after Setujui Semua
-- [ ] Returning visitor (same browser) doesn't see it
-- [ ] Admin can edit body, change reflects after page reload
+- [ ] Manual smoke: popup shows on `/` for new visitor, hides after Setujui Semua
+- [ ] Manual smoke: not shown on `/admin/*`
+- [ ] Manual smoke: admin edits body in settings, popup reflects new copy on next reload
 
 ---
 
 ## Phase F — Downloadable Policy Product Guideline
 
 ### Pages
-- [ ] `/policy-guideline` — public download page with short blurb + download button
-- [ ] `/admin/guidelines` — upload page (admin only); shows current active version, lets admin upload new one
+- [x] `/policy-guideline` — public download page using V2 layout; shows download button if URL set, friendly empty state otherwise
+- [x] `/admin/guidelines` — admin-only upload page; shows current file with download link + uploader
 
 ### Storage
-- [ ] Vercel Blob bucket `guidelines/` (on Vercel); `public/uploads/guidelines/` locally
-- [ ] `site_settings.guideline_url` updated on each upload
+- [x] Vercel Blob `guidelines/` on prod / `public/uploads/guidelines/` locally — mirrors articles/upload pattern
+- [x] `site_settings.guideline_url` upserted on each upload
 
 ### API
-- [ ] `POST /api/guidelines/upload` (admin only) — multipart PDF/DOCX
-- [ ] `GET /api/policy-guideline` — redirects to `site_settings.guideline_url`
+- [x] `POST /api/guidelines/upload` (admin only, `canManageUsers` gate) — multipart, .pdf/.docx, 25MB cap
+- [x] `GET /api/policy-guideline` — 302-redirects to `site_settings.guideline_url` (or back to the page if empty)
 
 ### UI
-- [ ] `<PolicyProductPicker>` "📥 Download guideline" link → `/api/policy-guideline`
-- [ ] Optional: also expose `/policy-guideline` link in main nav (Footer "Resources" column)
+- [x] `<PolicyProductPicker>` "📥 Download guideline" link → always renders, points to `/policy-guideline`
+- [x] Sidebar: new "Guidelines" menu item (admin-only in default matrix)
 
 ---
 
