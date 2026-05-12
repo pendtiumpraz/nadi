@@ -66,6 +66,14 @@ export default function PublishButton({ slug, currentStatus, onPublished }: Publ
                     }}
                 >
                     {msg}
+                    {!msg.startsWith("Error") && (
+                        <>
+                            {" "}
+                            <a href={`/publications/${slug}`} target="_blank" rel="noopener noreferrer" style={{ color: "#1a7a3e", textDecoration: "underline", fontWeight: 600 }}>
+                                View →
+                            </a>
+                        </>
+                    )}
                 </div>
             )}
         </div>

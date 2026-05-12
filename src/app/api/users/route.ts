@@ -107,15 +107,15 @@ export async function PATCH(req: NextRequest) {
             if (!STATUS_VALUES.includes(status)) {
                 return NextResponse.json({ error: `Invalid status: ${status}` }, { status: 400 });
             }
+            // Look up prior status so we only email the user on first activation
+            // (pending → active), not every reactivation from suspended.
+            const target = await getUserById(id);
+            const wasPending = target?.status === "pending";
             await updateUserStatus(id, status);
             await logUserEvent(session.user.id, id, `status_${status}`);
-            // Notify the user when they get activated
-            if (status === "active") {
-                const target = await getUserById(id);
-                if (target) {
-                    const baseUrl = req.nextUrl?.origin || `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
-                    notifyUserActivated({ name: target.name, email: target.email, baseUrl }).catch(() => { /* fire-and-forget */ });
-                }
+            if (status === "active" && wasPending && target) {
+                const baseUrl = req.nextUrl?.origin || `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
+                notifyUserActivated({ name: target.name, email: target.email, baseUrl }).catch(() => { /* fire-and-forget */ });
             }
         }
         return NextResponse.json({ success: true });

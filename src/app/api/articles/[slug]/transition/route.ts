@@ -47,6 +47,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         if (!canEditOwnContent(session.user, article.authorId)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
+        // Only valid source states: draft (first submit) or in_review (resubmit-after-feedback).
+        if (article.status !== "draft" && article.status !== "in_review") {
+            return NextResponse.json({ error: `Cannot submit from status='${article.status}'` }, { status: 400 });
+        }
         nextStatus = "in_review";
     } else if (action === "approve") {
         if (!canReview(session.user)) return NextResponse.json({ error: "Reviewer or admin required" }, { status: 403 });
@@ -56,6 +60,9 @@ export async function POST(req: NextRequest, { params }: Params) {
         nextStatus = "approved";
     } else if (action === "request_changes") {
         if (!canReview(session.user)) return NextResponse.json({ error: "Reviewer or admin required" }, { status: 403 });
+        if (article.status !== "in_review") {
+            return NextResponse.json({ error: `Can only request changes on an article currently in review (status was '${article.status}').` }, { status: 400 });
+        }
         nextStatus = "draft";
     } else {
         // publish

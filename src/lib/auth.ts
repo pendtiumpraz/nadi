@@ -46,12 +46,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const valid = await verifyPassword(password, user.password);
                 if (!valid) return null;
 
-                // Block accounts that are explicitly pending or suspended.
-                // (Legacy rows with a missing/empty status are normalized to "active" in users.ts.)
+                // Allowlist: only an explicit "active" status passes the gate.
+                // Legacy rows with a missing/empty status are normalized to "active"
+                // in `normalizeStatus()` (src/lib/users.ts), so they keep working.
                 if (user.status === "pending") {
                     throw new Error("PENDING_APPROVAL");
                 }
                 if (user.status === "suspended") {
+                    throw new Error("ACCOUNT_SUSPENDED");
+                }
+                if (user.status !== "active") {
+                    // Defensive: an unknown future status (e.g. "archived") blocks too.
                     throw new Error("ACCOUNT_SUSPENDED");
                 }
 

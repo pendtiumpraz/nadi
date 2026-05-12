@@ -173,6 +173,7 @@ export default function ConsentForm({
         }
         if (!signatorySignatureUrl) {
             missing.push("Please upload your e-signature image.");
+            if (!firstMissingRef) firstMissingRef = signatureInputRef;
         }
         if (!signatoryDate) {
             missing.push("Signature date is required.");

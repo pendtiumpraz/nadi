@@ -28,7 +28,7 @@ export const DEFAULT_MATRIX: RoleMenuMatrix = {
     admin: MENU_ITEMS.map((m) => m.key),
     reviewer: ["dashboard", "articles", "events", "media", "review", "consents", "docs"],
     contributor: ["dashboard", "articles", "events", "media", "ai", "docs"],
-    partner: ["dashboard", "events", "docs"],
+    partner: ["dashboard", "articles", "events", "docs"],
 };
 
 const SETTINGS_KEY = "role_menu_matrix";

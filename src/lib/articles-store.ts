@@ -16,7 +16,9 @@ export async function getArticleBySlugStore(slug: string): Promise<Article | nul
 
 export async function saveArticle(article: Article): Promise<void> {
     const sql = getDB();
-    const status: ArticleStatus = article.status || "published";
+    // Defensive default: a save that doesn't pass status stays unpublished.
+    // All callers (API routes) set status explicitly based on role + intent.
+    const status: ArticleStatus = article.status || "draft";
     const authorId = article.authorId ? Number(article.authorId) : null;
     const productType = article.policyProductType || null;
     const aiDisclosure = article.aiDisclosure || "";

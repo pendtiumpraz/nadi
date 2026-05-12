@@ -314,6 +314,32 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         💬 <strong>Feedback pending.</strong> A reviewer has posted comments — read them below, revise your article, and resubmit.
                     </div>
                 )}
+                {isEdit && articleStatus === "approved" && !canPublish && (
+                    <div style={{
+                        background: "rgba(140,90,200,0.10)",
+                        border: "1px solid rgba(140,90,200,0.30)",
+                        borderRadius: 4,
+                        padding: "12px 16px",
+                        marginBottom: "1rem",
+                        fontSize: "0.88rem",
+                        color: "#5a2f8a",
+                    }}>
+                        ✓ <strong>Approved!</strong> Please check your email for the consent-to-publish form link. The article cannot be published until you submit it.
+                    </div>
+                )}
+                {isEdit && articleStatus === "published" && slug && (
+                    <div style={{
+                        background: "rgba(40,140,80,0.10)",
+                        border: "1px solid rgba(40,140,80,0.30)",
+                        borderRadius: 4,
+                        padding: "12px 16px",
+                        marginBottom: "1rem",
+                        fontSize: "0.88rem",
+                        color: "#1a5a30",
+                    }}>
+                        🌐 <strong>Live!</strong> <a href={`/publications/${slug}`} target="_blank" rel="noopener noreferrer" style={{ color: "#1a5a30", textDecoration: "underline", fontWeight: 600 }}>View on public site →</a>
+                    </div>
+                )}
 
                 {/* Policy Product Type */}
                 <div className="editor-section">

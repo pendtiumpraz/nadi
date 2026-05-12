@@ -9,7 +9,25 @@ import {
     articleExists,
 } from "@/lib/articles-store";
 import { canPublish, canEditOwnContent, asRole } from "@/lib/permissions";
+import { getUserById } from "@/lib/users";
+import { notifyArticleSubmitted, notifySubmissionReceived, getReviewEtaDays } from "@/lib/notify";
 import type { Article, ArticleStatus } from "@/data/articles/types";
+
+function buildBaseUrl(req: NextRequest): string {
+    return req.nextUrl?.origin || `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
+}
+
+async function fireSubmitEmails(req: NextRequest, article: Article, actorName: string): Promise<void> {
+    const baseUrl = buildBaseUrl(req);
+    notifyArticleSubmitted({ title: article.title, slug: article.slug, actorName, baseUrl }).catch(() => { });
+    if (article.authorId) {
+        const author = await getUserById(article.authorId);
+        if (author?.email) {
+            const etaDays = await getReviewEtaDays();
+            notifySubmissionReceived({ title: article.title, slug: article.slug, authorEmail: author.email, etaDays, baseUrl }).catch(() => { });
+        }
+    }
+}
 
 function slugify(text: string): string {
     return text
@@ -89,6 +107,10 @@ export async function POST(req: NextRequest) {
         body.feedbackPending = false; // fresh row never has pending feedback
 
         await saveArticle(body);
+        // Fire submission emails when a non-publisher creates a row that lands in_review
+        if (status === "in_review" && !canPublish(session.user)) {
+            fireSubmitEmails(req, body, session.user.name || "A contributor").catch(() => { });
+        }
         return NextResponse.json(body, { status: 201 });
     } catch (err) {
         return NextResponse.json({ error: (err as Error).message }, { status: 400 });
@@ -120,24 +142,35 @@ export async function PUT(req: NextRequest) {
 
         // Status policy on edit:
         // - admin/reviewer: keeps existing OR caller-supplied status
-        // - contributor: editing a published/in_review article moves it back to in_review when they submit;
-        //   otherwise stays draft. They cannot publish.
+        // - contributor: editing a draft/in_review/feedback article moves it to in_review when they
+        //   submit, else stays draft (or in_review if it was). They cannot publish.
+        // - non-publisher edits while article is already `approved` or `consent_received` MUST NOT
+        //   demote it back to draft — preserve the state.
+        const lockedStates: ArticleStatus[] = ["approved", "consent_received", "published"];
         let status: ArticleStatus;
         if (canPublish(session.user)) {
-            status = (body.status as ArticleStatus) || existing.status || "published";
+            status = (body.status as ArticleStatus) || existing.status || "draft";
+        } else if (lockedStates.includes(existing.status as ArticleStatus)) {
+            // Partner / contributor cannot regress these states by saving.
+            status = existing.status as ArticleStatus;
         } else if (body.submit) {
             status = "in_review";
         } else {
-            // keep existing review state if it was in_review; otherwise back to draft
             status = existing.status === "in_review" ? "in_review" : "draft";
         }
+        const wasInReview = existing.status === "in_review";
         body.status = status;
         body.authorId = existing.authorId || body.authorId;
-        // Partner re-saving an article clears feedback_pending (they've addressed the comments).
+        // Partner re-saving clears feedback_pending (they've addressed the comments).
         // Admin/reviewer re-saving doesn't touch it — only commenting flips it.
         body.feedbackPending = canPublish(session.user) ? !!existing.feedbackPending : false;
 
         await saveArticle(body);
+        // Fire submission emails when a non-publisher transitions an article TO in_review
+        // (resubmit-after-feedback OR first submit from a draft).
+        if (status === "in_review" && !wasInReview && !canPublish(session.user)) {
+            fireSubmitEmails(req, body, session.user.name || "A contributor").catch(() => { });
+        }
         return NextResponse.json(body);
     } catch (err) {
         return NextResponse.json({ error: (err as Error).message }, { status: 400 });

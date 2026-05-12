@@ -13,8 +13,6 @@ export default async function EditArticlePage({ params }: Props) {
 
     return (
         <div className="admin-content admin-content--wide">
-            <h1 className="admin-page-title">Edit Article</h1>
-            <p className="admin-page-desc">Update this publication.</p>
             <ArticleEditor slug={slug} />
         </div>
     );

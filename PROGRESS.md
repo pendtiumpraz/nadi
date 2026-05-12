@@ -211,20 +211,38 @@ Mirror of `PLAN.md`. Tick boxes as items land. Phases map 1:1 to PLAN §10.
 
 ## Phase H — Final wiring & QA
 
-- [ ] All emails on the workflow send to standing CC list per PDF arrows
-- [ ] Audit: `submission_received`, `feedback_received`, `article_approved`, `consent_received`, `article_published` all fire correctly
-- [ ] `/admin/review` page label updated to "Pending QC / Review"
-- [ ] Smoke test (end-to-end):
-  - [ ] Partner registers → admin activates → partner logs in
-  - [ ] Partner accepts Privacy Popup
-  - [ ] Partner clicks Create Article → picks Opinion Piece → editor scaffolds 5 sections + authorship ack + AI disclosure
-  - [ ] Partner submits → receives auto email "We'll review in 7 days" → admin + CC get notified
-  - [ ] Admin opens `/admin/review` → opens article → posts comment
-  - [ ] Partner gets "Your work has been reviewed" email → opens "Submitted Article" → reads comment → edits → resubmits
-  - [ ] Admin clicks Approve → partner gets email with consent-form link
-  - [ ] Partner clicks link → fills consent form → submits → admin + CC notified
-  - [ ] Admin opens article → clicks Publish → article appears on `/publications`
-  - [ ] All emails arrived; all states transitioned correctly; audit log has rows
+Three parallel audit agents reviewed email / state / UI surfaces; fixes below.
+
+### Audit findings → fixes shipped
+
+- [x] `POST/PUT /api/articles` now fires `notifyArticleSubmitted` + `notifySubmissionReceived` when a non-publisher save lands in `in_review` (was missing — only the transition route fired them)
+- [x] `PUT /api/articles` no longer demotes `approved` / `consent_received` / `published` back to `draft` when a partner re-saves their own article (locked-state preservation)
+- [x] `articles-store.saveArticle` default status `published` → `draft` (defensive)
+- [x] `transition action=submit` now requires source = `draft` or `in_review` (was unguarded — reviewer could regress any state)
+- [x] `transition action=request_changes` now requires source = `in_review`
+- [x] `notifyUserActivated` gated to first activation (pending → active) only — no longer fires on reactivation from suspended
+- [x] `permissions-matrix` partner default now includes `articles` (so they can reach "My Submissions" via sidebar)
+- [x] `PrivacyPopupGate` suppresses popup on `/admin/*`, `/login`, `/register`, `/consent/*` (was only admin)
+- [x] ArticleEditor shows "Approved — check email for consent form" banner when partner views own `approved` article
+- [x] ArticleEditor shows "Live! View on public site →" banner when status=`published`
+- [x] PublishButton success message includes a "View →" link to `/publications/[slug]`
+- [x] `/admin/review` H1 renamed to "Pending QC / Review" per PDF terminology
+- [x] Duplicate `<h1>` removed from `/admin/articles/[slug]` and `/admin/articles/new` (ArticleEditor renders its own title)
+- [x] ConsentForm signature missing-error now sets `firstMissingRef` so the scroll-to-error works for the e-signature field
+- [x] Auth gate flipped from blocklist to allowlist: only an explicit `status='active'` (or normalized-null legacy rows) passes; any unknown future status blocks
+
+### Smoke test (manual — to run with SMTP set or watch console logs)
+
+- [ ] Partner registers → admin activates → partner logs in (gets activation email)
+- [ ] Partner accepts Privacy Popup; popup is suppressed on `/admin/*`, `/login`, `/register`, `/consent/*`
+- [ ] Partner clicks Create Article → picks Opinion Piece → editor scaffolds 5 sections + authorship ack + AI disclosure
+- [ ] Partner submits → receives auto email "We'll review in 7 days" → admins + CC get notified
+- [ ] Admin opens `/admin/review` → opens article → posts comment
+- [ ] Partner gets "Your work has been reviewed" email → opens "My Submissions" → reads comment → edits → resubmits
+- [ ] Admin clicks Approve → partner gets email with consent-form link
+- [ ] Partner clicks link → fills consent form → submits → admins + CC notified
+- [ ] Admin opens article → clicks Publish → article appears on `/publications` → partner gets "Your article is now live" email
+- [ ] All audit log rows present in `submissions` + `user_events` tables
 
 ---
 

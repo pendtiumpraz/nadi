@@ -12,8 +12,8 @@ export default async function ReviewQueuePage() {
 
     return (
         <div className="admin-body">
-            <h1 className="admin-page-title">Review Queue</h1>
-            <p className="admin-page-desc">Articles, media, and events submitted for review. Approve to publish, or send back to the author with notes.</p>
+            <h1 className="admin-page-title">Pending QC / Review</h1>
+            <p className="admin-page-desc">Articles submitted for quality control. Approve to send the consent form to the author, or request changes with notes.</p>
             <ReviewQueue />
         </div>
     );
