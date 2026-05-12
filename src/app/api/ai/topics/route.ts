@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { callDeepSeek, extractJSON } from "@/lib/deepseek";
 import { saveTopics, getAllTopics, getPendingTopics, deleteTopic } from "@/lib/topics-store";
+import { checkAiCall, recordAiCall } from "@/lib/ai-throttle";
 
 const SYSTEM_PROMPT = `You are a research topic strategist for NADI — a health policy research institute.
 Generate article topics that are specific, researchable, and relevant to health policy.
@@ -28,8 +29,13 @@ export async function POST(req: NextRequest) {
 
     try {
         const { focusArea, count } = await req.json();
-        const userPrompt = `Generate ${count || 5} article topics${focusArea ? ` focused on: ${focusArea}` : " about health policy, governance, and financing"}.`;
-        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.7);
+        // Cap count to avoid runaway prompts ("generate 10000 topics")
+        const safeCount = Math.min(Math.max(1, Number(count) || 5), 20);
+        const userPrompt = `Generate ${safeCount} article topics${focusArea ? ` focused on: ${focusArea}` : " about health policy, governance, and financing"}.`;
+        const check = await checkAiCall(session.user.id, userPrompt);
+        if (!check.ok) return NextResponse.json({ error: check.error }, { status: 429 });
+        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.7, check.maxOutputTokens);
+        await recordAiCall(session.user.id, "topics", userPrompt.length);
         const topics = JSON.parse(extractJSON(raw));
 
         // Save to DB

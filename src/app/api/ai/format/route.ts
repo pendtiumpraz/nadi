@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { callDeepSeek, extractJSON } from "@/lib/deepseek";
+import { checkAiCall, recordAiCall } from "@/lib/ai-throttle";
 
 const SYSTEM_PROMPT = `You are a layout engine for NADI — a health policy research institute.
 
@@ -46,7 +47,10 @@ export async function POST(req: NextRequest) {
         }
 
         const userPrompt = `Convert this article text into magazine-style content blocks:\n\n${content}`;
-        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.3);
+        const check = await checkAiCall(session.user.id, userPrompt);
+        if (!check.ok) return NextResponse.json({ error: check.error }, { status: 429 });
+        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.3, check.maxOutputTokens);
+        await recordAiCall(session.user.id, "format", userPrompt.length);
         const blocks = JSON.parse(extractJSON(raw));
 
         return NextResponse.json({ blocks });

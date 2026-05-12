@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { callDeepSeek, extractJSON } from "@/lib/deepseek";
+import { checkAiCall, recordAiCall } from "@/lib/ai-throttle";
 
 const SYSTEM_PROMPT = `You are an SEO specialist for NADI — a health policy research institute.
 
@@ -27,7 +28,10 @@ Title: ${title}
 Category: ${category || "POLICY BRIEF"}
 Content excerpt: ${content || title}`;
 
-        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.4);
+        const check = await checkAiCall(session.user.id, userPrompt);
+        if (!check.ok) return NextResponse.json({ error: check.error }, { status: 429 });
+        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.4, check.maxOutputTokens);
+        await recordAiCall(session.user.id, "seo", userPrompt.length);
         const seo = JSON.parse(extractJSON(raw));
         return NextResponse.json(seo);
     } catch (err) {

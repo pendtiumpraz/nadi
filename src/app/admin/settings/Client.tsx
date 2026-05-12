@@ -16,6 +16,7 @@ const ADMIN_THEMES = [
 interface CCRecipient { name: string; email: string }
 interface ThrottleThreshold { after: number; lockoutSeconds: number }
 interface ThrottleSettings { windowSeconds: number; thresholds: ThrottleThreshold[] }
+interface AiLimits { maxInputChars: number; maxOutputTokens: number; perUserPerHour: number }
 
 export default function AdminSettingsPage() {
     const [landingVersion, setLandingVersion] = useState("v2");
@@ -25,6 +26,8 @@ export default function AdminSettingsPage() {
     const [privacyTermsMd, setPrivacyTermsMd] = useState("");
     const [throttle, setThrottle] = useState<ThrottleSettings>({ windowSeconds: 3600, thresholds: [] });
     const [recentFailures, setRecentFailures] = useState(0);
+    const [aiLimits, setAiLimits] = useState<AiLimits>({ maxInputChars: 8000, maxOutputTokens: 4096, perUserPerHour: 30 });
+    const [aiLast24h, setAiLast24h] = useState(0);
     const [loaded, setLoaded] = useState(false);
     const [status, setStatus] = useState("");
 
@@ -53,7 +56,33 @@ export default function AdminSettingsPage() {
                 if (typeof d.recentFailures === "number") setRecentFailures(d.recentFailures);
             })
             .catch(() => { /* keep defaults */ });
+        // AI limits + usage
+        fetch("/api/admin/ai-limits")
+            .then((r) => r.json())
+            .then((d) => {
+                if (d.limits) setAiLimits(d.limits);
+                if (typeof d.last24h === "number") setAiLast24h(d.last24h);
+            })
+            .catch(() => { /* keep defaults */ });
     }, []);
+
+    const saveAiLimits = async () => {
+        setStatus("Saving AI limits...");
+        const res = await fetch("/api/admin/ai-limits", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ limits: aiLimits }),
+        });
+        if (res.ok) {
+            const d = await res.json();
+            if (d.limits) setAiLimits(d.limits);
+            setStatus("✓ AI limits updated.");
+            setTimeout(() => setStatus(""), 3000);
+        } else {
+            const d = await res.json();
+            setStatus(`Error: ${d.error || "Failed to save"}`);
+        }
+    };
 
     const updateThreshold = (idx: number, patch: Partial<ThrottleThreshold>) => {
         setThrottle({ ...throttle, thresholds: throttle.thresholds.map((t, i) => i === idx ? { ...t, ...patch } : t) });
@@ -297,6 +326,62 @@ export default function AdminSettingsPage() {
                             <li>SQL injection: all DB queries use parameterised neon templates — string concat in SQL is not used.</li>
                         </ul>
                     </div>
+                </div>
+            </div>
+
+            {/* AI Limits — anti-token-burn defense */}
+            <div className="editor" style={{ marginBottom: "2rem" }}>
+                <div className="editor-section">
+                    <div className="editor-section-title">AI Limits</div>
+                    <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem", lineHeight: 1.55 }}>
+                        Prevents abuse of the DeepSeek bridge. <strong>Input cap</strong> rejects oversized prompts before they hit the model;
+                        <strong> output cap</strong> is forwarded as <code>max_tokens</code>; <strong>per-user rate limit</strong> caps how many
+                        AI calls one user can fire per hour.
+                    </p>
+                    <div style={{ marginBottom: "0.75rem", fontSize: "0.85rem", color: "var(--muted)" }}>
+                        Last 24h: <strong>{aiLast24h}</strong> AI call{aiLast24h === 1 ? "" : "s"}
+                    </div>
+                    <div className="editor-grid">
+                        <div className="form-group">
+                            <label>Max input chars</label>
+                            <input
+                                type="number"
+                                min={500}
+                                max={50000}
+                                value={aiLimits.maxInputChars}
+                                onChange={(e) => setAiLimits({ ...aiLimits, maxInputChars: Number(e.target.value) || 0 })}
+                            />
+                            <span className="editor-hint">Reject prompts longer than this. Default 8000.</span>
+                        </div>
+                        <div className="form-group">
+                            <label>Max output tokens</label>
+                            <input
+                                type="number"
+                                min={64}
+                                max={8000}
+                                value={aiLimits.maxOutputTokens}
+                                onChange={(e) => setAiLimits({ ...aiLimits, maxOutputTokens: Number(e.target.value) || 0 })}
+                            />
+                            <span className="editor-hint">Sent to DeepSeek as max_tokens. Default 4096; hard cap 8000.</span>
+                        </div>
+                    </div>
+                    <div className="form-group" style={{ maxWidth: 360 }}>
+                        <label>Per-user rate limit (calls / hour)</label>
+                        <input
+                            type="number"
+                            min={0}
+                            max={1000}
+                            value={aiLimits.perUserPerHour}
+                            onChange={(e) => setAiLimits({ ...aiLimits, perUserPerHour: Number(e.target.value) || 0 })}
+                        />
+                        <span className="editor-hint">0 = unlimited (not recommended). Default 30.</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                        <button type="button" className="btn-primary" onClick={saveAiLimits} style={{ fontSize: "0.8rem", padding: "6px 14px" }}>Save AI limits</button>
+                    </div>
+                    <p style={{ marginTop: "1rem", fontSize: "0.78rem", color: "var(--muted)", fontStyle: "italic" }}>
+                        Topic-generation count is also clamped to 1–20 regardless of these settings.
+                    </p>
                 </div>
             </div>
 

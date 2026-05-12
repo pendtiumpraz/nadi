@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { callDeepSeek, extractJSON } from "@/lib/deepseek";
+import { checkAiCall, recordAiCall } from "@/lib/ai-throttle";
 
 const SYSTEM_PROMPT = `You are a senior policy writer for NADI — Network for Advancing Development & Innovation in Health. 
 
@@ -69,7 +70,14 @@ Write from NADI's perspective as a health policy institute. Make it data-informe
 
 Remember: output ONLY valid JSON matching the schema. Use a rich variety of block types for magazine-style layout.`;
 
-        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.7);
+        // Validate before burning tokens — input length cap + per-user rate limit.
+        const check = await checkAiCall(session.user.id, userPrompt);
+        if (!check.ok) {
+            return NextResponse.json({ error: check.error }, { status: 429 });
+        }
+
+        const raw = await callDeepSeek(SYSTEM_PROMPT, userPrompt, 0.7, check.maxOutputTokens);
+        await recordAiCall(session.user.id, "generate", userPrompt.length);
         const article = JSON.parse(extractJSON(raw));
 
         // Auto-generate slug from title

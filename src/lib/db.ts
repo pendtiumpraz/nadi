@@ -321,6 +321,34 @@ export async function migrate() {
     END $$
   `;
 
+  // ── Security: AI usage tracking + limits ───────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS ai_calls (
+      id            SERIAL PRIMARY KEY,
+      user_id       INTEGER,
+      endpoint      VARCHAR(50) NOT NULL,
+      input_chars   INTEGER NOT NULL,
+      called_at     TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS ai_calls_user_idx ON ai_calls (user_id, called_at DESC)`;
+  // Default AI limits (admin-configurable in /admin/settings).
+  // - maxInputChars: hard reject any user prompt longer than this (anti-token-burn)
+  // - maxOutputTokens: cap on the response size (passed to DeepSeek as max_tokens)
+  // - perUserPerHour: rolling cap on total AI calls per user
+  await sql`
+    INSERT INTO site_settings (key, value)
+    VALUES (
+      'ai_limits',
+      ${JSON.stringify({
+          maxInputChars: 8000,
+          maxOutputTokens: 4096,
+          perUserPerHour: 30,
+      })}
+    )
+    ON CONFLICT (key) DO NOTHING
+  `;
+
   // ── Security: login attempt log + throttle settings ────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS login_attempts (
