@@ -22,6 +22,20 @@ const FILTERS: { key: "ALL" | PolicyProductType; label: string }[] = [
     ...POLICY_PRODUCT_LIST.map((p) => ({ key: p.key, label: p.label })),
 ];
 
+/** Returns the visible page-number sequence with "…" gaps for large totals.
+ *  Layout: [1] … [c-1] [c] [c+1] … [last] — always shows first/last, current ±1. */
+function pageNumbers(current: number, total: number): (number | "…")[] {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const out: (number | "…")[] = [1];
+    if (current > 3) out.push("…");
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) out.push(i);
+    if (current < total - 2) out.push("…");
+    out.push(total);
+    return out;
+}
+
 export default function PublicationsPage() {
     const [articles, setArticles] = useState<ArticleItem[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -29,11 +43,14 @@ export default function PublicationsPage() {
     const [filter, setFilter] = useState<"ALL" | PolicyProductType>("ALL");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const PER_PAGE = 9;
+
+    // Reset to page 1 whenever the filter changes — handled in the filter onClick already.
 
     useEffect(() => {
         setLoading(true);
         setError(false);
-        const params = new URLSearchParams({ page: String(page), limit: "9" });
+        const params = new URLSearchParams({ page: String(page), limit: String(PER_PAGE) });
         // Filter by policy_product_type via the API. Falls back to legacy
         // `category` query if the type isn't matched (back-compat for old rows).
         if (filter !== "ALL") {
@@ -109,14 +126,22 @@ export default function PublicationsPage() {
                         ))}
                     </div>
 
-                    {pagination && pagination.totalPages > 1 && (
+                    {pagination && (
                         <div className="v2-pagination">
-                            <button disabled={page <= 1} onClick={() => setPage(page - 1)}>← Prev</button>
-                            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-                                <button key={p} className={p === page ? "active" : ""} onClick={() => setPage(p)}>{p}</button>
+                            {pagination.totalPages > 1 && (
+                                <button disabled={page <= 1} onClick={() => { setPage(page - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}>← Prev</button>
+                            )}
+                            {pagination.totalPages > 1 && pageNumbers(page, pagination.totalPages).map((p, i) => (
+                                p === "…"
+                                    ? <span key={`gap-${i}`} className="v2-pagination-info" style={{ padding: "0 4px" }}>…</span>
+                                    : <button key={p} className={p === page ? "active" : ""} onClick={() => { setPage(p as number); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{p}</button>
                             ))}
-                            <span className="v2-pagination-info">{pagination.total} articles</span>
-                            <button disabled={page >= pagination.totalPages} onClick={() => setPage(page + 1)}>Next →</button>
+                            <span className="v2-pagination-info">
+                                Showing {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, pagination.total)} of {pagination.total} publication{pagination.total === 1 ? "" : "s"}
+                            </span>
+                            {pagination.totalPages > 1 && (
+                                <button disabled={page >= pagination.totalPages} onClick={() => { setPage(page + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Next →</button>
+                            )}
                         </div>
                     )}
                 </>
