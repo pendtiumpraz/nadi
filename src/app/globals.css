@@ -2153,6 +2153,68 @@ footer {
   opacity: 1;
 }
 
+/* Collapsible category groups. The header is a button styled like a thin
+   section divider; clicking toggles the link list below. */
+.adm-sidebar-group {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.6rem;
+}
+
+.adm-sidebar-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: calc(100% - 1rem);
+  margin: 0 0.5rem 0.15rem;
+  padding: 0.4rem 0.7rem;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.adm-sidebar-group-header:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.adm-sidebar-group-header.has-active {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.adm-sidebar-group-chevron {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.adm-sidebar-group-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-light .adm-sidebar-group-header {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.adm-light .adm-sidebar-group-header:hover {
+  color: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.adm-light .adm-sidebar-group-header.has-active {
+  color: rgba(139, 28, 28, 0.95);
+}
+
 .adm-sidebar-bottom {
   padding: 1rem 1.2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
