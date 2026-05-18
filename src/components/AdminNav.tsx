@@ -183,7 +183,6 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
                         backgrounds (consent, public V2 nav). */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={branding.logoWhiteUrl} alt="NADI" className="adm-topbar-logo-img" />
-                    <span className="adm-topbar-logo-sub">Admin</span>
                 </a>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginLeft: "auto" }}>
                     <NotificationBell />

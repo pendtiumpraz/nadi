@@ -15,6 +15,7 @@ interface TeamMember {
 
 export default function NewLanding() {
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const [logoUrl, setLogoUrl] = useState("/logo-nadi-color.png");
 
 
     useEffect(() => {
@@ -26,6 +27,15 @@ export default function NewLanding() {
                 }
             })
             .catch(() => { });
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/public/branding")
+            .then((r) => r.json())
+            .then((d) => { if (!cancelled && d?.logoUrl) setLogoUrl(d.logoUrl); })
+            .catch(() => { /* keep default */ });
+        return () => { cancelled = true; };
     }, []);
 
     useEffect(() => {
@@ -102,9 +112,9 @@ export default function NewLanding() {
         <div className="v2">
             {/* NAV */}
             <nav className="v2-nav">
-                <a href="/" className="v2-logo">
-                    <span className="v2-logo-name">NADI</span>
-                    <span className="v2-logo-by">advancing development &amp; innovation</span>
+                <a href="/" className="v2-logo" aria-label="NADI">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logoUrl} alt="NADI" className="v2-logo-img" />
                 </a>
                 <ul className="v2-nav-links">
                     <li><a href="#about">About</a></li>
@@ -404,12 +414,20 @@ export default function NewLanding() {
             {/* FOOTER */}
             <footer className="v2-footer">
                 <div className="v2-footer-left">
-                    <a href="/" className="v2-logo"><span className="v2-logo-name">NADI</span></a>
+                    <a href="/" className="v2-logo" aria-label="NADI">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={logoUrl} alt="NADI" className="v2-logo-img" />
+                    </a>
                     <p>Network for Advancing Development &amp; Innovation in Health.<br />Part of Inke Maris &amp; Associates.</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/logo_IMA_white.png" alt="Inke Maris & Associates" style={{ maxWidth: 140, marginTop: "0.75rem", filter: "invert(1)", opacity: 0.6 }} />
                 </div>
                 <div className="v2-footer-right">
                     <p>Jl. KH Abdullah Syafi&apos;i No. 28<br />Jakarta 12840, Indonesia</p>
+                    <p style={{ marginTop: "0.75rem", fontSize: "0.85rem" }}>
+                        <a href="/privacy-policy" style={{ color: "inherit", textDecoration: "underline", marginRight: "1rem" }}>Privacy Policy</a>
+                        <a href="/terms" style={{ color: "inherit", textDecoration: "underline" }}>Terms of Service</a>
+                    </p>
                 </div>
             </footer>
             <div className="v2-footer-bottom">
