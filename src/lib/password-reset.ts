@@ -11,8 +11,29 @@ export function hashToken(token: string): string {
     return createHash("sha256").update(token).digest("hex");
 }
 
+/** Defensive: make sure the password_reset_tokens table exists before we
+ *  try to touch it. Belt-and-braces in case /api/db/migrate wasn't run on
+ *  the latest deploy (silent failure here used to swallow forgot-password
+ *  requests entirely). Idempotent via CREATE TABLE IF NOT EXISTS. */
+async function ensureTable(): Promise<void> {
+    const sql = getDB();
+    await sql`
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            token_hash VARCHAR(128) NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            used_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS password_reset_tokens_hash_idx ON password_reset_tokens (token_hash)`;
+    await sql`CREATE INDEX IF NOT EXISTS password_reset_tokens_user_idx ON password_reset_tokens (user_id)`;
+}
+
 /** Insert a new reset token row. Returns the plaintext token (for the email). */
 export async function createResetToken(userId: number): Promise<string> {
+    await ensureTable();
     const token = generateToken();
     const hash = hashToken(token);
     const expires = new Date(Date.now() + TOKEN_TTL_MS).toISOString();
@@ -36,6 +57,7 @@ export interface VerifyResult {
 /** Verify a plaintext token. Does NOT mark it used. */
 export async function verifyResetToken(token: string): Promise<VerifyResult> {
     if (!token || typeof token !== "string") return { ok: false, reason: "invalid" };
+    await ensureTable();
     const hash = hashToken(token);
     const sql = getDB();
     const rows = (await sql`
