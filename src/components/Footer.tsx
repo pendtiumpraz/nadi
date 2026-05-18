@@ -58,8 +58,8 @@ export default function Footer() {
                 <div className="footer-col">
                     <h4>Legal</h4>
                     <ul>
-                        <li><a href="/privacy-policy">Kebijakan Privasi</a></li>
-                        <li><a href="/terms">Ketentuan Penggunaan</a></li>
+                        <li><a href="/privacy-policy">Privacy Policy</a></li>
+                        <li><a href="/terms">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>

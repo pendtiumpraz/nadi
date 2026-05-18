@@ -8,8 +8,8 @@ import "@/app/landing-v2.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-    title: "Ketentuan Penggunaan Layanan — NADI",
-    description: "Ketentuan dan syarat penggunaan platform NADI untuk kontributor, partner, reviewer, dan pengunjung umum.",
+    title: "Terms of Service — NADI",
+    description: "Terms and conditions governing the use of the NADI platform for contributors, reviewers, and public visitors.",
 };
 
 async function getTerms(): Promise<{ html: string; updatedAt: string | null }> {
@@ -31,11 +31,11 @@ async function getTerms(): Promise<{ html: string; updatedAt: string | null }> {
 export default async function TermsPage() {
     const { html, updatedAt } = await getTerms();
     return (
-        <V2PageLayout title="Ketentuan <em>Penggunaan</em>" eyebrow="Terms of Service">
+        <V2PageLayout title="Terms of <em>Service</em>" eyebrow="Terms of Service">
             <LegalDocument
-                title="Ketentuan Penggunaan Layanan"
+                title="Terms of Service"
                 eyebrow="Terms of Service"
-                intro="Syarat dan ketentuan yang mengatur penggunaan platform NADI oleh pengunjung, kontributor, dan partner."
+                intro="The terms and conditions that govern the use of the NADI platform by visitors and contributors."
                 updatedAt={updatedAt || undefined}
                 html={html}
             />

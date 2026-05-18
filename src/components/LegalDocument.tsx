@@ -48,7 +48,7 @@ export default function LegalDocument({ title, eyebrow, intro, updatedAt, html }
                     {intro && <p className="legal-hero-intro">{intro}</p>}
                     {updatedAt && (
                         <span className="legal-hero-stamp">
-                            Terakhir diperbarui · {new Date(updatedAt).toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })}
+                            Last updated · {new Date(updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                         </span>
                     )}
                 </div>
@@ -57,7 +57,7 @@ export default function LegalDocument({ title, eyebrow, intro, updatedAt, html }
             <div className="legal-shell">
                 {toc.length > 0 && (
                     <aside className="legal-toc" aria-label="Table of contents">
-                        <div className="legal-toc-title">Daftar Isi</div>
+                        <div className="legal-toc-title">Table of Contents</div>
                         <ol>
                             {toc.map((entry, i) => (
                                 <li key={entry.id}>

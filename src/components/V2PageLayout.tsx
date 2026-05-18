@@ -18,15 +18,6 @@ export default function V2PageLayout({ title, eyebrow, subtitle, children }: { t
                     <li><a href="/publications">Publications</a></li>
                     <li><a href="/events">Events</a></li>
                     <li><a href="/media">Media</a></li>
-                    <li className="nav-legal-dropdown">
-                        <button type="button" className="nav-legal-trigger" aria-haspopup="true">
-                            Legal <span aria-hidden>▾</span>
-                        </button>
-                        <div className="nav-legal-menu" role="menu">
-                            <a href="/privacy-policy" role="menuitem">Kebijakan Privasi</a>
-                            <a href="/terms" role="menuitem">Ketentuan Penggunaan</a>
-                        </div>
-                    </li>
                     <li><a href="/contact" className="v2-nav-cta">Contact</a></li>
                 </ul>
                 <button className="v2-hamburger" aria-label="Menu" onClick={(e) => {
@@ -62,8 +53,8 @@ export default function V2PageLayout({ title, eyebrow, subtitle, children }: { t
                 <div className="v2-footer-right">
                     <p>Jl. KH Abdullah Syafi&apos;i No. 28<br />Jakarta 12840, Indonesia</p>
                     <p style={{ marginTop: "0.75rem", fontSize: "0.85rem" }}>
-                        <a href="/privacy-policy" style={{ color: "inherit", textDecoration: "underline", marginRight: "1rem" }}>Kebijakan Privasi</a>
-                        <a href="/terms" style={{ color: "inherit", textDecoration: "underline" }}>Ketentuan Penggunaan</a>
+                        <a href="/privacy-policy" style={{ color: "inherit", textDecoration: "underline", marginRight: "1rem" }}>Privacy Policy</a>
+                        <a href="/terms" style={{ color: "inherit", textDecoration: "underline" }}>Terms of Service</a>
                     </p>
                 </div>
             </footer>

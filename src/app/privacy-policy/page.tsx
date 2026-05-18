@@ -8,8 +8,8 @@ import "@/app/landing-v2.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-    title: "Kebijakan Privasi — NADI",
-    description: "Bagaimana NADI mengumpulkan, menggunakan, dan melindungi data pengguna platform riset dan publikasi kebijakan kesehatan.",
+    title: "Privacy Policy — NADI",
+    description: "How NADI collects, uses, and protects the data of users of our health policy research and publication platform.",
 };
 
 async function getPolicy(): Promise<{ html: string; updatedAt: string | null }> {
@@ -31,11 +31,11 @@ async function getPolicy(): Promise<{ html: string; updatedAt: string | null }> 
 export default async function PrivacyPolicyPage() {
     const { html, updatedAt } = await getPolicy();
     return (
-        <V2PageLayout title="Kebijakan <em>Privasi</em>" eyebrow="Legal & Compliance">
+        <V2PageLayout title="Privacy <em>Policy</em>" eyebrow="Legal & Compliance">
             <LegalDocument
-                title="Kebijakan Privasi"
+                title="Privacy Policy"
                 eyebrow="Privacy Policy"
-                intro="Komitmen NADI terhadap pengelolaan data pengguna platform riset dan publikasi kebijakan kesehatan."
+                intro="NADI's commitment to the data of users of our health policy research and publication platform."
                 updatedAt={updatedAt || undefined}
                 html={html}
             />

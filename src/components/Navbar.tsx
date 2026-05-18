@@ -30,15 +30,6 @@ export default function Navbar() {
                 <li><a href="/publications" onClick={handleLinkClick}>Publications</a></li>
                 <li><a href="/events" onClick={handleLinkClick}>Events</a></li>
                 <li><a href="/media" onClick={handleLinkClick}>Media</a></li>
-                <li className="nav-legal-dropdown">
-                    <button type="button" className="nav-legal-trigger" aria-haspopup="true">
-                        Legal <span aria-hidden>▾</span>
-                    </button>
-                    <div className="nav-legal-menu" role="menu">
-                        <a href="/privacy-policy" role="menuitem" onClick={handleLinkClick}>Kebijakan Privasi</a>
-                        <a href="/terms" role="menuitem" onClick={handleLinkClick}>Ketentuan Penggunaan</a>
-                    </div>
-                </li>
                 {isAuthed ? (
                     <li><a href="/admin" onClick={handleLinkClick}>Dashboard</a></li>
                 ) : (
