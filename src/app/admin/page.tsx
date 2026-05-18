@@ -1,15 +1,26 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getAllArticlesAsync } from "@/data/articles";
+import { getArticlesByAuthor } from "@/lib/articles-store";
 import { getSubscriberCount } from "@/lib/newsletter-store";
+import { asRole } from "@/lib/permissions";
 
 export default async function AdminDashboard() {
     const session = await auth();
     if (!session?.user) redirect("/login");
 
-    const articles = await getAllArticlesAsync();
-    const totalArticles = articles.length;
-    const latestArticle = articles[0];
+    // Authors (contributor / partner) see numbers scoped to themselves — total
+    // articles is just THEIR submissions, "Published" is the count of those
+    // already live. Admin/reviewer see the platform-wide totals like before.
+    const role = asRole(session.user.role);
+    const isAuthor = role === "contributor" || role === "partner";
+
+    const allArticles = isAuthor
+        ? await getArticlesByAuthor(session.user.id)
+        : await getAllArticlesAsync();
+    const publishedArticles = allArticles.filter((a) => (a.status ?? "published") === "published");
+    const publishedCount = publishedArticles.length;
+    const latestArticle = isAuthor ? allArticles[0] : publishedArticles[0];
     const { active } = await getSubscriberCount();
 
     return (
@@ -27,15 +38,24 @@ export default async function AdminDashboard() {
 
             <div className="admin-stats">
                 <div className="admin-stat-card">
-                    <span className="admin-stat-value">{totalArticles}</span>
-                    <span className="admin-stat-label">Published Articles</span>
+                    <span className="admin-stat-value">{publishedCount}</span>
+                    <span className="admin-stat-label">
+                        {isAuthor ? "My Published Articles" : "Published Articles"}
+                    </span>
                 </div>
+                {isAuthor ? (
+                    <div className="admin-stat-card">
+                        <span className="admin-stat-value">{allArticles.length}</span>
+                        <span className="admin-stat-label">My Total Submissions</span>
+                    </div>
+                ) : (
+                    <div className="admin-stat-card">
+                        <span className="admin-stat-value">{active || 0}</span>
+                        <span className="admin-stat-label">Active Subscribers</span>
+                    </div>
+                )}
                 <div className="admin-stat-card">
-                    <span className="admin-stat-value">{active || 0}</span>
-                    <span className="admin-stat-label">Active Subscribers</span>
-                </div>
-                <div className="admin-stat-card">
-                    <span className="admin-stat-value">{session.user.role === "admin" ? "Full" : "Write"}</span>
+                    <span className="admin-stat-value">{session.user.role === "admin" ? "Full" : isAuthor ? "Author" : "Review"}</span>
                     <span className="admin-stat-label">Access Level</span>
                 </div>
             </div>
@@ -73,7 +93,9 @@ export default async function AdminDashboard() {
 
             {latestArticle && (
                 <>
-                    <h2 className="admin-section-title" style={{ marginTop: "2rem" }}>Latest Publication</h2>
+                    <h2 className="admin-section-title" style={{ marginTop: "2rem" }}>
+                        {isAuthor ? "Your Latest Submission" : "Latest Publication"}
+                    </h2>
                     <a href={`/admin/articles/${latestArticle.slug}`} className="admin-latest">
                         <div className="admin-latest-badge">{latestArticle.category}</div>
                         <h3 className="admin-latest-title">{latestArticle.title}</h3>
