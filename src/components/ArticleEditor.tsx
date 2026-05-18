@@ -61,6 +61,12 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const [summarySocial, setSummarySocial] = useState("");
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
     const [nowTick, setNowTick] = useState(Date.now());
+    // AI Magazine Style toggle. When ON (default), the saved content goes through
+    // /api/ai/format which splits it into magazine blocks (pullquote / stat /
+    // callout / etc). When OFF, the writer's HTML is saved verbatim as a single
+    // 'html' block and the editor layout switches to a wider, Gutenberg-style
+    // split (content centre, all metadata in the right sidebar).
+    const [aiStyleEnabled, setAiStyleEnabled] = useState(true);
     const coverInputRef = useRef<HTMLInputElement>(null);
     const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -124,6 +130,11 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     setNoAi(!data.aiDisclosure);
                     setContainsPrimaryResearch(!!data.containsPrimaryResearch);
                     setSummarySocial(data.summarySocial || "");
+                    // Detect manual-mode articles: a single 'html' block means the
+                    // writer authored the layout themselves and didn't run AI format.
+                    if (Array.isArray(data.blocks) && data.blocks.length === 1 && data.blocks[0]?.type === "html") {
+                        setAiStyleEnabled(false);
+                    }
                     if (data.blocks && editorRef.current) {
                         editorRef.current.innerHTML = blocksToHTML(data.blocks);
                         setEditorText(editorRef.current.innerText || "");
@@ -148,10 +159,17 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 case "list": return `<ul>${(b.items as string[]).map((i) => `<li>${i}</li>`).join("")}</ul>`;
                 case "two-column": return `<p>${b.left}</p><p>${b.right}</p>`;
                 case "divider": return `<hr>`;
+                case "html": return String(b.html || "");
                 default: return `<p>${b.text || ""}</p>`;
             }
         }).join("");
     };
+
+    /** Mirror the contentEditable's HTML into a single article block so the
+     *  layout the writer chose survives the round-trip. */
+    function htmlToBlocks(html: string) {
+        return [{ type: "html" as const, html }];
+    }
 
     // When partner picks a product type, seed the editor with section scaffold —
     // but only if the editor is empty or still holds an untouched scaffold from a
@@ -248,22 +266,31 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
         }
 
         setSaving(true);
-        setStatus("⏳ AI is formatting your article into magazine layout...");
+        setStatus(aiStyleEnabled ? "⏳ AI is formatting your article into magazine layout..." : "⏳ Saving your article...");
 
         try {
-            // Step 1: Format content → blocks
-            const formatRes = await fetch("/api/ai/format", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content }),
-            });
-            const formatData = await formatRes.json();
-            if (!formatRes.ok) throw new Error(formatData.error);
+            // Step 1: Pick the block-builder. AI mode runs the magazine formatter;
+            // manual mode just packages the contentEditable HTML as a single block
+            // so the writer's layout is preserved on save.
+            let blocks: unknown[];
+            if (aiStyleEnabled) {
+                const formatRes = await fetch("/api/ai/format", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content }),
+                });
+                const formatData = await formatRes.json();
+                if (!formatRes.ok) throw new Error(formatData.error);
+                blocks = formatData.blocks;
+            } else {
+                blocks = htmlToBlocks(editorRef.current?.innerHTML || "");
+            }
 
-            // Step 2: Auto-generate SEO if empty
+            // Step 2: Auto-generate SEO if empty (skip SEO AI call too when AI is
+            // explicitly off — the writer can fill SEO manually).
             let finalSeoDesc = seoDesc;
             let finalKeywords = seoKeywords.split(",").map((k) => k.trim()).filter(Boolean);
-            if (!finalSeoDesc || finalKeywords.length === 0) {
+            if (aiStyleEnabled && (!finalSeoDesc || finalKeywords.length === 0)) {
                 setStatus("⏳ Generating SEO metadata...");
                 const seoRes = await fetch("/api/ai/seo", {
                     method: "POST",
@@ -293,7 +320,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 coverImage,
                 pdfUrl,
                 seo: { description: finalSeoDesc, keywords: finalKeywords },
-                blocks: formatData.blocks,
+                blocks,
                 policyProductType: policyProductType || undefined,
                 aiDisclosure: noAi ? "" : aiDisclosure,
                 containsPrimaryResearch,
@@ -325,12 +352,241 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
         setSaving(false);
     };
 
+    // Sections that move between the form (AI mode) and the right aside
+    // (manual / Gutenberg-style mode). Extracted into variables so they live in
+    // exactly one place in the rendered tree no matter which mode is active.
+    const policyTypeSection = (
+        <div className="editor-section" style={fieldError === "type" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
+            <PolicyProductPicker
+                value={policyProductType}
+                onChange={(v) => { handleProductTypeChange(v); if (fieldError === "type") setFieldError(null); }}
+                disabled={isEdit && !!policyProductType && articleStatus !== "draft" && articleStatus !== "changes_requested" && !canPublish}
+            />
+            {policyProductType === "policy_brief" && (
+                <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.75rem", fontSize: "0.85rem" }}>
+                    <input
+                        type="checkbox"
+                        checked={containsPrimaryResearch}
+                        onChange={(e) => setContainsPrimaryResearch(e.target.checked)}
+                    />
+                    This brief contains primary research (will be flagged for QC verification)
+                </label>
+            )}
+        </div>
+    );
+
+    const metaSection = (
+        <div className="editor-section">
+            <div className="editor-section-title">Article Details</div>
+            <div className={`form-group${fieldError === "title" ? " field-error" : ""}`}>
+                <label htmlFor="ed-title" className={fieldError === "title" ? "field-error-label" : ""} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span>Title *</span>
+                    <Counter value={title.length} max={80} />
+                </label>
+                <input id="ed-title" value={title} onChange={(e) => { setTitle(e.target.value); if (fieldError === "title") setFieldError(null); }} required placeholder="e.g. Health Financing Sustainability in Post-Pandemic Indonesia" maxLength={120} />
+            </div>
+            <div className="editor-grid">
+                <div className="form-group">
+                    <label htmlFor="ed-cat">Category</label>
+                    <select id="ed-cat" value={category} onChange={e => setCategory(e.target.value)}>
+                        <option>POLICY BRIEF</option><option>RESEARCH PAPER</option><option>POLICY ANALYSIS</option>
+                        <option>OPINION</option><option>RESEARCH NOTE</option>
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label htmlFor="ed-author">Author</label>
+                    <input id="ed-author" value={author} onChange={e => setAuthor(e.target.value)} />
+                </div>
+            </div>
+            <div className="editor-grid">
+                <div className="form-group">
+                    <label htmlFor="ed-time">Read Time</label>
+                    <input id="ed-time" value={readTime} onChange={e => setReadTime(e.target.value)} />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="ed-color">Cover Color</label>
+                    <select id="ed-color" value={coverColor} onChange={e => setCoverColor(e.target.value)}>
+                        <option value="crimson">Crimson</option><option value="charcoal">Charcoal</option><option value="dark">Dark</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    );
+
+    const coverSection = (
+        <div className="editor-section">
+            <div className="editor-section-title">Cover Image <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span></div>
+            {coverImage ? (
+                <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                    <img src={coverImage} alt="Cover" style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--line)' }} />
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}>{uploadingCover ? '⏳...' : 'Change Image'}</button>
+                        <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px', color: '#c44' }} onClick={() => setCoverImage('')}>Remove</button>
+                    </div>
+                </div>
+            ) : (
+                <div
+                    style={{ border: '2px dashed var(--line)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                    onClick={() => coverInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--crimson)'; }}
+                    onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; }}
+                    onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--line)'; const f = e.dataTransfer.files[0]; if (f) handleCoverUpload(f); }}
+                >
+                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.85rem' }}>{uploadingCover ? '⏳ Uploading...' : '📷 Click or drag image to upload'}</p>
+                </div>
+            )}
+            <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f); }} />
+        </div>
+    );
+
+    const pdfSection = (
+        <div className="editor-section">
+            <div className="editor-section-title">PDF Document <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span></div>
+            {pdfUrl ? (
+                <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.75rem', background: 'rgba(139,28,28,0.06)', borderRadius: '6px', border: '1px solid rgba(139,28,28,0.15)' }}>
+                        <span style={{ fontSize: '1.2rem' }}>📄</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>PDF Attached</div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--muted)', wordBreak: 'break-all' }}>{pdfUrl.split('/').pop()}</div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                        <button type="button" className="btn-outline" style={{ fontSize: '0.72rem', padding: '4px 10px' }} onClick={() => pdfInputRef.current?.click()} disabled={uploadingPdf}>{uploadingPdf ? '⏳...' : 'Change'}</button>
+                        <button type="button" className="btn-outline" style={{ fontSize: '0.72rem', padding: '4px 10px', color: '#c44' }} onClick={() => setPdfUrl('')}>Remove</button>
+                        <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="btn-outline" style={{ fontSize: '0.72rem', padding: '4px 10px', textDecoration: 'none' }}>Preview ↗</a>
+                    </div>
+                </div>
+            ) : (
+                <div
+                    style={{ border: '2px dashed var(--line)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                    onClick={() => pdfInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--crimson)'; }}
+                    onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; }}
+                    onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--line)'; const f = e.dataTransfer.files[0]; if (f) handlePdfUpload(f); }}
+                >
+                    <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.85rem' }}>{uploadingPdf ? '⏳ Uploading PDF...' : '📄 Click or drag PDF (max 20MB)'}</p>
+                </div>
+            )}
+            <input ref={pdfInputRef} type="file" accept=".pdf,application/pdf" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f); }} />
+        </div>
+    );
+
+    const ackSection = (
+        <div className="editor-section" style={fieldError === "ack" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
+            <AuthorshipAck values={authorshipAck} onChange={(v) => { setAuthorshipAck(v); if (fieldError === "ack") setFieldError(null); }} />
+        </div>
+    );
+
+    const aiDisclosureSection = (
+        <div className="editor-section" style={fieldError === "ai" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
+            <AiDisclosureField
+                value={aiDisclosure}
+                onChange={(v) => { setAiDisclosure(v); if (fieldError === "ai") setFieldError(null); }}
+                noAi={noAi}
+                onNoAiChange={(v) => { setNoAi(v); if (fieldError === "ai") setFieldError(null); }}
+            />
+        </div>
+    );
+
+    const seoSection = (
+        <div className="editor-section">
+            <div className="editor-section-title">SEO Settings <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{aiStyleEnabled ? "— leave description empty to auto-generate with AI" : "— fill in manually"}</span></div>
+            <div className="form-group">
+                <label htmlFor="ed-seo-desc" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span>Description</span>
+                    <Counter value={seoDesc.length} max={200} />
+                </label>
+                <input id="ed-seo-desc" value={seoDesc} onChange={e => setSeoDesc(e.target.value)} maxLength={250} placeholder={aiStyleEnabled ? "Leave empty — AI will generate it." : "Search-engine meta description."} />
+            </div>
+            <div className="form-group">
+                <label htmlFor="ed-summary-social" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span>Summary Social</span>
+                    <Counter value={summarySocial.length} max={200} />
+                </label>
+                <input id="ed-summary-social" value={summarySocial} onChange={e => setSummarySocial(e.target.value)} maxLength={250} placeholder="Used as the social-share / Open Graph preview text." />
+                <span className="editor-hint">Shown when the article is shared on Twitter / LinkedIn / WhatsApp.</span>
+            </div>
+            <div className="form-group">
+                <label htmlFor="ed-seo-kw">Keywords (comma-separated)</label>
+                <input id="ed-seo-kw" value={seoKeywords} onChange={e => setSeoKeywords(e.target.value)} placeholder={aiStyleEnabled ? "Leave empty — AI will generate relevant keywords" : "comma-separated keywords"} />
+            </div>
+        </div>
+    );
+
     return (
         <div className="admin-body" style={{ position: "relative" }}>
-            <h1 className="admin-page-title">{isEdit ? "Edit Article" : "Write New Article"}</h1>
-            <p className="admin-page-desc">Write freely with the editor below. AI will format your content into a magazine-style layout and generate SEO metadata automatically.</p>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
+                <div>
+                    <h1 className="admin-page-title" style={{ margin: 0 }}>{isEdit ? "Edit Article" : "Write New Article"}</h1>
+                    <p className="admin-page-desc" style={{ margin: "0.25rem 0 0" }}>
+                        {aiStyleEnabled
+                            ? "AI will format your content into a magazine-style layout on save."
+                            : "Manual mode — the layout you author is saved verbatim."}
+                    </p>
+                </div>
+                {/* AI Magazine Style toggle. Switching mid-edit doesn't move existing
+                    content, but the next save will use the active mode's block format. */}
+                <label
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.6rem",
+                        padding: "0.55rem 0.85rem",
+                        border: "1px solid var(--line, #ddd)",
+                        borderRadius: 24,
+                        background: aiStyleEnabled ? "rgba(139,28,28,0.08)" : "rgba(0,0,0,0.04)",
+                        cursor: "pointer",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        userSelect: "none",
+                    }}
+                >
+                    <span aria-hidden style={{ fontSize: "1rem" }}>{aiStyleEnabled ? "✦" : "✎"}</span>
+                    <span>AI Magazine Style</span>
+                    <span
+                        aria-hidden
+                        style={{
+                            position: "relative",
+                            width: 36,
+                            height: 20,
+                            borderRadius: 10,
+                            background: aiStyleEnabled ? "#8B1C1C" : "#bbb",
+                            transition: "background 0.15s",
+                        }}
+                    >
+                        <span
+                            style={{
+                                position: "absolute",
+                                top: 2,
+                                left: aiStyleEnabled ? 18 : 2,
+                                width: 16,
+                                height: 16,
+                                borderRadius: "50%",
+                                background: "#fff",
+                                transition: "left 0.15s",
+                                boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                            }}
+                        />
+                    </span>
+                    <input
+                        type="checkbox"
+                        checked={aiStyleEnabled}
+                        onChange={(e) => setAiStyleEnabled(e.target.checked)}
+                        style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+                    />
+                </label>
+            </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: "1.5rem", alignItems: "start" }} className="editor-grid-wrap">
+            <div
+                className={`editor-grid-wrap editor-mode-${aiStyleEnabled ? "ai" : "manual"}`}
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: aiStyleEnabled ? "minmax(0, 1fr) 280px" : "minmax(0, 1fr) 340px",
+                    gap: "1.5rem",
+                    alignItems: "start",
+                }}
+            >
             <form onSubmit={(e) => handleSubmit(e)} className="editor" style={{ minWidth: 0 }}>
                 {(feedbackPending || articleStatus === "changes_requested") && (
                     <div style={{
@@ -372,118 +628,36 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     </div>
                 )}
 
-                {/* Policy Product Type */}
-                <div className="editor-section" style={fieldError === "type" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
-                    <PolicyProductPicker
-                        value={policyProductType}
-                        onChange={(v) => { handleProductTypeChange(v); if (fieldError === "type") setFieldError(null); }}
-                        disabled={isEdit && !!policyProductType && articleStatus !== "draft" && articleStatus !== "changes_requested" && !canPublish}
-                    />
-                    {policyProductType === "policy_brief" && (
-                        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.75rem", fontSize: "0.85rem" }}>
-                            <input
-                                type="checkbox"
-                                checked={containsPrimaryResearch}
-                                onChange={(e) => setContainsPrimaryResearch(e.target.checked)}
-                            />
-                            This brief contains primary research (will be flagged for QC verification)
-                        </label>
-                    )}
-                </div>
+                {aiStyleEnabled && policyTypeSection}
+                {aiStyleEnabled && metaSection}
+                {aiStyleEnabled && coverSection}
+                {aiStyleEnabled && pdfSection}
 
-                {/* Meta */}
-                <div className="editor-section">
-                    <div className="editor-section-title">Article Details</div>
-                    <div className={`form-group${fieldError === "title" ? " field-error" : ""}`}>
-                        <label htmlFor="ed-title" className={fieldError === "title" ? "field-error-label" : ""} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                            <span>Title *</span>
-                            <Counter value={title.length} max={80} />
-                        </label>
-                        <input id="ed-title" value={title} onChange={(e) => { setTitle(e.target.value); if (fieldError === "title") setFieldError(null); }} required placeholder="e.g. Health Financing Sustainability in Post-Pandemic Indonesia" maxLength={120} />
+                {/* Manual mode keeps the title up at the top of the content area
+                    so the writer always has a visible heading slot. */}
+                {!aiStyleEnabled && (
+                    <div className={`editor-section${fieldError === "title" ? " " : ""}`} style={fieldError === "title" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
+                        <input
+                            id="ed-title"
+                            value={title}
+                            onChange={(e) => { setTitle(e.target.value); if (fieldError === "title") setFieldError(null); }}
+                            required
+                            placeholder="Article title…"
+                            maxLength={120}
+                            style={{
+                                width: "100%",
+                                border: "none",
+                                outline: "none",
+                                background: "transparent",
+                                fontSize: "1.85rem",
+                                fontWeight: 700,
+                                fontFamily: "var(--font-serif, Georgia, 'Times New Roman', serif)",
+                                lineHeight: 1.2,
+                                padding: "0.4rem 0",
+                            }}
+                        />
                     </div>
-                    <div className="editor-grid">
-                        <div className="form-group">
-                            <label htmlFor="ed-cat">Category</label>
-                            <select id="ed-cat" value={category} onChange={e => setCategory(e.target.value)}>
-                                <option>POLICY BRIEF</option><option>RESEARCH PAPER</option><option>POLICY ANALYSIS</option>
-                                <option>OPINION</option><option>RESEARCH NOTE</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="ed-author">Author</label>
-                            <input id="ed-author" value={author} onChange={e => setAuthor(e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="editor-grid">
-                        <div className="form-group">
-                            <label htmlFor="ed-time">Read Time</label>
-                            <input id="ed-time" value={readTime} onChange={e => setReadTime(e.target.value)} />
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="ed-color">Cover Color</label>
-                            <select id="ed-color" value={coverColor} onChange={e => setCoverColor(e.target.value)}>
-                                <option value="crimson">Crimson</option><option value="charcoal">Charcoal</option><option value="dark">Dark</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Cover Image */}
-                <div className="editor-section">
-                    <div className="editor-section-title">Cover Image <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span></div>
-                    {coverImage ? (
-                        <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                            <img src={coverImage} alt="Cover" style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--line)' }} />
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}>{uploadingCover ? '⏳...' : 'Change Image'}</button>
-                                <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px', color: '#c44' }} onClick={() => setCoverImage('')}>Remove</button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div
-                            style={{ border: '2px dashed var(--line)', borderRadius: '8px', padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}
-                            onClick={() => coverInputRef.current?.click()}
-                            onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--crimson)'; }}
-                            onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; }}
-                            onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--line)'; const f = e.dataTransfer.files[0]; if (f) handleCoverUpload(f); }}
-                        >
-                            <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>{uploadingCover ? '⏳ Uploading...' : '📷 Click or drag image here to upload cover'}</p>
-                        </div>
-                    )}
-                    <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f); }} />
-                </div>
-
-                {/* PDF Upload */}
-                <div className="editor-section">
-                    <div className="editor-section-title">PDF Document <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional, attach a PDF for embedded viewing</span></div>
-                    {pdfUrl ? (
-                        <div style={{ marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: 'rgba(139,28,28,0.06)', borderRadius: '8px', border: '1px solid rgba(139,28,28,0.15)' }}>
-                                <span style={{ fontSize: '1.5rem' }}>📄</span>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>PDF Attached</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--muted)', wordBreak: 'break-all' }}>{pdfUrl.split('/').pop()}</div>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px' }} onClick={() => pdfInputRef.current?.click()} disabled={uploadingPdf}>{uploadingPdf ? '⏳...' : 'Change PDF'}</button>
-                                <button type="button" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px', color: '#c44' }} onClick={() => setPdfUrl('')}>Remove</button>
-                                <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="btn-outline" style={{ fontSize: '0.8rem', padding: '6px 14px', textDecoration: 'none' }}>Preview ↗</a>
-                            </div>
-                        </div>
-                    ) : (
-                        <div
-                            style={{ border: '2px dashed var(--line)', borderRadius: '8px', padding: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}
-                            onClick={() => pdfInputRef.current?.click()}
-                            onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--crimson)'; }}
-                            onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; }}
-                            onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--line)'; const f = e.dataTransfer.files[0]; if (f) handlePdfUpload(f); }}
-                        >
-                            <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>{uploadingPdf ? '⏳ Uploading PDF...' : '📄 Click or drag PDF here to upload (max 20MB)'}</p>
-                        </div>
-                    )}
-                    <input ref={pdfInputRef} type="file" accept=".pdf,application/pdf" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f); }} />
-                </div>
+                )}
 
                 {/* Rich Text Editor */}
                 <div className="editor-section">
@@ -534,47 +708,16 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                             />
                         </div>
                     )}
-                    <p className="editor-hint">✨ AI will auto-format into magazine blocks (pullquotes, stats, callouts, columns, etc.) on publish.</p>
+                    <p className="editor-hint">
+                        {aiStyleEnabled
+                            ? "✨ AI will auto-format into magazine blocks (pullquotes, stats, callouts, columns, etc.) on publish."
+                            : "✎ Manual mode — your formatting is saved verbatim. Use the toolbar above for headings, lists, links, and quotes."}
+                    </p>
                 </div>
 
-                {/* Authorship & Research Integrity */}
-                <div className="editor-section" style={fieldError === "ack" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
-                    <AuthorshipAck values={authorshipAck} onChange={(v) => { setAuthorshipAck(v); if (fieldError === "ack") setFieldError(null); }} />
-                </div>
-
-                {/* AI Disclosure */}
-                <div className="editor-section" style={fieldError === "ai" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
-                    <AiDisclosureField
-                        value={aiDisclosure}
-                        onChange={(v) => { setAiDisclosure(v); if (fieldError === "ai") setFieldError(null); }}
-                        noAi={noAi}
-                        onNoAiChange={(v) => { setNoAi(v); if (fieldError === "ai") setFieldError(null); }}
-                    />
-                </div>
-
-                {/* SEO + Social */}
-                <div className="editor-section">
-                    <div className="editor-section-title">SEO Settings <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— leave description empty to auto-generate with AI</span></div>
-                    <div className="form-group">
-                        <label htmlFor="ed-seo-desc" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                            <span>Description</span>
-                            <Counter value={seoDesc.length} max={200} />
-                        </label>
-                        <input id="ed-seo-desc" value={seoDesc} onChange={e => setSeoDesc(e.target.value)} maxLength={250} placeholder="Used for the search-engine meta tag. Leave empty — AI will generate it." />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="ed-summary-social" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                            <span>Summary Social</span>
-                            <Counter value={summarySocial.length} max={200} />
-                        </label>
-                        <input id="ed-summary-social" value={summarySocial} onChange={e => setSummarySocial(e.target.value)} maxLength={250} placeholder="Used as the social-share / Open Graph preview text." />
-                        <span className="editor-hint">Shown when the article is shared on Twitter / LinkedIn / WhatsApp.</span>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="ed-seo-kw">Keywords (comma-separated)</label>
-                        <input id="ed-seo-kw" value={seoKeywords} onChange={e => setSeoKeywords(e.target.value)} placeholder="Leave empty — AI will generate relevant keywords" />
-                    </div>
-                </div>
+                {aiStyleEnabled && ackSection}
+                {aiStyleEnabled && aiDisclosureSection}
+                {aiStyleEnabled && seoSection}
 
                 {status && (
                     <div
@@ -671,7 +814,10 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 </div>
             </form>
 
-            {/* Sticky side panel — Kumparan-style */}
+            {/* Sticky side panel. In AI mode it just holds the counters + save
+                buttons; in manual (Gutenberg) mode all metadata sections live
+                here so the centre column stays focused on writing. The aside
+                gets its own scroll once content grows past the viewport. */}
             <aside className="editor-side" style={{
                 position: "sticky",
                 top: "1rem",
@@ -683,7 +829,20 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 display: "flex",
                 flexDirection: "column",
                 gap: "0.75rem",
+                maxHeight: !aiStyleEnabled ? "calc(100vh - 32px)" : undefined,
+                overflowY: !aiStyleEnabled ? "auto" : undefined,
             }}>
+                {!aiStyleEnabled && (
+                    <>
+                        {policyTypeSection}
+                        {metaSection}
+                        {coverSection}
+                        {pdfSection}
+                        {ackSection}
+                        {aiDisclosureSection}
+                        {seoSection}
+                    </>
+                )}
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--line)" }}>
                     <span style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", fontWeight: 600 }}>Status</span>
                     {lastSavedAt ? (

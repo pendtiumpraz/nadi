@@ -105,6 +105,18 @@ export default function ArticleRenderer({ blocks }: ArticleRendererProps) {
                     case "divider":
                         return <hr key={i} className="article-divider" />;
 
+                    case "html":
+                        // Manual-mode (non-AI-formatted) articles ship as one HTML
+                        // block authored directly by the writer. Render verbatim,
+                        // wrapped so magazine typography still applies.
+                        return (
+                            <div
+                                key={i}
+                                className="article-html"
+                                dangerouslySetInnerHTML={{ __html: block.html }}
+                            />
+                        );
+
                     default:
                         return null;
                 }

@@ -14,7 +14,8 @@ export type BlockType =
     | "callout"
     | "list"
     | "stat"
-    | "divider";
+    | "divider"
+    | "html";
 
 export interface BlockLead {
     type: "lead";
@@ -81,6 +82,14 @@ export interface BlockDivider {
     type: "divider";
 }
 
+/** Raw author-written HTML, used when the article is saved in "manual mode"
+ *  (AI magazine-style formatting off). Renders inside a styled wrapper so it
+ *  inherits the magazine typography but the markup stays verbatim. */
+export interface BlockHtml {
+    type: "html";
+    html: string;
+}
+
 export type ContentBlock =
     | BlockLead
     | BlockText
@@ -93,7 +102,8 @@ export type ContentBlock =
     | BlockCallout
     | BlockList
     | BlockStat
-    | BlockDivider;
+    | BlockDivider
+    | BlockHtml;
 
 export interface ArticleSEO {
     description: string;
