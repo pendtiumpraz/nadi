@@ -114,17 +114,10 @@ function LoginPageInner() {
                 <div style={{ marginTop: "1rem", textAlign: "center", fontSize: "0.85rem", color: "var(--muted)" }}>
                     Don&apos;t have an account?{" "}
                     <a
-                        href={`/register?role=contributor${callbackUrl !== "/admin" ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+                        href={`/register${callbackUrl !== "/admin" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
                         style={{ color: "var(--crimson)", fontWeight: 600 }}
                     >
-                        Register as Contributor
-                    </a>
-                    {" or "}
-                    <a
-                        href={`/register?role=partner${callbackUrl !== "/admin" ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
-                        style={{ color: "var(--crimson)", fontWeight: 600 }}
-                    >
-                        Partner
+                        Register here
                     </a>
                 </div>
                 <a href="/" className="login-back">← Back to NADI Website</a>

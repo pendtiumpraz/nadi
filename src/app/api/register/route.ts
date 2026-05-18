@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addUser, logUserEvent } from "@/lib/users";
+import { addUser, logUserEvent, type UserRole } from "@/lib/users";
 import { notifyUserSignup, notifyRegistrationReceived } from "@/lib/notify";
+import { PUBLIC_REGISTRATION_ROLES } from "@/lib/role-config";
 
-// Public registration. Creates a contributor OR partner account with
-// status='pending'. Admin must activate the account before sign-in is allowed.
-// Only these two roles are accepted from the public form — admin and reviewer
-// are admin-created only.
-const PUBLIC_ROLES = ["contributor", "partner"] as const;
-type PublicRole = (typeof PUBLIC_ROLES)[number];
+// Public registration. Creates an account with status='pending' using one of
+// the allowlisted public roles. Admin must activate the account before
+// sign-in is allowed. The allowlist lives in lib/role-config so it can be
+// expanded later without touching this route.
 
 export async function POST(req: NextRequest) {
     try {
@@ -28,8 +27,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
         }
         // Reject anything outside the allowlist so the public form can't be
-        // used to provision an admin / reviewer account.
-        const safeRole: PublicRole = PUBLIC_ROLES.includes(role) ? (role as PublicRole) : "contributor";
+        // used to provision an admin / reviewer account. Falls back to the
+        // first allowed role when the caller didn't pass one.
+        const fallback = PUBLIC_REGISTRATION_ROLES[0] || "contributor";
+        const safeRole: UserRole = PUBLIC_REGISTRATION_ROLES.includes(role) ? (role as UserRole) : (fallback as UserRole);
 
         const user = await addUser(email, name, password, safeRole, "pending");
         await logUserEvent(null, user.id, "self_registered", { email, role: safeRole });

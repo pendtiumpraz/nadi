@@ -1,5 +1,6 @@
 import { getDB } from "@/lib/db";
 import type { UserRole } from "@/lib/users";
+import { PERMISSION_MATRIX_ROLES } from "@/lib/role-config";
 
 // All admin menu keys, in display order. Adding a new admin page? Add its key here.
 export const MENU_ITEMS: { key: string; label: string }[] = [
@@ -21,15 +22,19 @@ export const MENU_ITEMS: { key: string; label: string }[] = [
     { key: "audit", label: "Audit Log" },
 ];
 
-export const ROLES: UserRole[] = ["admin", "reviewer", "contributor", "partner"];
+// Roles surfaced as columns in /admin/permissions. Driven by role-config so
+// hiding a role (e.g. 'partner') in one place removes its matrix column too.
+export const ROLES: UserRole[] = PERMISSION_MATRIX_ROLES;
 
 export type RoleMenuMatrix = Record<UserRole, string[]>;
 
 // Defaults — admin always sees everything; other roles see a sensible subset.
 // `docs`, `topics`, `ai`, and `guidelines` are admin-internal surfaces:
-// contributors and partners only need the action pages (articles, events,
-// media) plus the dashboard. Reviewers also get the review queue and
-// editorial extras (topics, consents, docs).
+// contributors only need the action pages (articles, events, media) plus the
+// dashboard. Reviewers also get the review queue and editorial extras
+// (topics, consents, docs). The 'partner' default is kept so existing partner
+// rows still load with a sane sidebar — the role itself is hidden from the
+// register form and the user-management role picker.
 export const DEFAULT_MATRIX: RoleMenuMatrix = {
     admin: MENU_ITEMS.map((m) => m.key),
     reviewer: ["dashboard", "articles", "events", "media", "review", "topics", "consents", "docs"],

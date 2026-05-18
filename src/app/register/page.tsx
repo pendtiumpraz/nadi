@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import PasswordInput from "@/components/PasswordInput";
+import { PUBLIC_REGISTRATION_ROLES } from "@/lib/role-config";
 
 // Same rules as login — only accept relative paths so we can't be used as
 // an open redirect to an attacker-controlled URL.
@@ -23,30 +24,40 @@ export default function RegisterPage() {
     );
 }
 
-type Role = "contributor" | "partner";
-
-const ROLE_OPTIONS: { key: Role; label: string; tagline: string }[] = [
-    {
-        key: "contributor",
+// Role catalogue for the public register form. The list mirrors
+// PUBLIC_REGISTRATION_ROLES from lib/role-config so re-introducing a role
+// (e.g. 'partner' later) means dropping it into both lists with a tagline
+// here — no other code changes required.
+const ROLE_DESCRIPTIONS: Record<string, { label: string; tagline: string }> = {
+    contributor: {
         label: "Contributor",
-        tagline: "NADI-affiliated writer / researcher drafting policy products inside the CMS.",
+        tagline: "Writer / researcher who drafts policy products inside the NADI CMS.",
     },
-    {
-        key: "partner",
+    partner: {
         label: "Partner",
         tagline: "External organization submitting policy products for NADI review and publication.",
     },
-];
+};
+
+const ROLE_OPTIONS = PUBLIC_REGISTRATION_ROLES.map((key) => ({
+    key,
+    label: ROLE_DESCRIPTIONS[key]?.label || key,
+    tagline: ROLE_DESCRIPTIONS[key]?.tagline || "",
+}));
 
 function RegisterPageInner() {
     const searchParams = useSearchParams();
     const callbackUrl = safeRedirect(searchParams?.get("callbackUrl") ?? null);
-    const initialRole: Role = ((): Role => {
+    // Default to whatever URL hint we received, falling back to the first
+    // allowed role. When only one role is allowed (current state) the picker
+    // collapses to a single-line summary instead of a radio group.
+    const initialRole: string = ((): string => {
         const r = searchParams?.get("role");
-        return r === "partner" ? "partner" : "contributor";
+        if (r && PUBLIC_REGISTRATION_ROLES.includes(r as never)) return r;
+        return PUBLIC_REGISTRATION_ROLES[0] || "contributor";
     })();
     const toast = useToast();
-    const [role, setRole] = useState<Role>(initialRole);
+    const [role, setRole] = useState<string>(initialRole);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -80,6 +91,9 @@ function RegisterPageInner() {
         setLoading(false);
     };
 
+    const onlyOneRole = ROLE_OPTIONS.length <= 1;
+    const activeOption = ROLE_OPTIONS.find((o) => o.key === role) || ROLE_OPTIONS[0];
+
     return (
         <div className="login-page">
             <div className="login-card">
@@ -94,49 +108,73 @@ function RegisterPageInner() {
                 ) : (
                     <form className="login-form" onSubmit={handleSubmit}>
                         <p style={{ fontSize: "0.85rem", color: "var(--muted)", margin: "0 0 1rem", lineHeight: 1.55 }}>
-                            Apply for a NADI account. Pick the account type that fits your relationship with NADI. After registering, an admin reviews and activates your access — you&apos;ll get an email once approved.
+                            Apply for a NADI account. After registering, an admin reviews and activates your access — you&apos;ll get an email once approved.
                         </p>
-                        <div className="form-group" role="radiogroup" aria-label="Account type">
-                            <label style={{ marginBottom: "0.5rem" }}>I am a…</label>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-                                {ROLE_OPTIONS.map((opt) => {
-                                    const active = role === opt.key;
-                                    return (
-                                        <label
-                                            key={opt.key}
-                                            style={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: "0.2rem",
-                                                padding: "0.7rem 0.85rem",
-                                                border: `1px solid ${active ? "var(--crimson, #8B1C1C)" : "var(--line, #ddd)"}`,
-                                                borderRadius: 4,
-                                                background: active ? "rgba(139,28,28,0.06)" : "#fff",
-                                                cursor: "pointer",
-                                                transition: "all 0.15s",
-                                            }}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="role"
-                                                value={opt.key}
-                                                checked={active}
-                                                onChange={() => setRole(opt.key)}
-                                                style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
-                                            />
-                                            <span style={{ fontWeight: 700, fontSize: "0.9rem", color: active ? "var(--crimson, #8B1C1C)" : "inherit" }}>
-                                                {opt.label}
-                                            </span>
-                                            <span style={{ fontSize: "0.72rem", color: "var(--muted)", lineHeight: 1.4 }}>
-                                                {opt.tagline}
-                                            </span>
-                                        </label>
-                                    );
-                                })}
+                        {onlyOneRole && activeOption ? (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "0.2rem",
+                                    padding: "0.7rem 0.85rem",
+                                    border: "1px solid var(--crimson, #8B1C1C)",
+                                    borderRadius: 4,
+                                    background: "rgba(139,28,28,0.06)",
+                                    marginBottom: "1rem",
+                                }}
+                            >
+                                <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--crimson, #8B1C1C)" }}>
+                                    {activeOption.label} account
+                                </span>
+                                {activeOption.tagline && (
+                                    <span style={{ fontSize: "0.72rem", color: "var(--muted)", lineHeight: 1.4 }}>
+                                        {activeOption.tagline}
+                                    </span>
+                                )}
                             </div>
-                        </div>
+                        ) : (
+                            <div className="form-group" role="radiogroup" aria-label="Account type">
+                                <label style={{ marginBottom: "0.5rem" }}>I am a…</label>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.5rem" }}>
+                                    {ROLE_OPTIONS.map((opt) => {
+                                        const active = role === opt.key;
+                                        return (
+                                            <label
+                                                key={opt.key}
+                                                style={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: "0.2rem",
+                                                    padding: "0.7rem 0.85rem",
+                                                    border: `1px solid ${active ? "var(--crimson, #8B1C1C)" : "var(--line, #ddd)"}`,
+                                                    borderRadius: 4,
+                                                    background: active ? "rgba(139,28,28,0.06)" : "#fff",
+                                                    cursor: "pointer",
+                                                    transition: "all 0.15s",
+                                                }}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="role"
+                                                    value={opt.key}
+                                                    checked={active}
+                                                    onChange={() => setRole(opt.key)}
+                                                    style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
+                                                />
+                                                <span style={{ fontWeight: 700, fontSize: "0.9rem", color: active ? "var(--crimson, #8B1C1C)" : "inherit" }}>
+                                                    {opt.label}
+                                                </span>
+                                                <span style={{ fontSize: "0.72rem", color: "var(--muted)", lineHeight: 1.4 }}>
+                                                    {opt.tagline}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                         <div className="form-group">
-                            <label htmlFor="reg-name">{role === "partner" ? "Full Name / Contact Person" : "Full Name"}</label>
+                            <label htmlFor="reg-name">Full Name</label>
                             <input
                                 type="text"
                                 id="reg-name"
@@ -148,7 +186,7 @@ function RegisterPageInner() {
                         </div>
                         <div className={`form-group${hasError ? " field-error" : ""}`}>
                             <label htmlFor="reg-email" className={hasError ? "field-error-label" : ""}>
-                                {role === "partner" ? "Email (organisation)" : "Email Address"}
+                                Email Address
                             </label>
                             <input
                                 type="email"
@@ -171,7 +209,7 @@ function RegisterPageInner() {
                             />
                         </div>
                         <button type="submit" className="btn-primary login-submit" disabled={loading}>
-                            {loading ? "Sending..." : `Request ${role === "partner" ? "Partner" : "Contributor"} Account`}
+                            {loading ? "Sending..." : `Request ${activeOption?.label || "Contributor"} Account`}
                         </button>
                     </form>
                 )}

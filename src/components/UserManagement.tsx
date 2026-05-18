@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import Pagination from "@/components/Pagination";
 import { useToast, confirmDialog } from "@/components/Toast";
 import PasswordInput from "@/components/PasswordInput";
+import { ADMIN_ASSIGNABLE_ROLES } from "@/lib/role-config";
 
 type UserRole = "admin" | "reviewer" | "contributor" | "partner";
 type UserStatus = "pending" | "active" | "suspended";
@@ -18,7 +19,10 @@ interface UserRow {
     status: UserStatus;
 }
 
-const ROLE_OPTIONS: UserRole[] = ["admin", "reviewer", "contributor", "partner"];
+// Roles offered in the add/edit selectors. Existing users with a role no
+// longer listed here (e.g. 'partner' before its hide) still render correctly
+// in the table; admin can switch them to a listed role to migrate.
+const ROLE_OPTIONS: UserRole[] = ADMIN_ASSIGNABLE_ROLES;
 
 const STATUS_LABEL: Record<UserStatus, string> = {
     pending: "Pending",
@@ -270,6 +274,12 @@ export default function UserManagement() {
                                     onChange={(e) => updateUser(user, { role: e.target.value as UserRole })}
                                     style={{ padding: "4px 8px", fontSize: "0.8rem", border: "1px solid var(--line)", borderRadius: 4 }}
                                 >
+                                    {/* Surface the user's current role even when it's not in
+                                        ADMIN_ASSIGNABLE_ROLES (e.g. legacy 'partner') so the
+                                        admin can see and migrate them. */}
+                                    {!ROLE_OPTIONS.includes(user.role) && (
+                                        <option key={user.role} value={user.role}>{user.role} (legacy)</option>
+                                    )}
                                     {ROLE_OPTIONS.map((r) => (
                                         <option key={r} value={r}>{r}</option>
                                     ))}
@@ -404,6 +414,9 @@ export default function UserManagement() {
                                 <div className="form-group">
                                     <label htmlFor="edit-role">Role</label>
                                     <select id="edit-role" name="role" defaultValue={editModal.role}>
+                                        {!ROLE_OPTIONS.includes(editModal.role) && (
+                                            <option key={editModal.role} value={editModal.role}>{editModal.role} (legacy)</option>
+                                        )}
                                         {ROLE_OPTIONS.map((r) => (
                                             <option key={r} value={r}>{r}</option>
                                         ))}
