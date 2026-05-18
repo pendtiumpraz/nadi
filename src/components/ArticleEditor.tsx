@@ -86,6 +86,52 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     }, []);
     const productByKey = (key: string): PolicyProductDef | undefined =>
         productTypes.find((p) => p.key === key) || POLICY_PRODUCTS[key];
+
+    // Focus-mode state for the manual (Gutenberg-style) writing experience.
+    // When AI is off, the admin chrome (topbar + left sidebar) collapses out
+    // of the way and the centre column fills the viewport. Each side has its
+    // own toggle so the user can bring panels back without flipping the AI
+    // switch.
+    const [chromeCollapsed, setChromeCollapsed] = useState(false);
+    const [asideCollapsed, setAsideCollapsed] = useState(false);
+    useEffect(() => {
+        // Default: manual mode auto-collapses admin chrome on entry; AI mode
+        // restores it. Persisted via localStorage so the user's last choice
+        // survives a reload.
+        if (typeof window === "undefined") return;
+        const stored = window.localStorage.getItem("nadi_editor_chrome_collapsed");
+        if (stored !== null) {
+            setChromeCollapsed(stored === "1");
+        } else {
+            setChromeCollapsed(!aiStyleEnabled);
+        }
+        const storedAside = window.localStorage.getItem("nadi_editor_aside_collapsed");
+        if (storedAside !== null) setAsideCollapsed(storedAside === "1");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    useEffect(() => {
+        // Sync chrome class to <body> so global CSS can hide the admin nav.
+        // Cleanup on unmount restores normal admin shell.
+        if (typeof document === "undefined") return;
+        document.body.classList.toggle("editor-focus-mode", chromeCollapsed);
+        return () => { document.body.classList.remove("editor-focus-mode"); };
+    }, [chromeCollapsed]);
+    useEffect(() => {
+        // Flipping the AI toggle nudges the chrome state in the same
+        // direction, but doesn't lock the user out — they can still expand
+        // the chrome via the floating button regardless of AI mode.
+        if (typeof window === "undefined") return;
+        setChromeCollapsed(!aiStyleEnabled);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [aiStyleEnabled]);
+    const persistChrome = (next: boolean) => {
+        setChromeCollapsed(next);
+        try { window.localStorage.setItem("nadi_editor_chrome_collapsed", next ? "1" : "0"); } catch { /* swallow */ }
+    };
+    const persistAside = (next: boolean) => {
+        setAsideCollapsed(next);
+        try { window.localStorage.setItem("nadi_editor_aside_collapsed", next ? "1" : "0"); } catch { /* swallow */ }
+    };
     const coverInputRef = useRef<HTMLInputElement>(null);
     const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -600,11 +646,13 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             </div>
 
             <div
-                className={`editor-grid-wrap editor-mode-${aiStyleEnabled ? "ai" : "manual"}`}
+                className={`editor-grid-wrap editor-mode-${aiStyleEnabled ? "ai" : "manual"}${asideCollapsed ? " editor-aside-collapsed" : ""}`}
                 style={{
                     display: "grid",
-                    gridTemplateColumns: aiStyleEnabled ? "minmax(0, 1fr) 280px" : "minmax(0, 1fr) 340px",
-                    gap: "1.5rem",
+                    gridTemplateColumns: asideCollapsed
+                        ? "minmax(0, 1fr) 44px"
+                        : (aiStyleEnabled ? "minmax(0, 1fr) 280px" : "minmax(0, 1fr) 340px"),
+                    gap: asideCollapsed ? "0.75rem" : "1.5rem",
                     alignItems: "start",
                 }}
             >
@@ -838,7 +886,61 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             {/* Sticky side panel. In AI mode it just holds the counters + save
                 buttons; in manual (Gutenberg) mode all metadata sections live
                 here so the centre column stays focused on writing. The aside
-                gets its own scroll once content grows past the viewport. */}
+                gets its own scroll once content grows past the viewport.
+                Collapse / expand button at the very top lets the user shrink
+                the panel down to a thin strip for a true distraction-free
+                writing experience. */}
+            {asideCollapsed ? (
+                <aside
+                    className="editor-side editor-side--collapsed"
+                    style={{
+                        position: "sticky",
+                        top: "1rem",
+                        alignSelf: "start",
+                        padding: "0.4rem",
+                        border: "1px solid var(--line)",
+                        borderRadius: 8,
+                        background: "#fff",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                    }}
+                >
+                    <button
+                        type="button"
+                        onClick={() => persistAside(false)}
+                        title="Expand settings panel"
+                        aria-label="Expand settings panel"
+                        style={{
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "8px",
+                            color: "var(--crimson)",
+                            fontSize: "1.1rem",
+                            lineHeight: 1,
+                        }}
+                    >
+                        ‹
+                    </button>
+                    <span
+                        aria-hidden
+                        style={{
+                            writingMode: "vertical-rl",
+                            transform: "rotate(180deg)",
+                            fontSize: "0.7rem",
+                            letterSpacing: "0.15em",
+                            textTransform: "uppercase",
+                            color: "var(--muted)",
+                            fontWeight: 700,
+                            marginTop: "0.5rem",
+                        }}
+                    >
+                        Settings
+                    </span>
+                </aside>
+            ) : (
             <aside className="editor-side" style={{
                 position: "sticky",
                 top: "1rem",
@@ -853,6 +955,27 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 maxHeight: !aiStyleEnabled ? "calc(100vh - 32px)" : undefined,
                 overflowY: !aiStyleEnabled ? "auto" : undefined,
             }}>
+                {/* Collapse button — always at the top of the expanded aside */}
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "-0.25rem" }}>
+                    <button
+                        type="button"
+                        onClick={() => persistAside(true)}
+                        title="Collapse settings panel"
+                        aria-label="Collapse settings panel"
+                        style={{
+                            background: "transparent",
+                            border: "1px solid var(--line)",
+                            borderRadius: 4,
+                            cursor: "pointer",
+                            padding: "2px 8px",
+                            color: "var(--muted)",
+                            fontSize: "0.85rem",
+                            lineHeight: 1,
+                        }}
+                    >
+                        › Collapse
+                    </button>
+                </div>
                 {!aiStyleEnabled && (
                     <>
                         {policyTypeSection}
@@ -940,7 +1063,64 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     </button>
                 </div>
             </aside>
+            )}
             </div>
+
+            {/* Floating chrome toggle — visible only when admin nav is hidden.
+                Lets the user pop the sidebar back without leaving the editor. */}
+            {chromeCollapsed && (
+                <button
+                    type="button"
+                    onClick={() => persistChrome(false)}
+                    title="Show admin sidebar"
+                    aria-label="Show admin sidebar"
+                    style={{
+                        position: "fixed",
+                        top: "1rem",
+                        left: "1rem",
+                        zIndex: 9000,
+                        background: "#2C2C2C",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 6,
+                        padding: "8px 14px",
+                        fontSize: "0.78rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.4rem",
+                    }}
+                >
+                    ≡ Exit focus mode
+                </button>
+            )}
+            {!chromeCollapsed && !aiStyleEnabled && (
+                <button
+                    type="button"
+                    onClick={() => persistChrome(true)}
+                    title="Hide admin sidebar for distraction-free writing"
+                    aria-label="Enter focus mode"
+                    style={{
+                        position: "fixed",
+                        top: "60px",
+                        right: "1rem",
+                        zIndex: 9000,
+                        background: "#fff",
+                        color: "#1a1a1a",
+                        border: "1px solid var(--line)",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        fontSize: "0.78rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                    }}
+                >
+                    ⛶ Focus mode
+                </button>
+            )}
 
             {isEdit && slug && (
                 <div className="editor-section" style={{ marginTop: "2rem" }}>

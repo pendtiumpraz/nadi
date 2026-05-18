@@ -2022,6 +2022,26 @@ footer {
   background: var(--cream);
 }
 
+/* Focus mode for the manual article editor — admin chrome slides off so the
+   writer gets the full viewport. Triggered by ArticleEditor adding the body
+   class when manual mode is on (or when the user clicks "Focus mode"). */
+body.editor-focus-mode .adm-shell {
+  grid-template-columns: 0 1fr;
+  grid-template-rows: 0 1fr;
+}
+body.editor-focus-mode .adm-topbar,
+body.editor-focus-mode .adm-sidebar {
+  display: none;
+}
+body.editor-focus-mode .adm-main {
+  padding: 1.5rem 1.5rem 4rem !important;
+  max-width: none !important;
+}
+body.editor-focus-mode .admin-body {
+  max-width: none !important;
+  padding-top: 3rem;
+}
+
 .adm-topbar {
   grid-area: topbar;
   background: var(--dark);
