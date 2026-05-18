@@ -79,52 +79,53 @@ export default function PublicationsPage() {
             .finally(() => setLoading(false));
     }, [page, filter]);
 
-    return (
-        <V2PageLayout title="Publications & <em>Insights</em>" eyebrow="Research & Analysis">
-            {/* Submit-a-publication CTA */}
-            <div
+    const submitBanner = (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "1rem",
+                padding: "1.1rem 1.4rem",
+                background: "#fafafa",
+                border: "1px solid #E8E5E1",
+                borderLeft: "3px solid #8B1C1C",
+                borderRadius: 4,
+                marginTop: "2rem",
+                flexWrap: "wrap",
+            }}
+        >
+            <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.2rem" }}>
+                    Have a policy product to share?
+                </div>
+                <div style={{ fontSize: "0.82rem", color: "#666", lineHeight: 1.5 }}>
+                    Submit your Policy Brief, Policy Paper, or Opinion Piece for review and publication on NADI.
+                </div>
+            </div>
+            <a
+                href={submitHref}
                 style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "1rem",
-                    padding: "1.1rem 1.4rem",
-                    background: "#fafafa",
-                    border: "1px solid #E8E5E1",
-                    borderLeft: "3px solid #8B1C1C",
-                    borderRadius: 4,
-                    marginBottom: "1.5rem",
-                    flexWrap: "wrap",
+                    display: "inline-block",
+                    padding: "10px 22px",
+                    background: "#8B1C1C",
+                    color: "#fff",
+                    textDecoration: "none",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    borderRadius: 2,
+                    whiteSpace: "nowrap",
                 }}
             >
-                <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.2rem" }}>
-                        Have a policy product to share?
-                    </div>
-                    <div style={{ fontSize: "0.82rem", color: "#666", lineHeight: 1.5 }}>
-                        Submit your Policy Brief, Policy Paper, or Opinion Piece for review and publication on NADI.
-                    </div>
-                </div>
-                <a
-                    href={submitHref}
-                    style={{
-                        display: "inline-block",
-                        padding: "10px 22px",
-                        background: "#8B1C1C",
-                        color: "#fff",
-                        textDecoration: "none",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        borderRadius: 2,
-                        whiteSpace: "nowrap",
-                    }}
-                >
-                    Submit a Publication →
-                </a>
-            </div>
+                Submit a Publication →
+            </a>
+        </div>
+    );
 
+    return (
+        <V2PageLayout title="Publications & <em>Insights</em>" eyebrow="Research & Analysis">
             {/* Policy Product Type Filter */}
             <div className="v2-filters">
                 {FILTERS.map((f) => (
@@ -138,9 +139,15 @@ export default function PublicationsPage() {
             {loading ? (
                 <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>Loading publications...</p>
             ) : error ? (
-                <p style={{ textAlign: "center", padding: "3rem 0", color: "#c44" }}>Couldn&apos;t load publications. Please refresh or try again later.</p>
+                <>
+                    <p style={{ textAlign: "center", padding: "3rem 0", color: "#c44" }}>Couldn&apos;t load publications. Please refresh or try again later.</p>
+                    {submitBanner}
+                </>
             ) : articles.length === 0 ? (
-                <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>No publications found{filter !== "ALL" ? ` in this category` : ""}.</p>
+                <>
+                    <p style={{ textAlign: "center", padding: "3rem 0", color: "#888" }}>No publications found{filter !== "ALL" ? ` in this category` : ""}.</p>
+                    {submitBanner}
+                </>
             ) : (
                 <>
                     <div className="v2-pub-list">
@@ -198,6 +205,8 @@ export default function PublicationsPage() {
                             )}
                         </div>
                     )}
+
+                    {submitBanner}
                 </>
             )}
         </V2PageLayout>
