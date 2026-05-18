@@ -2787,7 +2787,7 @@ footer {
   min-height: 400px;
   font-family: var(--font-body);
   font-size: 0.95rem;
-  line-height: 1.8;
+  line-height: 1.65;
   padding: 1.2rem;
   border: 1px solid var(--line);
   border-radius: 0 0 6px 6px;
@@ -2795,6 +2795,19 @@ footer {
   color: var(--text);
   outline: none;
   overflow-y: auto;
+}
+
+/* Tighten the gap between paragraphs that the browser inserts on Enter —
+   default `<p>` margins (~1em top + 1em bottom) make the editor feel like
+   double-spaced typewriter output. Same for the `<div>` wrappers some
+   browsers use instead of `<p>`. */
+.rte-content p,
+.rte-content div {
+  margin: 0 0 0.35rem;
+}
+.rte-content p:last-child,
+.rte-content div:last-child {
+  margin-bottom: 0;
 }
 
 .rte-content:focus {

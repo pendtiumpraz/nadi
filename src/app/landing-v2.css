@@ -1369,29 +1369,35 @@
 .legal-doc {
     font-family: Georgia, 'Times New Roman', Times, serif;
     font-size: 1rem;
-    line-height: 1.75;
+    line-height: 1.65;
     color: #1a1a1a;
 }
 .legal-doc section {
-    padding: 1.5rem 0 1.25rem;
+    padding: 0.85rem 0 0.75rem;
     border-bottom: 1px solid #EEEAE2;
+}
+.legal-doc section:first-child {
+    padding-top: 0;
 }
 .legal-doc section:last-child {
     border-bottom: none;
 }
 .legal-doc h2 {
     font-family: Georgia, serif;
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 700;
     color: #8B1C1C;
-    line-height: 1.3;
-    margin: 0 0 1rem;
+    line-height: 1.25;
+    margin: 0 0 0.6rem;
     padding-left: 0;
     position: relative;
     scroll-margin-top: 1rem;
 }
 .legal-doc p {
-    margin: 0 0 0.85rem;
+    margin: 0 0 0.55rem;
+}
+.legal-doc p:last-child {
+    margin-bottom: 0;
 }
 .legal-doc a {
     color: #8B1C1C;
