@@ -52,7 +52,13 @@ export default function EventsPage() {
                     <tbody>
                         {events.map(e => (
                             <tr key={e.slug}>
-                                <td><strong>{e.title}</strong><br /><span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{e.category}</span></td>
+                                <td>
+                                    <a href={`/admin/events/${e.slug}`} style={{ color: "var(--crimson)", textDecoration: "none", fontWeight: 700 }}>
+                                        {e.title}
+                                    </a>
+                                    <br />
+                                    <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{e.category}</span>
+                                </td>
                                 <td>{new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
                                 <td>{e.location}<br /><span className={`role-badge role-badge--${e.locationType === "online" ? "user" : "admin"}`}>{e.locationType}</span></td>
                                 <td><span className={`role-badge role-badge--${e.status === "upcoming" ? "admin" : "user"}`}>{e.status}</span></td>

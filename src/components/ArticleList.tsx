@@ -198,7 +198,9 @@ export default function ArticleList({ initialArticles = [], partnerView = false 
                             return (
                                 <tr key={a.slug}>
                                     <td>
-                                        <strong>{a.title}</strong>
+                                        <a href={`/admin/articles/${a.slug}`} style={{ color: "var(--crimson)", textDecoration: "none", fontWeight: 700 }}>
+                                            {a.title}
+                                        </a>
                                         {a.feedbackPending && (
                                             <span title="Reviewer comments awaiting your reply" style={{ marginLeft: "0.5rem", fontSize: "0.7rem", color: "#9a6a10" }}>
                                                 💬 feedback

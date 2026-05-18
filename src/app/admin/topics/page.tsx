@@ -44,8 +44,8 @@ export default async function AdminTopicsPage() {
                         <tbody>
                             {topics.map((t) => (
                                 <tr key={t.id} style={{ borderBottom: "1px solid var(--line)" }}>
-                                    <td style={{ padding: "0.65rem 0.5rem", fontWeight: 600 }}>
-                                        <a href={`/admin/topics/${t.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                                    <td style={{ padding: "0.65rem 0.5rem" }}>
+                                        <a href={`/admin/topics/${t.id}`} style={{ textDecoration: "none", color: "var(--crimson)", fontWeight: 700 }}>
                                             {t.title}
                                         </a>
                                     </td>

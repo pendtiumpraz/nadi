@@ -54,7 +54,13 @@ export default function MediaPage() {
                     <tbody>
                         {items.map(m => (
                             <tr key={m.slug}>
-                                <td><strong>{m.title}</strong><br /><span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.category}</span></td>
+                                <td>
+                                    <a href={`/admin/media/${m.slug}`} style={{ color: "var(--crimson)", textDecoration: "none", fontWeight: 700 }}>
+                                        {m.title}
+                                    </a>
+                                    <br />
+                                    <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.category}</span>
+                                </td>
                                 <td>{typeEmoji[m.type] || "📺"} {m.type}</td>
                                 <td>{new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
                                 <td>{m.duration || "—"}</td>

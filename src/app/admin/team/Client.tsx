@@ -127,7 +127,17 @@ export default function AdminTeamPage() {
                             {members.map((m) => (
                                 <tr key={m.id}>
                                     <td>{m.orderNum}</td>
-                                    <td><strong>{m.name}</strong><br /><span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.initials}</span></td>
+                                    <td>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditing({ ...m })}
+                                            style={{ background: "none", border: "none", padding: 0, color: "var(--crimson)", fontWeight: 700, cursor: "pointer", textAlign: "left" }}
+                                        >
+                                            {m.name}
+                                        </button>
+                                        <br />
+                                        <span style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.initials}</span>
+                                    </td>
                                     <td>{m.title}</td>
                                     <td>{m.linkedinUrl ? <a href={m.linkedinUrl} target="_blank" rel="noopener" style={{ fontSize: "0.72rem", color: "var(--crimson)" }}>View</a> : <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>—</span>}</td>
                                     <td><span className={`role-badge role-badge--${m.isFeatured ? "admin" : "user"}`}>{m.isFeatured ? "Homepage + Team" : "Team Only"}</span></td>
