@@ -27,6 +27,8 @@ export default function AdminSettingsPage() {
     const [ccList, setCcList] = useState<CCRecipient[]>([]);
     const [reviewEta, setReviewEta] = useState("7");
     const [privacyTermsMd, setPrivacyTermsMd] = useState("");
+    const [privacyPolicyHtml, setPrivacyPolicyHtml] = useState("");
+    const [termsOfServiceHtml, setTermsOfServiceHtml] = useState("");
     const [throttle, setThrottle] = useState<ThrottleSettings>({ windowSeconds: 3600, thresholds: [] });
     const [recentFailures, setRecentFailures] = useState(0);
     const [aiLimits, setAiLimits] = useState<AiLimits>({ maxInputChars: 8000, maxOutputTokens: 4096, perUserPerHour: 30 });
@@ -35,7 +37,7 @@ export default function AdminSettingsPage() {
     const [topSubmitters, setTopSubmitters] = useState<TopSubmitter[]>([]);
     const [loaded, setLoaded] = useState(false);
     const toast = useToast();
-    const [tab, setTab] = useState<"general" | "notifications" | "security">("general");
+    const [tab, setTab] = useState<"general" | "notifications" | "security" | "legal">("general");
 
     useEffect(() => {
         fetch("/api/settings")
@@ -45,6 +47,8 @@ export default function AdminSettingsPage() {
                 setAdminTheme(data.settings?.admin_theme || "v1");
                 setReviewEta(data.settings?.review_eta_days || "7");
                 setPrivacyTermsMd(data.settings?.privacy_terms_md || "");
+                setPrivacyPolicyHtml(data.settings?.privacy_policy_html || "");
+                setTermsOfServiceHtml(data.settings?.terms_of_service_html || "");
                 try {
                     const parsed = JSON.parse(data.settings?.notification_cc || "[]");
                     setCcList(Array.isArray(parsed) ? parsed : []);
@@ -165,10 +169,11 @@ export default function AdminSettingsPage() {
 
     if (!loaded) return <div className="admin-body"><p className="admin-page-desc">Loading settings...</p></div>;
 
-    const TABS: { key: "general" | "notifications" | "security"; label: string }[] = [
+    const TABS: { key: "general" | "notifications" | "security" | "legal"; label: string }[] = [
         { key: "general", label: "General" },
         { key: "notifications", label: "Notifications & Privacy" },
         { key: "security", label: "Security & Limits" },
+        { key: "legal", label: "Legal Pages" },
     ];
 
     return (
@@ -551,6 +556,83 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+            )}
+
+            {/* Legal pages — Privacy Policy + Terms of Service editors */}
+            {tab === "legal" && (
+                <>
+                    <div className="editor" style={{ marginBottom: "1.5rem" }}>
+                        <div className="editor-section">
+                            <div className="editor-section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span>Privacy Policy <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--muted)" }}>— public page at <code>/privacy-policy</code></span></span>
+                                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.78rem", color: "var(--crimson)", textDecoration: "none" }}>Preview ↗</a>
+                            </div>
+                            <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem" }}>
+                                HTML content. Wrap each clause in <code>&lt;section id=&quot;slug&quot;&gt;&lt;h2&gt;...&lt;/h2&gt;...&lt;/section&gt;</code> — the public page auto-builds a table of contents from those <code>section[id]</code> tags. Leave empty to fall back to the default Indonesian template.
+                            </p>
+                            <textarea
+                                rows={18}
+                                value={privacyPolicyHtml}
+                                onChange={(e) => setPrivacyPolicyHtml(e.target.value)}
+                                placeholder="Leave empty to use the default seed content..."
+                                style={{
+                                    width: "100%",
+                                    fontFamily: "monospace",
+                                    fontSize: "0.82rem",
+                                    padding: "12px",
+                                    border: "1px solid var(--line)",
+                                    borderRadius: 4,
+                                }}
+                            />
+                            <div style={{ marginTop: "0.75rem" }}>
+                                <button
+                                    type="button"
+                                    className="btn-primary"
+                                    onClick={() => saveSetting("privacy_policy_html", privacyPolicyHtml)}
+                                    style={{ fontSize: "0.8rem", padding: "6px 14px" }}
+                                >
+                                    Save Privacy Policy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="editor">
+                        <div className="editor-section">
+                            <div className="editor-section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span>Terms of Service <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "var(--muted)" }}>— public page at <code>/terms</code></span></span>
+                                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.78rem", color: "var(--crimson)", textDecoration: "none" }}>Preview ↗</a>
+                            </div>
+                            <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem" }}>
+                                HTML content. Same structure as Privacy Policy — each numbered clause wrapped in <code>&lt;section id=&quot;...&quot;&gt;</code> so the TOC builds itself.
+                            </p>
+                            <textarea
+                                rows={18}
+                                value={termsOfServiceHtml}
+                                onChange={(e) => setTermsOfServiceHtml(e.target.value)}
+                                placeholder="Leave empty to use the default seed content..."
+                                style={{
+                                    width: "100%",
+                                    fontFamily: "monospace",
+                                    fontSize: "0.82rem",
+                                    padding: "12px",
+                                    border: "1px solid var(--line)",
+                                    borderRadius: 4,
+                                }}
+                            />
+                            <div style={{ marginTop: "0.75rem" }}>
+                                <button
+                                    type="button"
+                                    className="btn-primary"
+                                    onClick={() => saveSetting("terms_of_service_html", termsOfServiceHtml)}
+                                    style={{ fontSize: "0.8rem", padding: "6px 14px" }}
+                                >
+                                    Save Terms of Service
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* Admin Theme — General tab */}

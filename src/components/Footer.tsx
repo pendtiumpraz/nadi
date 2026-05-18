@@ -55,6 +55,13 @@ export default function Footer() {
                         <li><a href="/contact">Media &amp; Press</a></li>
                     </ul>
                 </div>
+                <div className="footer-col">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="/privacy-policy">Kebijakan Privasi</a></li>
+                        <li><a href="/terms">Ketentuan Penggunaan</a></li>
+                    </ul>
+                </div>
             </div>
             <div className="footer-bottom">
                 <span>© 2026 NADI — Network for Advancing Development &amp; Innovation in Health</span>
