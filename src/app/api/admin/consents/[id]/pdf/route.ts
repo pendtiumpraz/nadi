@@ -118,6 +118,7 @@ async function buildPDF(c: ConsentRecord, sizeKey: string): Promise<Uint8Array> 
     const black = rgb(0, 0, 0);
     const greyDark = rgb(0.33, 0.33, 0.33);
     const greyLight = rgb(0.6, 0.6, 0.6);
+    const crimson = rgb(139 / 255, 28 / 255, 28 / 255);
 
     // Ensure we have space for the next block — if not, paginate.
     const ensureSpace = (needed: number) => {
@@ -160,7 +161,41 @@ async function buildPDF(c: ConsentRecord, sizeKey: string): Promise<Uint8Array> 
         return curTop; // returns new y position (top of next line)
     };
 
-    // ── Title
+    // ── Top-left NADI letterhead. "NADI" is centred horizontally over the
+    // longer subtitle (so the wordmark feels visually anchored), but the
+    // whole block is pinned to the left margin.
+    {
+        const wordmark = "NADI";
+        const wordmarkSize = 24;
+        const subtitle = "Advancing Development & Innovation";
+        const subtitleSize = 7.5;
+        const wordmarkWidth = fontBold.widthOfTextAtSize(wordmark, wordmarkSize);
+        const subtitleWidth = fontRegular.widthOfTextAtSize(subtitle.toUpperCase(), subtitleSize);
+
+        const subtitleX = marginLeft;
+        const wordmarkX = subtitleX + (subtitleWidth - wordmarkWidth) / 2;
+
+        page.drawText(wordmark, {
+            x: wordmarkX,
+            y: y - wordmarkSize,
+            size: wordmarkSize,
+            font: fontBold,
+            color: crimson,
+        });
+        page.drawText(subtitle.toUpperCase(), {
+            x: subtitleX,
+            y: y - wordmarkSize - subtitleSize - 3,
+            size: subtitleSize,
+            font: fontRegular,
+            color: crimson,
+        });
+        // Track text rendered with a tiny letter-spacing for the eye — pdf-lib
+        // doesn't directly support kerning, so we approximate by adjusting
+        // y to leave room for the block.
+        y -= wordmarkSize + subtitleSize + 28;
+    }
+
+    // ── Document title
     {
         const title = "CONSENT-TO-PUBLISH FORM";
         const titleSize = 16;

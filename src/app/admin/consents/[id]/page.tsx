@@ -178,6 +178,35 @@ export default async function ConsentDetailPage({ params }: Props) {
                     lineHeight: 1.55,
                 }}
             >
+                {/* NADI letterhead — top-left wordmark.
+                    The "NADI" word is centred horizontally over the longer
+                    subtitle so the two lines feel anchored together. */}
+                <div style={{ marginBottom: "2rem", display: "inline-block", textAlign: "center" }}>
+                    <div
+                        style={{
+                            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                            fontSize: "2.4rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.12em",
+                            lineHeight: 1,
+                            color: "#8B1C1C",
+                        }}
+                    >
+                        NADI
+                    </div>
+                    <div
+                        style={{
+                            fontSize: "0.7rem",
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                            color: "#8B1C1C",
+                            marginTop: "0.3rem",
+                        }}
+                    >
+                        Advancing Development &amp; Innovation
+                    </div>
+                </div>
+
                 {/* Document title */}
                 <h2
                     style={{
