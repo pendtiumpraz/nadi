@@ -1,10 +1,21 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import PasswordInput from "@/components/PasswordInput";
 
+// Same rules as login — only accept relative paths so we can't be used as
+// an open redirect to an attacker-controlled URL.
+function safeRedirect(value: string | null): string {
+    if (!value) return "";
+    if (!value.startsWith("/") || value.startsWith("//")) return "";
+    return value;
+}
+
 export default function RegisterPage() {
+    const searchParams = useSearchParams();
+    const callbackUrl = safeRedirect(searchParams?.get("callbackUrl") ?? null);
     const toast = useToast();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -94,7 +105,13 @@ export default function RegisterPage() {
                     </form>
                 )}
                 <div style={{ marginTop: "1rem", textAlign: "center", fontSize: "0.85rem", color: "var(--muted)" }}>
-                    Already have an account? <a href="/login" style={{ color: "var(--crimson)", fontWeight: 600 }}>Sign in</a>
+                    Already have an account?{" "}
+                    <a
+                        href={`/login${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+                        style={{ color: "var(--crimson)", fontWeight: 600 }}
+                    >
+                        Sign in
+                    </a>
                 </div>
                 <a href="/" className="login-back">← Back to NADI Website</a>
             </div>

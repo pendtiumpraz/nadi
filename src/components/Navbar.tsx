@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const { data: session, status } = useSession();
+    const isAuthed = status === "authenticated" && !!session?.user;
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -27,6 +30,11 @@ export default function Navbar() {
                 <li><a href="/publications" onClick={handleLinkClick}>Publications</a></li>
                 <li><a href="/events" onClick={handleLinkClick}>Events</a></li>
                 <li><a href="/media" onClick={handleLinkClick}>Media</a></li>
+                {isAuthed ? (
+                    <li><a href="/admin" onClick={handleLinkClick}>Dashboard</a></li>
+                ) : (
+                    <li><a href="/login" onClick={handleLinkClick}>Sign In</a></li>
+                )}
                 <li><a href="/contact" className="nav-cta" onClick={handleLinkClick}>Get in Touch</a></li>
             </ul>
             <button className={`hamburger${menuOpen ? " active" : ""}`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">

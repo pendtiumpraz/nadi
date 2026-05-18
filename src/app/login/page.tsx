@@ -2,12 +2,22 @@
 
 import { signIn } from "next-auth/react";
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import PasswordInput from "@/components/PasswordInput";
 
+// Only allow same-origin relative paths in callbackUrl — never let an
+// attacker craft /login?callbackUrl=https://evil.example.
+function safeRedirect(value: string | null): string {
+    if (!value) return "/admin";
+    if (!value.startsWith("/") || value.startsWith("//")) return "/admin";
+    return value;
+}
+
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = safeRedirect(searchParams?.get("callbackUrl") ?? null);
     const toast = useToast();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -32,22 +42,22 @@ export default function LoginPage() {
             const code = (result as unknown as { code?: string })?.code || result.error;
             if (code?.includes("PENDING_APPROVAL")) {
                 setErrorField("account");
-                toast.error("Account is pending admin approval. You'll receive an email once activated.");
+                toast.error("Akun kamu belum diaktivasi oleh admin. Kamu akan menerima email konfirmasi setelah akun diaktivasi.");
             } else if (code?.includes("ACCOUNT_SUSPENDED")) {
                 setErrorField("account");
-                toast.error("Account is suspended. Contact an administrator.");
+                toast.error("Akun kamu telah dinonaktifkan. Silakan hubungi administrator.");
             } else if (code?.includes("THROTTLED")) {
                 const seconds = Number(code.split(":")[1]) || 0;
                 const mins = Math.ceil(seconds / 60);
-                const wait = seconds < 60 ? `${seconds} seconds` : mins === 1 ? "about a minute" : `${mins} minutes`;
+                const wait = seconds < 60 ? `${seconds} detik` : mins === 1 ? "sekitar 1 menit" : `${mins} menit`;
                 setErrorField("credentials");
-                toast.error(`Too many failed attempts. Please wait ${wait} before trying again.`);
+                toast.error(`Terlalu banyak percobaan gagal. Coba lagi dalam ${wait}.`);
             } else {
                 setErrorField("credentials");
-                toast.error("Invalid email or password.");
+                toast.error("Email atau password salah.");
             }
         } else {
-            router.push("/admin");
+            router.push(callbackUrl);
             router.refresh();
         }
     };
@@ -92,7 +102,13 @@ export default function LoginPage() {
                     </button>
                 </form>
                 <div style={{ marginTop: "1rem", textAlign: "center", fontSize: "0.85rem", color: "var(--muted)" }}>
-                    Don&apos;t have an account? <a href="/register" style={{ color: "var(--crimson)", fontWeight: 600 }}>Register as a contributor</a>
+                    Don&apos;t have an account?{" "}
+                    <a
+                        href={`/register${callbackUrl !== "/admin" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+                        style={{ color: "var(--crimson)", fontWeight: 600 }}
+                    >
+                        Register as a contributor
+                    </a>
                 </div>
                 <a href="/" className="login-back">← Back to NADI Website</a>
             </div>

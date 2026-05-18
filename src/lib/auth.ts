@@ -1,8 +1,27 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { getUserByEmail, verifyPassword } from "@/lib/users";
 import { checkLoginThrottle, recordLoginAttempt } from "@/lib/login-throttle";
 import authConfig from "@/lib/auth.config";
+
+// NextAuth v5 hides any plain Error thrown inside `authorize` behind a generic
+// "CredentialsSignin" so brute-forcers can't probe for valid emails. To pass a
+// CUSTOMER-facing error code through (pending approval, suspended, throttled),
+// throw a CredentialsSignin subclass with a `code` field — that field is
+// preserved on `result.code` client-side.
+class PendingApprovalError extends CredentialsSignin {
+    code = "PENDING_APPROVAL";
+}
+class AccountSuspendedError extends CredentialsSignin {
+    code = "ACCOUNT_SUSPENDED";
+}
+class LoginThrottledError extends CredentialsSignin {
+    code: string;
+    constructor(retryAfterSeconds: number) {
+        super("Login throttled");
+        this.code = `THROTTLED:${retryAfterSeconds}`;
+    }
+}
 
 declare module "next-auth" {
     interface User {
@@ -46,7 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 // Defaults: 3 failures → 30s, 5 → 5min, 10 → 1hr.
                 const throttle = await checkLoginThrottle(email);
                 if (throttle.blocked) {
-                    throw new Error(`THROTTLED:${throttle.retryAfterSeconds}`);
+                    throw new LoginThrottledError(throttle.retryAfterSeconds);
                 }
 
                 const user = await getUserByEmail(email);
@@ -65,14 +84,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 // Legacy rows with a missing/empty status are normalized to "active"
                 // in `normalizeStatus()` (src/lib/users.ts), so they keep working.
                 if (user.status === "pending") {
-                    throw new Error("PENDING_APPROVAL");
+                    throw new PendingApprovalError();
                 }
                 if (user.status === "suspended") {
-                    throw new Error("ACCOUNT_SUSPENDED");
+                    throw new AccountSuspendedError();
                 }
                 if (user.status !== "active") {
                     // Defensive: an unknown future status (e.g. "archived") blocks too.
-                    throw new Error("ACCOUNT_SUSPENDED");
+                    throw new AccountSuspendedError();
                 }
 
                 // Successful sign-in — clears the failure chain in the throttle check.

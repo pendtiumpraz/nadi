@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import V2PageLayout from "@/components/V2PageLayout";
 import { POLICY_PRODUCT_LIST, getProduct, type PolicyProductType } from "@/data/policy-products";
 import "@/app/landing-v2.css";
+
+const SUBMIT_TARGET = "/admin/articles/new";
 
 interface ArticleItem {
     slug: string; title: string; subtitle: string; category: string;
@@ -44,6 +47,13 @@ export default function PublicationsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const PER_PAGE = 9;
+    const { data: session, status } = useSession();
+    const isAuthed = status === "authenticated" && !!session?.user;
+    // Logged-in users go straight to the editor; visitors are bounced through
+    // /login (which honours callbackUrl) and land in the editor after auth.
+    const submitHref = isAuthed
+        ? SUBMIT_TARGET
+        : `/login?callbackUrl=${encodeURIComponent(SUBMIT_TARGET)}`;
 
     // Reset to page 1 whenever the filter changes — handled in the filter onClick already.
 
@@ -71,6 +81,50 @@ export default function PublicationsPage() {
 
     return (
         <V2PageLayout title="Publications & <em>Insights</em>" eyebrow="Research & Analysis">
+            {/* Submit-a-publication CTA */}
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "1rem",
+                    padding: "1.1rem 1.4rem",
+                    background: "#fafafa",
+                    border: "1px solid #E8E5E1",
+                    borderLeft: "3px solid #8B1C1C",
+                    borderRadius: 4,
+                    marginBottom: "1.5rem",
+                    flexWrap: "wrap",
+                }}
+            >
+                <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: "0.95rem", marginBottom: "0.2rem" }}>
+                        Have a policy product to share?
+                    </div>
+                    <div style={{ fontSize: "0.82rem", color: "#666", lineHeight: 1.5 }}>
+                        Submit your Policy Brief, Policy Paper, or Opinion Piece for review and publication on NADI.
+                    </div>
+                </div>
+                <a
+                    href={submitHref}
+                    style={{
+                        display: "inline-block",
+                        padding: "10px 22px",
+                        background: "#8B1C1C",
+                        color: "#fff",
+                        textDecoration: "none",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        borderRadius: 2,
+                        whiteSpace: "nowrap",
+                    }}
+                >
+                    Submit a Publication →
+                </a>
+            </div>
+
             {/* Policy Product Type Filter */}
             <div className="v2-filters">
                 {FILTERS.map((f) => (
