@@ -61,6 +61,33 @@ body {
   text-decoration: none;
 }
 
+/* Image-based brand mark for Navbar / V2 layout / footer. Sized in CSS so the
+   underlying logo file can have any intrinsic dimensions. The landing Navbar
+   sits on a dark hero background (PNG already has dark text) so the colour
+   logo is used; the white variant takes over on dark admin chrome. */
+.nav-logo-img {
+  height: 42px;
+  width: auto;
+  display: block;
+  /* Landing Navbar is dark before scroll: invert the dark text portion of
+     the colour logo so "Advancing Development & Innovation" stays legible.
+     Once the user scrolls past the hero, the nav background lightens and
+     the original colours show through. */
+  background: transparent;
+}
+.site-nav .nav-logo-img {
+  filter: brightness(0) invert(1);
+}
+.site-nav.scrolled .nav-logo-img {
+  filter: none;
+  height: 36px;
+}
+.footer-brand .nav-logo-img {
+  filter: brightness(0) invert(1);
+  height: 38px;
+  margin-bottom: 0.5rem;
+}
+
 .nav-logo-word {
   font-family: 'Cormorant Garamond', serif;
   font-size: 1.75rem;
@@ -2155,6 +2182,24 @@ body.editor-focus-mode .admin-body {
   align-items: baseline;
   gap: 8px;
   text-decoration: none;
+}
+
+/* Image-based brand mark in the admin topbar. Two <img> elements ship —
+   white variant for the default dark topbar, colour variant for the
+   .adm-light theme — and CSS shows/hides the right one. */
+.adm-topbar-logo-img {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+.adm-topbar-logo-img.on-light {
+  display: none;
+}
+.adm-light .adm-topbar-logo-img.on-dark {
+  display: none;
+}
+.adm-light .adm-topbar-logo-img.on-light {
+  display: block;
 }
 
 .adm-topbar-logo-text {

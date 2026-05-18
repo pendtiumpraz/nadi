@@ -93,7 +93,7 @@ function wrapText(text: string, font: import("pdf-lib").PDFFont, size: number, m
     return lines.length > 0 ? lines : [""];
 }
 
-async function buildPDF(c: ConsentRecord, sizeKey: string): Promise<Uint8Array> {
+async function buildPDF(c: ConsentRecord, sizeKey: string, baseUrl: string): Promise<Uint8Array> {
     const [pageWidth, pageHeight] = PAGE_SIZES[sizeKey] || PAGE_SIZES.A4;
 
     const doc = await PDFDocument.create();
@@ -161,38 +161,62 @@ async function buildPDF(c: ConsentRecord, sizeKey: string): Promise<Uint8Array> 
         return curTop; // returns new y position (top of next line)
     };
 
-    // ── Top-left NADI letterhead. "NADI" is centred horizontally over the
-    // longer subtitle (so the wordmark feels visually anchored), but the
-    // whole block is pinned to the left margin.
+    // ── Top-left NADI letterhead. Embed the brand logo (color variant)
+    // from the admin-configured branding URL, falling back to the
+    // /public/logo-nadi-color.png shipped with the build. Drawn at a fixed
+    // height so layout stays predictable regardless of source dimensions.
     {
-        const wordmark = "NADI";
-        const wordmarkSize = 24;
-        const subtitle = "Advancing Development & Innovation";
-        const subtitleSize = 7.5;
-        const wordmarkWidth = fontBold.widthOfTextAtSize(wordmark, wordmarkSize);
-        const subtitleWidth = fontRegular.widthOfTextAtSize(subtitle.toUpperCase(), subtitleSize);
+        const logoTargetHeight = 56;
+        try {
+            // Prefer the admin-configured logo if set; fall back to the
+            // bundled default file in /public.
+            let logoSource = `${baseUrl}/logo-nadi-color.png`;
+            try {
+                const sql = getDB();
+                const rows = (await sql`SELECT value FROM site_settings WHERE key = 'branding_logo_url' LIMIT 1`) as { value: string }[];
+                if (rows[0]?.value && rows[0].value.trim().length > 0) {
+                    const v = rows[0].value;
+                    logoSource = v.startsWith("http") ? v : `${baseUrl}${v.startsWith("/") ? v : `/${v}`}`;
+                }
+            } catch { /* fall back to default */ }
 
-        const subtitleX = marginLeft;
-        const wordmarkX = subtitleX + (subtitleWidth - wordmarkWidth) / 2;
-
-        page.drawText(wordmark, {
-            x: wordmarkX,
-            y: y - wordmarkSize,
-            size: wordmarkSize,
-            font: fontBold,
-            color: crimson,
-        });
-        page.drawText(subtitle.toUpperCase(), {
-            x: subtitleX,
-            y: y - wordmarkSize - subtitleSize - 3,
-            size: subtitleSize,
-            font: fontRegular,
-            color: crimson,
-        });
-        // Track text rendered with a tiny letter-spacing for the eye — pdf-lib
-        // doesn't directly support kerning, so we approximate by adjusting
-        // y to leave room for the block.
-        y -= wordmarkSize + subtitleSize + 28;
+            const res2 = await fetch(logoSource);
+            if (res2.ok) {
+                const buf = new Uint8Array(await res2.arrayBuffer());
+                const isPng = (res2.headers.get("content-type") || "").includes("png") || logoSource.toLowerCase().endsWith(".png");
+                const img = isPng ? await doc.embedPng(buf) : await doc.embedJpg(buf);
+                const scale = logoTargetHeight / img.height;
+                const w = img.width * scale;
+                page.drawImage(img, {
+                    x: marginLeft,
+                    y: y - logoTargetHeight,
+                    width: w,
+                    height: logoTargetHeight,
+                });
+                y -= logoTargetHeight + 22;
+            } else {
+                throw new Error("logo fetch failed");
+            }
+        } catch {
+            // Text-based fallback if the logo image can't be loaded.
+            const wordmark = "NADI";
+            const wordmarkSize = 24;
+            page.drawText(wordmark, {
+                x: marginLeft,
+                y: y - wordmarkSize,
+                size: wordmarkSize,
+                font: fontBold,
+                color: crimson,
+            });
+            page.drawText("Advancing Development & Innovation".toUpperCase(), {
+                x: marginLeft,
+                y: y - wordmarkSize - 10,
+                size: 7.5,
+                font: fontRegular,
+                color: crimson,
+            });
+            y -= wordmarkSize + 28;
+        }
     }
 
     // ── Document title
@@ -443,7 +467,10 @@ export async function GET(req: NextRequest, { params }: Params) {
     }
     const c = rows[0] as unknown as ConsentRecord;
 
-    const pdf = await buildPDF(c, sizeKey);
+    const baseUrl =
+        req.nextUrl?.origin ||
+        `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
+    const pdf = await buildPDF(c, sizeKey, baseUrl);
     const filename = `Consent-${c.article_slug}-${c.signatory_full_name.replace(/[^a-z0-9]+/gi, "-")}.pdf`;
 
     return new NextResponse(pdf as unknown as BodyInit, {

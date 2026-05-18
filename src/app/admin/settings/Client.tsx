@@ -31,6 +31,10 @@ export default function AdminSettingsPage() {
     const [privacyTermsMd, setPrivacyTermsMd] = useState("");
     const [privacyPolicyHtml, setPrivacyPolicyHtml] = useState("");
     const [termsOfServiceHtml, setTermsOfServiceHtml] = useState("");
+    const [brandingLogoUrl, setBrandingLogoUrl] = useState("");
+    const [brandingLogoWhiteUrl, setBrandingLogoWhiteUrl] = useState("");
+    const [brandingFaviconUrl, setBrandingFaviconUrl] = useState("");
+    const [uploadingBrand, setUploadingBrand] = useState<string>("");
     // resetKey bumps force the RichTextEditor to re-seed its innerHTML
     // (clicking "Reset to default" otherwise wouldn't update the DOM because
     // the editor only reads `value` on mount to avoid cursor jumps).
@@ -44,7 +48,7 @@ export default function AdminSettingsPage() {
     const [topSubmitters, setTopSubmitters] = useState<TopSubmitter[]>([]);
     const [loaded, setLoaded] = useState(false);
     const toast = useToast();
-    const [tab, setTab] = useState<"general" | "notifications" | "security" | "legal">("general");
+    const [tab, setTab] = useState<"general" | "notifications" | "security" | "legal" | "branding">("general");
 
     useEffect(() => {
         fetch("/api/settings")
@@ -59,6 +63,9 @@ export default function AdminSettingsPage() {
                 // starting point to edit instead of a blank canvas.
                 setPrivacyPolicyHtml(data.settings?.privacy_policy_html || DEFAULT_PRIVACY_POLICY_HTML);
                 setTermsOfServiceHtml(data.settings?.terms_of_service_html || DEFAULT_TERMS_OF_SERVICE_HTML);
+                setBrandingLogoUrl(data.settings?.branding_logo_url || "");
+                setBrandingLogoWhiteUrl(data.settings?.branding_logo_white_url || "");
+                setBrandingFaviconUrl(data.settings?.branding_favicon_url || "");
                 try {
                     const parsed = JSON.parse(data.settings?.notification_cc || "[]");
                     setCcList(Array.isArray(parsed) ? parsed : []);
@@ -163,6 +170,27 @@ export default function AdminSettingsPage() {
     const addCcEntry = () => setCcList([...ccList, { name: "", email: "" }]);
     const removeCcEntry = (idx: number) => saveCcList(ccList.filter((_, i) => i !== idx));
 
+    const uploadBrandingFile = async (kind: "logo" | "logo_white" | "favicon", file: File) => {
+        if (!file) return;
+        setUploadingBrand(kind);
+        try {
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("kind", kind);
+            const res = await fetch("/api/admin/branding/upload", { method: "POST", body: fd });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.error || "Upload failed");
+            const url: string = data.url;
+            if (kind === "logo") { setBrandingLogoUrl(url); await saveSetting("branding_logo_url", url); }
+            if (kind === "logo_white") { setBrandingLogoWhiteUrl(url); await saveSetting("branding_logo_white_url", url); }
+            if (kind === "favicon") { setBrandingFaviconUrl(url); await saveSetting("branding_favicon_url", url); }
+            toast.success("Uploaded and saved.");
+        } catch (err) {
+            toast.error((err as Error).message);
+        }
+        setUploadingBrand("");
+    };
+
     const saveSetting = async (key: string, value: string) => {
         const res = await fetch("/api/settings", {
             method: "PUT",
@@ -179,11 +207,12 @@ export default function AdminSettingsPage() {
 
     if (!loaded) return <div className="admin-body"><p className="admin-page-desc">Loading settings...</p></div>;
 
-    const TABS: { key: "general" | "notifications" | "security" | "legal"; label: string }[] = [
+    const TABS: { key: "general" | "notifications" | "security" | "legal" | "branding"; label: string }[] = [
         { key: "general", label: "General" },
         { key: "notifications", label: "Notifications & Privacy" },
         { key: "security", label: "Security & Limits" },
         { key: "legal", label: "Legal Pages" },
+        { key: "branding", label: "Branding" },
     ];
 
     return (
@@ -566,6 +595,84 @@ export default function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+            )}
+
+            {/* Branding — logo / favicon uploads */}
+            {tab === "branding" && (
+                <div className="editor">
+                    <div className="editor-section">
+                        <div className="editor-section-title">Branding</div>
+                        <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1.25rem" }}>
+                            Brand assets used across the platform — the public landing nav, the admin topbar, the consent document and PDF, and the browser favicon. Leave a slot empty to fall back to the default file shipped with the build.
+                        </p>
+
+                        {([
+                            { key: "logo" as const, title: "Primary Logo (Color)", url: brandingLogoUrl, fallback: "/logo-nadi-color.png", help: "Used on the landing-page navbar, the consent document, and the consent PDF. Recommended: transparent PNG, at least 600px wide." },
+                            { key: "logo_white" as const, title: "White Logo", url: brandingLogoWhiteUrl, fallback: "/logo-nadi-white.png", help: "Used on dark backgrounds (admin topbar default theme, footer). Recommended: white version of the same artwork." },
+                            { key: "favicon" as const, title: "Favicon", url: brandingFaviconUrl, fallback: "/favicon-32.png", help: "Shown in the browser tab. Square PNG, at least 64×64 — browsers will down-scale to 16px/32px." },
+                        ]).map((slot) => {
+                            const current = slot.url || slot.fallback;
+                            const stateUrl = slot.url;
+                            return (
+                                <div key={slot.key} style={{ display: "flex", gap: "1rem", alignItems: "flex-start", padding: "1rem 0", borderTop: "1px solid var(--line)" }}>
+                                    <div style={{
+                                        width: 120,
+                                        height: 80,
+                                        flexShrink: 0,
+                                        border: "1px solid var(--line)",
+                                        borderRadius: 4,
+                                        background: slot.key === "logo_white" ? "#2C2C2C" : "#fff",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        padding: 6,
+                                    }}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={current} alt={slot.title} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{slot.title}</div>
+                                        <p style={{ fontSize: "0.78rem", color: "var(--muted)", margin: "0.2rem 0 0.5rem", lineHeight: 1.5 }}>{slot.help}</p>
+                                        <div style={{ fontSize: "0.72rem", color: "var(--muted)", marginBottom: "0.4rem", wordBreak: "break-all" }}>
+                                            {stateUrl ? <>Current: <code>{stateUrl}</code></> : <>Using default: <code>{slot.fallback}</code></>}
+                                        </div>
+                                        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                                            <label className="btn-outline" style={{ fontSize: "0.78rem", padding: "5px 12px", cursor: "pointer" }}>
+                                                {uploadingBrand === slot.key ? "⏳ Uploading…" : "Upload new"}
+                                                <input
+                                                    type="file"
+                                                    accept="image/png,image/jpeg,image/webp"
+                                                    hidden
+                                                    onChange={(e) => {
+                                                        const f = e.target.files?.[0];
+                                                        if (f) uploadBrandingFile(slot.key, f);
+                                                        e.target.value = "";
+                                                    }}
+                                                />
+                                            </label>
+                                            {stateUrl && (
+                                                <button
+                                                    type="button"
+                                                    className="btn-outline"
+                                                    style={{ fontSize: "0.78rem", padding: "5px 12px", color: "#c44" }}
+                                                    onClick={() => {
+                                                        const key = slot.key === "logo" ? "branding_logo_url" : slot.key === "logo_white" ? "branding_logo_white_url" : "branding_favicon_url";
+                                                        if (slot.key === "logo") setBrandingLogoUrl("");
+                                                        if (slot.key === "logo_white") setBrandingLogoWhiteUrl("");
+                                                        if (slot.key === "favicon") setBrandingFaviconUrl("");
+                                                        saveSetting(key, "");
+                                                    }}
+                                                >
+                                                    Reset to default
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             )}
 
             {/* Legal pages — Privacy Policy + Terms of Service editors */}

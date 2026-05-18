@@ -55,6 +55,19 @@
     border-bottom: 1px solid #E8E5E1;
 }
 
+/* Image-based brand mark used by the V2 nav + footer. */
+.v2-logo-img {
+    height: 38px;
+    width: auto;
+    display: block;
+}
+.v2-footer .v2-logo-img {
+    height: 32px;
+    /* Footer background is dark — invert the dark portion of the colour logo
+       so the subtitle stays legible. */
+    filter: brightness(0) invert(1);
+}
+
 .v2-logo {
     text-decoration: none;
     display: flex;

@@ -5,6 +5,11 @@ import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import NotificationBell from "@/components/NotificationBell";
 
+interface BrandingURLs {
+    logoUrl: string;
+    logoWhiteUrl: string;
+}
+
 interface AdminNavProps {
     user: {
         name?: string | null;
@@ -96,6 +101,24 @@ const COLLAPSE_STORAGE_KEY = "nadi_admin_sidebar_collapsed";
 
 export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
     const pathname = usePathname();
+    // Dashboard topbar is dark by default — load the white variant. Admin
+    // can override both URLs through Settings → Branding; fallback to the
+    // static files shipped in /public.
+    const [branding, setBranding] = useState<BrandingURLs>({ logoUrl: "/logo-nadi-color.png", logoWhiteUrl: "/logo-nadi-white.png" });
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/public/branding")
+            .then((r) => r.json())
+            .then((d) => {
+                if (cancelled) return;
+                setBranding({
+                    logoUrl: d?.logoUrl || "/logo-nadi-color.png",
+                    logoWhiteUrl: d?.logoWhiteUrl || "/logo-nadi-white.png",
+                });
+            })
+            .catch(() => { /* fallback already set */ });
+        return () => { cancelled = true; };
+    }, []);
 
     const allowedKeys = new Set(allowedMenus || ALL_KEYS);
     const standalone = STANDALONE_LINKS.filter((l) => allowedKeys.has(l.key));
@@ -153,8 +176,13 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
         <>
             {/* Top bar — ONLY logo left, logout right */}
             <header className="adm-topbar">
-                <a href="/admin" className="adm-topbar-logo">
-                    <span className="adm-topbar-logo-text">NADI</span>
+                <a href="/admin" className="adm-topbar-logo" aria-label="NADI Admin">
+                    {/* Dark topbar gets the white variant; .adm-light theme
+                        flips to the colour variant via CSS. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={branding.logoWhiteUrl} alt="NADI" className="adm-topbar-logo-img on-dark" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={branding.logoUrl} alt="NADI" className="adm-topbar-logo-img on-light" />
                     <span className="adm-topbar-logo-sub">Admin</span>
                 </a>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginLeft: "auto" }}>

@@ -1,15 +1,24 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 export default function V2PageLayout({ title, eyebrow, subtitle, children }: { title: string; eyebrow: string; subtitle?: string; children: ReactNode }) {
+    const [logoUrl, setLogoUrl] = useState("/logo-nadi-color.png");
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/public/branding")
+            .then((r) => r.json())
+            .then((d) => { if (!cancelled && d?.logoUrl) setLogoUrl(d.logoUrl); })
+            .catch(() => { /* keep default */ });
+        return () => { cancelled = true; };
+    }, []);
     return (
         <div className="v2">
             {/* NAV */}
             <nav className="v2-nav">
-                <a href="/" className="v2-logo">
-                    <span className="v2-logo-name">NADI</span>
-                    <span className="v2-logo-by">advancing development &amp; innovation</span>
+                <a href="/" className="v2-logo" aria-label="NADI">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logoUrl} alt="NADI" className="v2-logo-img" />
                 </a>
                 <ul className="v2-nav-links">
                     <li><a href="/#about">About</a></li>
@@ -47,7 +56,10 @@ export default function V2PageLayout({ title, eyebrow, subtitle, children }: { t
             {/* FOOTER */}
             <footer className="v2-footer">
                 <div className="v2-footer-left">
-                    <a href="/" className="v2-logo"><span className="v2-logo-name">NADI</span></a>
+                    <a href="/" className="v2-logo" aria-label="NADI">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={logoUrl} alt="NADI" className="v2-logo-img" />
+                    </a>
                     <p>Network for Advancing Development &amp; Innovation in Health.<br />Part of Inke Maris &amp; Associates.</p>
                 </div>
                 <div className="v2-footer-right">
