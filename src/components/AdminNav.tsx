@@ -26,7 +26,8 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
         { key: "events", href: "/admin/events", label: "Events", icon: "◈" },
         { key: "media", href: "/admin/media", label: "Media", icon: "▶" },
         { key: "review", href: "/admin/review", label: "Review Queue", icon: "✓" },
-        { key: "topics", href: "/admin/topics", label: "Topics", icon: "☷" },
+        // Topics hidden from the sidebar until the discussion-thread feature
+        // is needed again; the page itself stays reachable at /admin/topics.
         { key: "consents", href: "/admin/consents", label: "Consents", icon: "✍︎" },
         { key: "team", href: "/admin/team", label: "Team", icon: "◉" },
         { key: "newsletter", href: "/admin/newsletter", label: "Newsletter", icon: "✉︎" },
