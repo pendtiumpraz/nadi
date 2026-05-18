@@ -6,6 +6,7 @@ import {
     deleteUser,
     updateUserRole,
     updateUserStatus,
+    updateUserProfile,
     logUserEvent,
     getUserById,
     type UserRole,
@@ -89,12 +90,23 @@ export async function PATCH(req: NextRequest) {
     }
 
     try {
-        const { id, role, status } = await req.json();
+        const { id, role, status, name, email } = await req.json();
         if (!id) {
             return NextResponse.json({ error: "ID is required." }, { status: 400 });
         }
-        if (!role && !status) {
-            return NextResponse.json({ error: "Provide role or status to update." }, { status: 400 });
+        const hasProfilePatch = (typeof name === "string" && name.trim().length > 0) || (typeof email === "string" && email.trim().length > 0);
+        if (!role && !status && !hasProfilePatch) {
+            return NextResponse.json({ error: "Provide role, status, name, or email to update." }, { status: 400 });
+        }
+        if (hasProfilePatch) {
+            if (typeof email === "string" && email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
+            }
+            await updateUserProfile(id, {
+                name: typeof name === "string" ? name : undefined,
+                email: typeof email === "string" ? email : undefined,
+            });
+            await logUserEvent(session.user.id, id, "profile_updated", { name, email });
         }
         if (role) {
             if (!ROLE_VALUES.includes(role)) {

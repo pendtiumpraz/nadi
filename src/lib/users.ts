@@ -114,6 +114,32 @@ export async function updateUserStatus(id: string, status: UserStatus): Promise<
     await sql`UPDATE users SET status = ${status} WHERE id = ${Number(id)}`;
 }
 
+/** Update the display name and / or email. Throws if the new email collides
+ *  with another user's email (case-insensitive). */
+export async function updateUserProfile(
+    id: string,
+    patch: { name?: string; email?: string }
+): Promise<void> {
+    const sql = getDB();
+    const nextName = typeof patch.name === "string" ? patch.name.trim() : undefined;
+    const nextEmail = typeof patch.email === "string" ? patch.email.trim() : undefined;
+    if (!nextName && !nextEmail) return;
+
+    if (nextEmail) {
+        const lower = nextEmail.toLowerCase();
+        const clash = await sql`SELECT id FROM users WHERE LOWER(email) = ${lower} AND id != ${Number(id)} LIMIT 1`;
+        if (clash.length > 0) throw new Error("Another user is already using that email.");
+    }
+
+    if (nextName && nextEmail) {
+        await sql`UPDATE users SET name = ${nextName}, email = ${nextEmail} WHERE id = ${Number(id)}`;
+    } else if (nextName) {
+        await sql`UPDATE users SET name = ${nextName} WHERE id = ${Number(id)}`;
+    } else if (nextEmail) {
+        await sql`UPDATE users SET email = ${nextEmail} WHERE id = ${Number(id)}`;
+    }
+}
+
 export async function logUserEvent(
     actorId: string | null,
     targetUserId: string,

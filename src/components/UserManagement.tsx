@@ -31,6 +31,7 @@ export default function UserManagement() {
     const [loading, setLoading] = useState(true);
     const [showAdd, setShowAdd] = useState(false);
     const [passwordModal, setPasswordModal] = useState<UserRow | null>(null);
+    const [editModal, setEditModal] = useState<UserRow | null>(null);
     const [filter, setFilter] = useState<"all" | UserStatus>("all");
     const toast = useToast();
     const [page, setPage] = useState(1);
@@ -59,6 +60,16 @@ export default function UserManagement() {
         document.addEventListener("keydown", onKey);
         return () => document.removeEventListener("keydown", onKey);
     }, [passwordModal]);
+
+    // Same Escape-to-close behaviour for the edit-profile modal.
+    useEffect(() => {
+        if (!editModal) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setEditModal(null);
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [editModal]);
 
     const handleAdd = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -115,6 +126,33 @@ export default function UserManagement() {
             if (patch.status) toast.success(`${user.name} ${patch.status === "active" ? "activated" : patch.status === "suspended" ? "suspended" : "marked pending"}.`);
         } else {
             toast.error(data.error || "Update failed.");
+        }
+    };
+
+    const handleEditUser = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!editModal) return;
+        const fd = new FormData(e.currentTarget);
+        const name = String(fd.get("name") || "").trim();
+        const email = String(fd.get("email") || "").trim();
+        const role = String(fd.get("role") || "") as UserRole;
+        const status = String(fd.get("status") || "") as UserStatus;
+        if (!name || !email) {
+            toast.error("Name and email are required.");
+            return;
+        }
+        const res = await fetch("/api/users", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: editModal.id, name, email, role, status }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+            setEditModal(null);
+            fetchUsers();
+            toast.success("User updated.");
+        } else {
+            toast.error(data.error || "Failed to update user.");
         }
     };
 
@@ -216,7 +254,15 @@ export default function UserManagement() {
                 <tbody>
                     {paginatedUsers.map((user) => (
                         <tr key={user.id}>
-                            <td>{user.name}</td>
+                            <td>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditModal(user)}
+                                    style={{ background: "none", border: "none", padding: 0, color: "var(--crimson)", fontWeight: 700, cursor: "pointer", textAlign: "left" }}
+                                >
+                                    {user.name}
+                                </button>
+                            </td>
                             <td>{user.email}</td>
                             <td>
                                 <select
@@ -281,6 +327,12 @@ export default function UserManagement() {
                                         </button>
                                     )}
                                     <button
+                                        className="admin-btn"
+                                        onClick={() => setEditModal(user)}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
                                         className="admin-btn admin-btn--secondary"
                                         onClick={() => setPasswordModal(user)}
                                     >
@@ -314,6 +366,73 @@ export default function UserManagement() {
                     onPageChange={setPage}
                     itemLabel="users"
                 />
+            )}
+
+            {editModal && (
+                <div
+                    className="admin-modal-overlay"
+                    onClick={() => setEditModal(null)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="edit-user-title"
+                    tabIndex={-1}
+                >
+                    <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+                        <h3 id="edit-user-title">Edit {editModal.name}</h3>
+                        <form onSubmit={handleEditUser}>
+                            <div className="form-group">
+                                <label htmlFor="edit-name">Name</label>
+                                <input
+                                    type="text"
+                                    id="edit-name"
+                                    name="name"
+                                    defaultValue={editModal.name}
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="edit-email">Email</label>
+                                <input
+                                    type="email"
+                                    id="edit-email"
+                                    name="email"
+                                    defaultValue={editModal.email}
+                                    required
+                                />
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label htmlFor="edit-role">Role</label>
+                                    <select id="edit-role" name="role" defaultValue={editModal.role}>
+                                        {ROLE_OPTIONS.map((r) => (
+                                            <option key={r} value={r}>{r}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="edit-status">Status</label>
+                                    <select id="edit-status" name="status" defaultValue={editModal.status}>
+                                        <option value="pending">pending</option>
+                                        <option value="active">active</option>
+                                        <option value="suspended">suspended</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="admin-modal-actions">
+                                <button type="submit" className="btn-primary">
+                                    Save changes
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-outline"
+                                    onClick={() => setEditModal(null)}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
 
             {passwordModal && (
