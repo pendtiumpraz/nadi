@@ -26,14 +26,15 @@ export const ROLES: UserRole[] = ["admin", "reviewer", "contributor", "partner"]
 export type RoleMenuMatrix = Record<UserRole, string[]>;
 
 // Defaults — admin always sees everything; other roles see a sensible subset.
-// `guidelines` is the admin-side uploader. Contributors/partners/reviewers
-// reach the public guideline via the inline links on the article editor and
-// the publications page — they don't need an admin upload entry.
+// `docs`, `topics`, `ai`, and `guidelines` are admin-internal surfaces:
+// contributors and partners only need the action pages (articles, events,
+// media) plus the dashboard. Reviewers also get the review queue and
+// editorial extras (topics, consents, docs).
 export const DEFAULT_MATRIX: RoleMenuMatrix = {
     admin: MENU_ITEMS.map((m) => m.key),
     reviewer: ["dashboard", "articles", "events", "media", "review", "topics", "consents", "docs"],
-    contributor: ["dashboard", "articles", "events", "media", "topics", "ai", "docs"],
-    partner: ["dashboard", "articles", "events", "docs"],
+    contributor: ["dashboard", "articles", "events", "media"],
+    partner: ["dashboard", "articles", "events"],
 };
 
 const SETTINGS_KEY = "role_menu_matrix";
@@ -43,6 +44,13 @@ const SETTINGS_KEY = "role_menu_matrix";
 // have to re-open /admin/permissions and tick boxes manually).
 const ALWAYS_BACKFILL_KEYS: string[] = [];
 
+// Keys that contributors and partners must NEVER see, regardless of what was
+// saved in /admin/permissions previously. They're admin-internal surfaces
+// (AI Writer, Topics, Docs, Guidelines, Newsletter, Team, Settings, Users,
+// Permissions, Audit) — surfacing them to authors is just clutter and risk.
+// Reviewer is intentionally exempt: they still need topics, docs, etc.
+const STRIPPED_FOR_AUTHORS: string[] = ["topics", "ai", "docs", "guidelines", "newsletter", "team", "settings", "users", "permissions", "audit", "review", "consents"];
+
 export async function getMatrix(): Promise<RoleMenuMatrix> {
     try {
         const sql = getDB();
@@ -51,13 +59,19 @@ export async function getMatrix(): Promise<RoleMenuMatrix> {
         const parsed = JSON.parse(rows[0].value as string) as RoleMenuMatrix;
         // Ensure admin always has full access (defensive: never lock yourself out)
         const withAdmin: RoleMenuMatrix = { ...parsed, admin: MENU_ITEMS.map((m) => m.key) };
-        // Backfill universally-granted keys for older saved matrices.
         for (const role of ROLES) {
             const list = withAdmin[role] || [];
+            // Backfill universally-granted keys for older saved matrices.
             for (const key of ALWAYS_BACKFILL_KEYS) {
                 if (!list.includes(key)) list.push(key);
             }
-            withAdmin[role] = list;
+            // Hard-strip admin-only surfaces from contributor + partner even if
+            // a prior saved matrix granted them. Admin / reviewer untouched.
+            if (role === "contributor" || role === "partner") {
+                withAdmin[role] = list.filter((k) => !STRIPPED_FOR_AUTHORS.includes(k));
+            } else {
+                withAdmin[role] = list;
+            }
         }
         return withAdmin;
     } catch {

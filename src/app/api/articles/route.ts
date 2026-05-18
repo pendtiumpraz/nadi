@@ -67,11 +67,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(article);
     }
 
-    // Partners can only see their own submissions; admin/reviewer/contributor see all.
-    const articles =
-        asRole(session.user.role) === "partner"
-            ? await getArticlesByAuthor(session.user.id)
-            : await getAllArticlesStore();
+    // Authors (contributor / partner) only see their own articles. Admin and
+    // reviewer see the full list so they can moderate and publish.
+    const articles = canPublish(session.user)
+        ? await getAllArticlesStore()
+        : await getArticlesByAuthor(session.user.id);
     return NextResponse.json(articles);
 }
 
