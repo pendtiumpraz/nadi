@@ -727,11 +727,34 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "publish")} style={{ width: "100%" }}>
                             {saving ? "⏳ Saving..." : isEdit ? "Update & Publish" : "Publish Article"}
                         </button>
-                    ) : (
-                        <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "submit")} style={{ width: "100%" }}>
-                            {saving ? "⏳ Saving..." : "Submit for Review"}
-                        </button>
-                    )}
+                    ) : (() => {
+                        // Submit makes sense only from draft / changes_requested / in_review
+                        // (re-submit). Once it's approved or further, the partner's job is
+                        // to sign the consent form (sent by email) — not to "submit" again.
+                        // Showing a disabled, labelled button avoids the confusion the user
+                        // hit where clicking Submit on a consent_received article left the
+                        // status unchanged.
+                        const stage = articleStatus;
+                        const submittable = !isEdit || stage === "draft" || stage === "changes_requested" || stage === "in_review";
+                        let label = isEdit && stage === "changes_requested" ? "Re-submit for Review" : "Submit for Review";
+                        if (!submittable) {
+                            if (stage === "approved") label = "Waiting for your consent form";
+                            else if (stage === "consent_received") label = "Waiting for admin to publish";
+                            else if (stage === "published") label = "Already published";
+                        }
+                        return (
+                            <button
+                                type="button"
+                                className="btn-primary"
+                                disabled={saving || !submittable}
+                                onClick={(e) => handleSubmit(e, "submit")}
+                                style={{ width: "100%", opacity: submittable ? 1 : 0.55, cursor: submittable ? "pointer" : "not-allowed" }}
+                                title={submittable ? undefined : "This action isn't available at the current stage."}
+                            >
+                                {saving ? "⏳ Saving..." : label}
+                            </button>
+                        );
+                    })()}
                     <button type="button" className="btn-outline" disabled={saving} onClick={(e) => handleSubmit(e, "draft")} style={{ width: "100%" }}>
                         Save as Draft
                     </button>
