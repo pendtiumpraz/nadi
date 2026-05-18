@@ -1122,7 +1122,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
 
                         {/* Tab body — grows naturally, the outer page scrolls
                             when content's long. No inner scrollbox. */}
-                        <div className="editor-side-body" style={{ padding: "0.85rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                        <div className="editor-side-body" style={{ padding: "0.6rem 0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                             {asideTab === "settings" && (
                                 !aiStyleEnabled ? (
                                     <>

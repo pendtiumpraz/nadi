@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Pagination from "@/components/Pagination";
+
+const PER_PAGE = 5;
 
 interface HistoryEntry {
     id: string;
@@ -63,6 +66,15 @@ export default function ReviewHistory({ slug }: Props): React.JSX.Element {
     const [history, setHistory] = React.useState<HistoryEntry[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState("");
+    const [page, setPage] = React.useState(1);
+
+    // Newest event first so the most recent transition is right under the
+    // heading; older events get pushed back into pagination.
+    const ordered = React.useMemo(() => [...history].reverse(), [history]);
+    const paginated = React.useMemo(() => {
+        const start = (page - 1) * PER_PAGE;
+        return ordered.slice(start, start + PER_PAGE);
+    }, [ordered, page]);
 
     React.useEffect(() => {
         let cancelled = false;
@@ -119,7 +131,12 @@ export default function ReviewHistory({ slug }: Props): React.JSX.Element {
 
     return (
         <section>
-            <h2 style={titleStyle}>Review History</h2>
+            <h2 style={titleStyle}>
+                Review History
+                <span style={{ color: "var(--muted)", fontWeight: 400, marginLeft: "0.4rem" }}>
+                    ({history.length})
+                </span>
+            </h2>
             <ol style={{ listStyle: "none", padding: 0, margin: 0, position: "relative" }}>
                 {/* Vertical timeline line */}
                 <div
@@ -133,7 +150,7 @@ export default function ReviewHistory({ slug }: Props): React.JSX.Element {
                         background: "#e5e2dc",
                     }}
                 />
-                {history.map((entry) => {
+                {paginated.map((entry) => {
                     const palette = STATUS_COLOR[entry.status] ?? STATUS_COLOR.draft;
                     return (
                         <li key={entry.id} style={{ position: "relative", paddingLeft: 28, marginBottom: "1rem" }}>
@@ -197,14 +214,25 @@ export default function ReviewHistory({ slug }: Props): React.JSX.Element {
                     );
                 })}
             </ol>
+            {history.length > PER_PAGE && (
+                <Pagination
+                    page={page}
+                    total={history.length}
+                    perPage={PER_PAGE}
+                    onPageChange={setPage}
+                    itemLabel="events"
+                />
+            )}
         </section>
     );
 }
 
 const titleStyle: React.CSSProperties = {
-    fontSize: "1rem",
+    fontSize: "0.75rem",
     textTransform: "uppercase",
-    letterSpacing: "0.06em",
+    letterSpacing: "0.08em",
     color: "var(--muted)",
-    marginBottom: "0.75rem",
+    marginTop: 0,
+    marginBottom: "0.5rem",
+    fontWeight: 700,
 };

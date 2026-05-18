@@ -1,7 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type JSX, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent } from "react";
 import { useSession } from "next-auth/react";
+import Pagination from "@/components/Pagination";
+
+const PER_PAGE = 5;
 
 type AuthorRole = "admin" | "reviewer" | "contributor" | "partner";
 
@@ -65,7 +68,18 @@ export default function CommentThread({ slug, title = "Comments", onPosted }: Co
     const [body, setBody] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [postError, setPostError] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    // Newest-first view + pagination so a long thread doesn't push the input
+    // out of sight. Newest item appears at the top of page 1 — readers see
+    // the latest reply without scrolling, and the page slides backwards to
+    // walk through older comments.
+    const ordered = useMemo(() => [...comments].reverse(), [comments]);
+    const paginated = useMemo(() => {
+        const start = (page - 1) * PER_PAGE;
+        return ordered.slice(start, start + PER_PAGE);
+    }, [ordered, page]);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -144,14 +158,21 @@ export default function CommentThread({ slug, title = "Comments", onPosted }: Co
         <section>
             <h2
                 style={{
-                    fontSize: "1rem",
+                    fontSize: "0.75rem",
                     textTransform: "uppercase",
-                    letterSpacing: "0.06em",
+                    letterSpacing: "0.08em",
                     color: "var(--muted)",
-                    marginBottom: "0.75rem",
+                    marginTop: 0,
+                    marginBottom: "0.5rem",
+                    fontWeight: 700,
                 }}
             >
                 {title}
+                {comments.length > 0 && (
+                    <span style={{ color: "var(--muted)", fontWeight: 400, marginLeft: "0.4rem" }}>
+                        ({comments.length})
+                    </span>
+                )}
             </h2>
 
             {loading ? (
@@ -159,12 +180,12 @@ export default function CommentThread({ slug, title = "Comments", onPosted }: Co
             ) : loadError ? (
                 <p style={{ color: "#a83838" }}>Failed to load comments: {loadError}</p>
             ) : comments.length === 0 ? (
-                <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+                <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: 0 }}>
                     No comments yet. Start the conversation.
                 </p>
             ) : (
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                    {comments.map((c) => {
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                    {paginated.map((c) => {
                         const roleStyle = ROLE_STYLES[c.authorRole] ?? ROLE_STYLES.partner;
                         return (
                             <li
@@ -224,7 +245,17 @@ export default function CommentThread({ slug, title = "Comments", onPosted }: Co
                 </ul>
             )}
 
-            <div style={{ marginTop: "1.25rem" }}>
+            {comments.length > PER_PAGE && (
+                <Pagination
+                    page={page}
+                    total={comments.length}
+                    perPage={PER_PAGE}
+                    onPageChange={setPage}
+                    itemLabel="comments"
+                />
+            )}
+
+            <div style={{ marginTop: "0.75rem" }}>
                 <label htmlFor="comment-body" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
                     Write a comment
                 </label>

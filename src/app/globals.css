@@ -2788,10 +2788,10 @@ body.editor-focus-mode .admin-body {
 .editor-side-body ul {
   margin-bottom: 0 !important;
 }
-/* Trim the tab body's own padding-bottom so the final card sits close to
-   the aside border. */
-.editor-side-body {
-  padding-bottom: 0.6rem !important;
+/* Pagination inside the tab body shouldn't carry its giant default margin
+   meant for full-page tables. Trim down so it sits flush after the list. */
+.editor-side-body > div[style*="margin: 1.5rem 0"] {
+  margin: 0.5rem 0 0 !important;
 }
 
 .editor-save {
