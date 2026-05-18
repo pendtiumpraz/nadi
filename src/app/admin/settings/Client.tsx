@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/Toast";
 import { DEFAULT_PRIVACY_POLICY_HTML, DEFAULT_TERMS_OF_SERVICE_HTML } from "@/lib/legal-content";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const LANDING_MODES = [
     { value: "v2", label: "V2 — Light Theme (New)", desc: "Modern light design with ECG visualization, team cards, and partner marquee." },
@@ -30,6 +31,11 @@ export default function AdminSettingsPage() {
     const [privacyTermsMd, setPrivacyTermsMd] = useState("");
     const [privacyPolicyHtml, setPrivacyPolicyHtml] = useState("");
     const [termsOfServiceHtml, setTermsOfServiceHtml] = useState("");
+    // resetKey bumps force the RichTextEditor to re-seed its innerHTML
+    // (clicking "Reset to default" otherwise wouldn't update the DOM because
+    // the editor only reads `value` on mount to avoid cursor jumps).
+    const [privacyResetKey, setPrivacyResetKey] = useState(0);
+    const [termsResetKey, setTermsResetKey] = useState(0);
     const [throttle, setThrottle] = useState<ThrottleSettings>({ windowSeconds: 3600, thresholds: [] });
     const [recentFailures, setRecentFailures] = useState(0);
     const [aiLimits, setAiLimits] = useState<AiLimits>({ maxInputChars: 8000, maxOutputTokens: 4096, perUserPerHour: 30 });
@@ -572,21 +578,13 @@ export default function AdminSettingsPage() {
                                 <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.78rem", color: "var(--crimson)", textDecoration: "none" }}>Preview ↗</a>
                             </div>
                             <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem" }}>
-                                HTML content. Wrap each clause in <code>&lt;section id=&quot;slug&quot;&gt;&lt;h2&gt;...&lt;/h2&gt;...&lt;/section&gt;</code> — the public page auto-builds a table of contents from those <code>section[id]</code> tags. Leave empty to fall back to the default Indonesian template.
+                                Edit each clause directly — use the toolbar for headings, lists, and links. Numbered sections appear automatically based on the heading order.
                             </p>
-                            <textarea
-                                rows={18}
+                            <RichTextEditor
                                 value={privacyPolicyHtml}
-                                onChange={(e) => setPrivacyPolicyHtml(e.target.value)}
-                                placeholder="Leave empty to use the default seed content..."
-                                style={{
-                                    width: "100%",
-                                    fontFamily: "monospace",
-                                    fontSize: "0.82rem",
-                                    padding: "12px",
-                                    border: "1px solid var(--line)",
-                                    borderRadius: 4,
-                                }}
+                                onChange={setPrivacyPolicyHtml}
+                                resetKey={privacyResetKey}
+                                placeholder="Write the privacy policy here…"
                             />
                             <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                                 <button
@@ -600,7 +598,10 @@ export default function AdminSettingsPage() {
                                 <button
                                     type="button"
                                     className="btn-outline"
-                                    onClick={() => setPrivacyPolicyHtml(DEFAULT_PRIVACY_POLICY_HTML)}
+                                    onClick={() => {
+                                        setPrivacyPolicyHtml(DEFAULT_PRIVACY_POLICY_HTML);
+                                        setPrivacyResetKey((k) => k + 1);
+                                    }}
                                     style={{ fontSize: "0.8rem", padding: "6px 14px" }}
                                     title="Replace the editor contents with the built-in default. Doesn't save until you click Save."
                                 >
@@ -617,21 +618,13 @@ export default function AdminSettingsPage() {
                                 <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.78rem", color: "var(--crimson)", textDecoration: "none" }}>Preview ↗</a>
                             </div>
                             <p style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "1rem" }}>
-                                HTML content. Same structure as Privacy Policy — each numbered clause wrapped in <code>&lt;section id=&quot;...&quot;&gt;</code> so the TOC builds itself.
+                                Edit each clause directly with the toolbar — bold, lists, links, blockquotes. The public page builds the table of contents automatically from the section headings.
                             </p>
-                            <textarea
-                                rows={18}
+                            <RichTextEditor
                                 value={termsOfServiceHtml}
-                                onChange={(e) => setTermsOfServiceHtml(e.target.value)}
-                                placeholder="Leave empty to use the default seed content..."
-                                style={{
-                                    width: "100%",
-                                    fontFamily: "monospace",
-                                    fontSize: "0.82rem",
-                                    padding: "12px",
-                                    border: "1px solid var(--line)",
-                                    borderRadius: 4,
-                                }}
+                                onChange={setTermsOfServiceHtml}
+                                resetKey={termsResetKey}
+                                placeholder="Write the terms of service here…"
                             />
                             <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                                 <button
@@ -645,7 +638,10 @@ export default function AdminSettingsPage() {
                                 <button
                                     type="button"
                                     className="btn-outline"
-                                    onClick={() => setTermsOfServiceHtml(DEFAULT_TERMS_OF_SERVICE_HTML)}
+                                    onClick={() => {
+                                        setTermsOfServiceHtml(DEFAULT_TERMS_OF_SERVICE_HTML);
+                                        setTermsResetKey((k) => k + 1);
+                                    }}
                                     style={{ fontSize: "0.8rem", padding: "6px 14px" }}
                                     title="Replace the editor contents with the built-in default. Doesn't save until you click Save."
                                 >
