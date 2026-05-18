@@ -47,6 +47,11 @@ export default async function AdminDashboard() {
                     <span className="admin-card-title">Write New Article</span>
                     <span className="admin-card-desc">Create a publication with magazine-style layout blocks.</span>
                 </a>
+                <a href="/policy-guideline" className="admin-card" target="_blank" rel="noopener noreferrer">
+                    <span className="admin-card-icon">📘</span>
+                    <span className="admin-card-title">Policy Product Guideline</span>
+                    <span className="admin-card-desc">Download the canonical NADI guideline before writing your policy product.</span>
+                </a>
                 <a href="/admin/newsletter" className="admin-card">
                     <span className="admin-card-icon">✉️</span>
                     <span className="admin-card-title">Subscribers List</span>

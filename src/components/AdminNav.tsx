@@ -19,7 +19,7 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
     // emoji-style on some platforms (✍ ✉ ⚙ ⏱) get the ︎ text-variation
     // selector appended to force the text presentation. Reinforced by CSS
     // `font-variant-emoji: text` on `.adm-sidebar-icon`.
-    const ALL_LINKS: { href: string; label: string; icon: string; key: string }[] = [
+    const ALL_LINKS: { href: string; label: string; icon: string; key: string; external?: boolean }[] = [
         { key: "dashboard", href: "/admin", label: "Dashboard", icon: "⊞" },
         { key: "articles", href: "/admin/articles", label: "Articles", icon: "✎" },
         { key: "events", href: "/admin/events", label: "Events", icon: "◈" },
@@ -31,7 +31,8 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
         { key: "newsletter", href: "/admin/newsletter", label: "Newsletter", icon: "✉︎" },
         { key: "ai", href: "/admin/ai", label: "AI Writer", icon: "✦" },
         { key: "docs", href: "/admin/docs", label: "Docs", icon: "◇" },
-        { key: "guidelines", href: "/admin/guidelines", label: "Guidelines", icon: "⬇" },
+        { key: "policy-guideline", href: "/policy-guideline", label: "Guideline", icon: "⬇", external: true },
+        { key: "guidelines", href: "/admin/guidelines", label: "Guidelines", icon: "⬆" },
         { key: "settings", href: "/admin/settings", label: "Settings", icon: "⚙︎" },
         { key: "users", href: "/admin/users", label: "Users", icon: "⊕" },
         { key: "permissions", href: "/admin/permissions", label: "Permissions", icon: "⊟" },
@@ -64,7 +65,9 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
                         <a
                             key={link.href}
                             href={link.href}
-                            className={`adm-sidebar-link${isActive(link.href) ? " active" : ""}`}
+                            target={link.external ? "_blank" : undefined}
+                            rel={link.external ? "noopener noreferrer" : undefined}
+                            className={`adm-sidebar-link${!link.external && isActive(link.href) ? " active" : ""}`}
                         >
                             <span className="adm-sidebar-icon">{link.icon}</span>
                             <span className="adm-sidebar-label">{link.label}</span>

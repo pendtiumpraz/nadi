@@ -14,6 +14,7 @@ export const MENU_ITEMS: { key: string; label: string }[] = [
     { key: "newsletter", label: "Newsletter" },
     { key: "ai", label: "AI Writer" },
     { key: "docs", label: "Docs" },
+    { key: "policy-guideline", label: "Policy Guideline" },
     { key: "guidelines", label: "Guidelines" },
     { key: "settings", label: "Settings" },
     { key: "users", label: "Users" },
@@ -26,14 +27,21 @@ export const ROLES: UserRole[] = ["admin", "reviewer", "contributor", "partner"]
 export type RoleMenuMatrix = Record<UserRole, string[]>;
 
 // Defaults — admin always sees everything; other roles see a sensible subset.
+// `policy-guideline` is the read-only public guideline page; every role gets it
+// so contributors/partners have a sidebar entry point to the canonical doc.
 export const DEFAULT_MATRIX: RoleMenuMatrix = {
     admin: MENU_ITEMS.map((m) => m.key),
-    reviewer: ["dashboard", "articles", "events", "media", "review", "topics", "consents", "docs"],
-    contributor: ["dashboard", "articles", "events", "media", "topics", "ai", "docs"],
-    partner: ["dashboard", "articles", "events", "docs"],
+    reviewer: ["dashboard", "articles", "events", "media", "review", "topics", "consents", "docs", "policy-guideline"],
+    contributor: ["dashboard", "articles", "events", "media", "topics", "ai", "docs", "policy-guideline"],
+    partner: ["dashboard", "articles", "events", "docs", "policy-guideline"],
 };
 
 const SETTINGS_KEY = "role_menu_matrix";
+
+// Keys that should be auto-granted to every role on load — used to backfill
+// existing saved matrices when a new menu key is introduced (so admins don't
+// have to re-open /admin/permissions and tick boxes manually).
+const ALWAYS_BACKFILL_KEYS: string[] = ["policy-guideline"];
 
 export async function getMatrix(): Promise<RoleMenuMatrix> {
     try {
@@ -42,7 +50,16 @@ export async function getMatrix(): Promise<RoleMenuMatrix> {
         if (rows.length === 0) return DEFAULT_MATRIX;
         const parsed = JSON.parse(rows[0].value as string) as RoleMenuMatrix;
         // Ensure admin always has full access (defensive: never lock yourself out)
-        return { ...parsed, admin: MENU_ITEMS.map((m) => m.key) };
+        const withAdmin: RoleMenuMatrix = { ...parsed, admin: MENU_ITEMS.map((m) => m.key) };
+        // Backfill universally-granted keys for older saved matrices.
+        for (const role of ROLES) {
+            const list = withAdmin[role] || [];
+            for (const key of ALWAYS_BACKFILL_KEYS) {
+                if (!list.includes(key)) list.push(key);
+            }
+            withAdmin[role] = list;
+        }
+        return withAdmin;
     } catch {
         return DEFAULT_MATRIX;
     }
