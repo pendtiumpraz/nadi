@@ -2733,6 +2733,32 @@ body.editor-focus-mode .admin-body {
   box-sizing: border-box;
 }
 
+/* Authorship Ack rows: in a 340px aside the rule text was overflowing
+   past the section border because the <span> wasn't allowed to flex.
+   Force min-width: 0 + word-break so long rule strings wrap cleanly. */
+.editor-mode-manual .editor-side .authorship-ack label {
+  align-items: flex-start;
+  min-width: 0;
+}
+.editor-mode-manual .editor-side .authorship-ack label > span {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* CommentThread + ReviewHistory used to live below the form with section
+   margins of 2rem to space themselves from the article body. Now that they
+   live inside the tabbed aside, those margins create awkward gaps at the
+   top of the tab body. Reset them so the tab content sits flush with the
+   tab nav. */
+.editor-side-body section {
+  margin-top: 0 !important;
+}
+.editor-side-body > * + * {
+  margin-top: 0 !important;
+}
+
 .editor-save {
   display: flex;
   gap: 0.5rem;

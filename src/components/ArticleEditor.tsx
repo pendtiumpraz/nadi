@@ -899,7 +899,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 Status + counters + Publish/Save buttons live in the save card
                 so they're always visible above the fold; the tabbed aside
                 holds Settings / Comments / History and scrolls independently. */}
-            <div className="editor-right" style={{ display: "flex", flexDirection: "column", gap: "0.75rem", position: "sticky", top: "1rem", alignSelf: "start", maxHeight: "calc(100vh - 32px)", overflow: asideCollapsed ? "visible" : "hidden" }}>
+            <div className="editor-right" style={{ display: "flex", flexDirection: "column", gap: "0.75rem", alignSelf: "start" }}>
 
                 {/* SAVE CARD — Status, counters, primary CTA + Save Draft. Always
                     visible at the very top of the right column. */}
@@ -1078,12 +1078,9 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         background: "#fff",
                         display: "flex",
                         flexDirection: "column",
-                        flex: 1,
-                        minHeight: 0,
-                        overflow: "hidden",
                     }}>
                         {/* Tab nav */}
-                        <div className="editor-side-tabs" role="tablist" style={{ display: "flex", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+                        <div className="editor-side-tabs" role="tablist" style={{ display: "flex", borderBottom: "1px solid var(--line)" }}>
                             {(aiStyleEnabled
                                 ? [
                                     { id: "comments", label: "Comments" },
@@ -1123,9 +1120,9 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                             })}
                         </div>
 
-                        {/* Tab body — scrollable so long content (Settings in
-                            manual mode, big History) doesn't push the viewport. */}
-                        <div className="editor-side-body" style={{ flex: 1, overflowY: "auto", padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                        {/* Tab body — grows naturally, the outer page scrolls
+                            when content's long. No inner scrollbox. */}
+                        <div className="editor-side-body" style={{ padding: "0.85rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                             {asideTab === "settings" && (
                                 !aiStyleEnabled ? (
                                     <>
