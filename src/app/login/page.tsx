@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -73,14 +74,18 @@ export default function LoginPage() {
                     </div>
                     <div className={`form-group${errorField === "credentials" ? " field-error" : ""}`}>
                         <label htmlFor="login-password" className={errorField === "credentials" ? "field-error-label" : ""}>Password</label>
-                        <input
-                            type="password"
+                        <PasswordInput
                             id="login-password"
                             value={password}
                             onChange={(e) => { setPassword(e.target.value); if (errorField !== "none") setErrorField("none"); }}
                             required
                             placeholder="••••••••"
                         />
+                    </div>
+                    <div style={{ textAlign: "right", marginTop: "-0.4rem", marginBottom: "0.4rem" }}>
+                        <a href="/forgot-password" style={{ color: "var(--crimson)", fontSize: "0.8rem", textDecoration: "none" }}>
+                            Forgot password?
+                        </a>
                     </div>
                     <button type="submit" className="btn-primary login-submit" disabled={loading}>
                         {loading ? "Signing in..." : "Sign In"}

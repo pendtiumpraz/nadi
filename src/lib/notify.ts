@@ -8,7 +8,9 @@ export interface CCRecipient {
 
 export type NotifyEvent =
     | "user_signup"
+    | "user_registration_received"
     | "user_activated"
+    | "password_reset_request"
     | "article_submitted"
     | "article_approved"
     | "article_changes_requested"
@@ -117,6 +119,29 @@ function render(event: NotifyEvent, p: NotifyPayload): RenderedEmail {
                     p.url ? { label: "Sign in", href: p.url } : undefined
                 ),
                 text: `Your NADI account is now active. Sign in at ${p.url || "/login"}.`,
+            };
+        case "user_registration_received":
+            return {
+                subject: "We've received your NADI registration",
+                html: wrap(
+                    "Registration Received",
+                    `<p>Hi ${p.targetName || ""},</p>
+                     <p>Thank you for signing up for a NADI contributor account. Your request is now pending admin review — you'll receive a follow-up email once your account is activated and ready to sign in.</p>
+                     <p style="color:#6B6B6B;font-size:0.82rem;">Activation typically happens within 1–2 business days. No action is required from you in the meantime.</p>`
+                ),
+                text: `Hi ${p.targetName || ""}, thank you for signing up for a NADI contributor account. Your request is pending admin review and you'll be notified by email once activated.`,
+            };
+        case "password_reset_request":
+            return {
+                subject: "Reset your NADI password",
+                html: wrap(
+                    "Password Reset",
+                    `<p>Hi ${p.targetName || ""},</p>
+                     <p>We received a request to reset the password for your NADI account. Click the button below to choose a new password — the link is valid for <strong>1 hour</strong>.</p>
+                     <p style="color:#6B6B6B;font-size:0.82rem;">If you didn't request this, you can safely ignore this email — your password won't change.</p>`,
+                    p.url ? { label: "Reset password", href: p.url } : undefined
+                ),
+                text: `Reset your NADI password (valid 1 hour): ${p.url || ""}. Ignore this email if you didn't request the reset.`,
             };
         case "article_submitted":
             return {
@@ -260,6 +285,22 @@ export async function notifyUserActivated(payload: { name: string; email: string
             targetName: payload.name,
             url: payload.baseUrl ? `${payload.baseUrl}/login` : undefined,
         },
+    });
+}
+
+export async function notifyRegistrationReceived(payload: { name: string; email: string }): Promise<void> {
+    await send({
+        event: "user_registration_received",
+        to: payload.email,
+        payload: { targetName: payload.name, targetEmail: payload.email },
+    });
+}
+
+export async function notifyPasswordResetRequest(payload: { name: string; email: string; resetUrl: string }): Promise<void> {
+    await send({
+        event: "password_reset_request",
+        to: payload.email,
+        payload: { targetName: payload.name, targetEmail: payload.email, url: payload.resetUrl },
     });
 }
 

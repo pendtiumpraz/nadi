@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useToast } from "@/components/Toast";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function RegisterPage() {
     const toast = useToast();
@@ -78,8 +79,7 @@ export default function RegisterPage() {
                         </div>
                         <div className="form-group">
                             <label htmlFor="reg-password">Password</label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 id="reg-password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}

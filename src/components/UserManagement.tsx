@@ -3,6 +3,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import Pagination from "@/components/Pagination";
 import { useToast, confirmDialog } from "@/components/Toast";
+import PasswordInput from "@/components/PasswordInput";
 
 type UserRole = "admin" | "reviewer" | "contributor" | "partner";
 type UserStatus = "pending" | "active" | "suspended";
@@ -180,8 +181,7 @@ export default function UserManagement() {
                     <div className="form-row">
                         <div className="form-group">
                             <label htmlFor="add-password">Password</label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 id="add-password"
                                 name="password"
                                 required
@@ -330,8 +330,7 @@ export default function UserManagement() {
                         <form onSubmit={handleChangePassword}>
                             <div className="form-group">
                                 <label htmlFor="new-pw">New Password</label>
-                                <input
-                                    type="password"
+                                <PasswordInput
                                     id="new-pw"
                                     name="newPassword"
                                     required
