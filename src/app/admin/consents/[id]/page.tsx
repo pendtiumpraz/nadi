@@ -158,7 +158,7 @@ export default async function ConsentDetailPage({ params }: Props) {
                         Article <code>{c.article_slug}</code> · Submitted {formatDateTime(c.created_at)}
                     </p>
                 </div>
-                <ConsentDocumentActions articleSlug={c.article_slug} signatoryName={c.signatory_full_name} />
+                <ConsentDocumentActions consentId={c.id} articleSlug={c.article_slug} />
             </div>
 
             {/* The document — styled to look like a printed A4 page */}
