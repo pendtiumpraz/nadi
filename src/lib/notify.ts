@@ -200,14 +200,15 @@ function render(event: NotifyEvent, p: NotifyPayload): RenderedEmail {
             };
         case "feedback_received":
             return {
-                subject: "Your work has been reviewed",
+                subject: p.title ? `New comment on: ${p.title}` : "Your work has been reviewed",
                 html: wrap(
                     "Feedback Received",
-                    `<p>Your work has been reviewed. Please kindly proceed with the necessary revisions at your earliest convenience.</p>
-                     ${p.title ? `<p style="color:#6B6B6B;font-size:0.85rem;">Article: <strong>${p.title}</strong>${p.actorName ? ` &middot; Reviewer: ${p.actorName}` : ""}</p>` : ""}`,
+                    `<p>${p.actorName ? `<strong>${p.actorName}</strong> posted` : "A reviewer posted"} a comment on your work${p.title ? ` <strong>${p.title}</strong>` : ""}.</p>
+                     ${p.notes ? `<div style="background:#fff;border-left:3px solid #8B1C1C;padding:16px 20px;margin:16px 0;"><p style="color:#6B6B6B;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 8px;">Comment</p><p style="margin:0;white-space:pre-wrap;">${p.notes}</p></div>` : ""}
+                     <p style="color:#6B6B6B;font-size:0.85rem;">Open the article in the CMS to read the full thread and reply.</p>`,
                     p.url ? { label: "Open Article", href: p.url } : undefined
                 ),
-                text: `Your work has been reviewed. Please kindly proceed with the necessary revisions at your earliest convenience.${p.url ? ` ${p.url}` : ""}`,
+                text: `${p.actorName || "A reviewer"} posted a comment${p.title ? ` on "${p.title}"` : ""}.${p.notes ? `\n\nComment:\n${p.notes}\n` : ""}${p.url ? `\nOpen: ${p.url}` : ""}`,
             };
         case "submission_received":
             return {
@@ -404,7 +405,7 @@ export async function notifyArticleChangesRequested(payload: { title: string; sl
     });
 }
 
-export async function notifyFeedbackReceived(payload: { title: string; slug: string; authorEmail: string; commenterName: string; baseUrl?: string }): Promise<void> {
+export async function notifyFeedbackReceived(payload: { title: string; slug: string; authorEmail: string; commenterName: string; commentBody?: string; baseUrl?: string }): Promise<void> {
     await send({
         event: "feedback_received",
         to: payload.authorEmail,
@@ -412,6 +413,7 @@ export async function notifyFeedbackReceived(payload: { title: string; slug: str
             title: payload.title,
             slug: payload.slug,
             actorName: payload.commenterName,
+            notes: payload.commentBody,
             url: payload.baseUrl ? `${payload.baseUrl}/admin/articles/${payload.slug}` : undefined,
         },
     });

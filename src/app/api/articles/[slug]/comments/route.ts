@@ -136,6 +136,7 @@ export async function POST(req: NextRequest, { params }: Params) {
                         slug,
                         authorEmail: author.email,
                         commenterName: session.user.name || "A reviewer",
+                        commentBody: trimmed,
                         baseUrl,
                     });
                 }
