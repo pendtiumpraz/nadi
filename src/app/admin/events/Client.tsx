@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { confirmDialog, useToast } from "@/components/Toast";
 
 interface Event {
@@ -12,6 +13,9 @@ export default function EventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const toast = useToast();
+    const { data: session } = useSession();
+    const role = session?.user?.role;
+    const isAuthor = role === "contributor" || role === "partner";
 
     useEffect(() => {
         fetch("/api/events").then(r => r.json()).then(d => { setEvents(d); setLoading(false); }).catch(() => setLoading(false));
@@ -37,11 +41,11 @@ export default function EventsPage() {
     return (
         <div className="admin-body">
             <div className="admin-content-header">
-                <h1 className="admin-page-title">Events</h1>
+                <h1 className="admin-page-title">{isAuthor ? "My Events" : "Events"}</h1>
                 <a href="/admin/events/new" className="btn-primary">+ New Event</a>
             </div>
             {loading ? <p className="admin-page-desc">Loading...</p> : events.length === 0 ? (
-                <div className="admin-empty">No events yet. Create your first event!</div>
+                <div className="admin-empty">{isAuthor ? "You haven't created any events yet. Get started!" : "No events yet. Create your first event!"}</div>
             ) : (
                 <table className="admin-table">
                     <thead><tr><th>Event</th><th>Date</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { confirmDialog, useToast } from "@/components/Toast";
 
 interface Media {
@@ -12,6 +13,9 @@ export default function MediaPage() {
     const [items, setItems] = useState<Media[]>([]);
     const [loading, setLoading] = useState(true);
     const toast = useToast();
+    const { data: session } = useSession();
+    const role = session?.user?.role;
+    const isAuthor = role === "contributor" || role === "partner";
 
     useEffect(() => {
         fetch("/api/media").then(r => r.json()).then(d => { setItems(d); setLoading(false); }).catch(() => setLoading(false));
@@ -39,11 +43,11 @@ export default function MediaPage() {
     return (
         <div className="admin-body">
             <div className="admin-content-header">
-                <h1 className="admin-page-title">Media</h1>
+                <h1 className="admin-page-title">{isAuthor ? "My Media" : "Media"}</h1>
                 <a href="/admin/media/new" className="btn-primary">+ New Media</a>
             </div>
             {loading ? <p className="admin-page-desc">Loading...</p> : items.length === 0 ? (
-                <div className="admin-empty">No media yet. Add your first video or podcast!</div>
+                <div className="admin-empty">{isAuthor ? "You haven't added any media yet. Add your first video or podcast!" : "No media yet. Add your first video or podcast!"}</div>
             ) : (
                 <table className="admin-table">
                     <thead><tr><th>Media</th><th>Type</th><th>Date</th><th>Duration</th><th>Actions</th></tr></thead>

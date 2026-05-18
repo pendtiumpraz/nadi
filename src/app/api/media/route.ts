@@ -8,7 +8,7 @@ import {
     deleteMedia,
     mediaExists,
 } from "@/lib/media-store";
-import { canPublish, canEditOwnContent, asRole } from "@/lib/permissions";
+import { canPublish, canEditOwnContent } from "@/lib/permissions";
 import { getUserById } from "@/lib/users";
 import { notifyArticleSubmitted, notifySubmissionReceived, getReviewEtaDays } from "@/lib/notify";
 import type { NADIMedia, MediaStatus } from "@/data/media/types";
@@ -40,11 +40,11 @@ export async function GET(req: NextRequest) {
         if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
         return NextResponse.json(item);
     }
-    // Partners can only see their own submissions; admin/reviewer/contributor see all.
-    const items =
-        asRole(session.user.role) === "partner"
-            ? await getMediaByAuthor(session.user.id)
-            : await getAllMedia();
+    // Authors (contributor / partner) only see media they created. Reviewers
+    // and admins see the whole catalogue so they can moderate / publish.
+    const items = canPublish(session.user)
+        ? await getAllMedia()
+        : await getMediaByAuthor(session.user.id);
     return NextResponse.json(items);
 }
 

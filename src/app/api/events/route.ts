@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getAllEvents, getEventBySlug, getEventsByAuthor, saveEvent, deleteEvent, eventExists, uploadEventImage } from "@/lib/events-store";
-import { canPublish, canEditOwnContent, asRole } from "@/lib/permissions";
+import { canPublish, canEditOwnContent } from "@/lib/permissions";
 import { getUserById } from "@/lib/users";
 import { notifyArticleSubmitted, notifySubmissionReceived, getReviewEtaDays } from "@/lib/notify";
 import type { NADIEvent, EventPublishStatus } from "@/data/events/types";
@@ -33,10 +33,11 @@ export async function GET(req: NextRequest) {
         if (!event) return NextResponse.json({ error: "Not found" }, { status: 404 });
         return NextResponse.json(event);
     }
-    // Partners only see their own events; admin/reviewer/contributor see all.
-    const events = asRole(session.user.role) === "partner"
-        ? await getEventsByAuthor(session.user.id)
-        : await getAllEvents();
+    // Authors (contributor / partner) only see events they created. Reviewers
+    // and admins see the whole list so they can moderate / publish.
+    const events = canPublish(session.user)
+        ? await getAllEvents()
+        : await getEventsByAuthor(session.user.id);
     return NextResponse.json(events);
 }
 
