@@ -62,24 +62,21 @@ body {
 }
 
 /* Image-based brand mark for Navbar / V2 layout / footer. Sized in CSS so the
-   underlying logo file can have any intrinsic dimensions. The landing Navbar
-   sits on a dark hero background (PNG already has dark text) so the colour
-   logo is used; the white variant takes over on dark admin chrome. */
+   underlying logo file can have any intrinsic dimensions. Landing surfaces
+   sit on dark / crimson backgrounds — force the white variant on those via
+   filter so the dark "Advancing Development & Innovation" subtitle stays
+   legible. The colour logo continues to render natively on the V2 nav
+   (light cream bg). */
 .nav-logo-img {
   height: 42px;
   width: auto;
   display: block;
-  /* Landing Navbar is dark before scroll: invert the dark text portion of
-     the colour logo so "Advancing Development & Innovation" stays legible.
-     Once the user scrolls past the hero, the nav background lightens and
-     the original colours show through. */
   background: transparent;
 }
 .site-nav .nav-logo-img {
   filter: brightness(0) invert(1);
 }
 .site-nav.scrolled .nav-logo-img {
-  filter: none;
   height: 36px;
 }
 .footer-brand .nav-logo-img {
