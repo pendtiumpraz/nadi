@@ -94,6 +94,18 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     // switch.
     const [chromeCollapsed, setChromeCollapsed] = useState(false);
     const [asideCollapsed, setAsideCollapsed] = useState(false);
+    // Which tab the right sidebar shows. Persisted so the user lands on the
+    // last tab they used on the next edit.
+    const [asideTab, setAsideTab] = useState<"settings" | "comments" | "history">("settings");
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const t = window.localStorage.getItem("nadi_editor_aside_tab");
+        if (t === "comments" || t === "history" || t === "settings") setAsideTab(t);
+    }, []);
+    const setTab = (next: "settings" | "comments" | "history") => {
+        setAsideTab(next);
+        try { window.localStorage.setItem("nadi_editor_aside_tab", next); } catch { /* swallow */ }
+    };
     useEffect(() => {
         // Default: manual mode auto-collapses admin chrome on entry; AI mode
         // restores it. Persisted via localStorage so the user's last choice
@@ -883,187 +895,279 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 </div>
             </form>
 
-            {/* Sticky side panel. In AI mode it just holds the counters + save
-                buttons; in manual (Gutenberg) mode all metadata sections live
-                here so the centre column stays focused on writing. The aside
-                gets its own scroll once content grows past the viewport.
-                Collapse / expand button at the very top lets the user shrink
-                the panel down to a thin strip for a true distraction-free
-                writing experience. */}
-            {asideCollapsed ? (
-                <aside
-                    className="editor-side editor-side--collapsed"
-                    style={{
-                        position: "sticky",
-                        top: "1rem",
-                        alignSelf: "start",
-                        padding: "0.4rem",
+            {/* Right column: separate save card on top, tabbed sidebar below.
+                Status + counters + Publish/Save buttons live in the save card
+                so they're always visible above the fold; the tabbed aside
+                holds Settings / Comments / History and scrolls independently. */}
+            <div className="editor-right" style={{ display: "flex", flexDirection: "column", gap: "0.75rem", position: "sticky", top: "1rem", alignSelf: "start", maxHeight: "calc(100vh - 32px)", overflow: asideCollapsed ? "visible" : "hidden" }}>
+
+                {/* SAVE CARD — Status, counters, primary CTA + Save Draft. Always
+                    visible at the very top of the right column. */}
+                {!asideCollapsed && (
+                    <div className="editor-save-card" style={{
+                        padding: "0.85rem 1rem",
                         border: "1px solid var(--line)",
                         borderRadius: 8,
                         background: "#fff",
                         display: "flex",
                         flexDirection: "column",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                    }}
-                >
-                    <button
-                        type="button"
-                        onClick={() => persistAside(false)}
-                        title="Expand settings panel"
-                        aria-label="Expand settings panel"
-                        style={{
-                            background: "transparent",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "8px",
-                            color: "var(--crimson)",
-                            fontSize: "1.1rem",
-                            lineHeight: 1,
-                        }}
-                    >
-                        ‹
-                    </button>
-                    <span
-                        aria-hidden
-                        style={{
-                            writingMode: "vertical-rl",
-                            transform: "rotate(180deg)",
-                            fontSize: "0.7rem",
-                            letterSpacing: "0.15em",
-                            textTransform: "uppercase",
-                            color: "var(--muted)",
-                            fontWeight: 700,
-                            marginTop: "0.5rem",
-                        }}
-                    >
-                        Settings
-                    </span>
-                </aside>
-            ) : (
-            <aside className="editor-side" style={{
-                position: "sticky",
-                top: "1rem",
-                alignSelf: "start",
-                padding: "1.25rem",
-                border: "1px solid var(--line)",
-                borderRadius: 8,
-                background: "#fff",
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.75rem",
-                maxHeight: !aiStyleEnabled ? "calc(100vh - 32px)" : undefined,
-                overflowY: !aiStyleEnabled ? "auto" : undefined,
-            }}>
-                {/* Collapse button — always at the top of the expanded aside */}
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "-0.25rem" }}>
-                    <button
-                        type="button"
-                        onClick={() => persistAside(true)}
-                        title="Collapse settings panel"
-                        aria-label="Collapse settings panel"
-                        style={{
-                            background: "transparent",
-                            border: "1px solid var(--line)",
-                            borderRadius: 4,
-                            cursor: "pointer",
-                            padding: "2px 8px",
-                            color: "var(--muted)",
-                            fontSize: "0.85rem",
-                            lineHeight: 1,
-                        }}
-                    >
-                        › Collapse
-                    </button>
-                </div>
-                {!aiStyleEnabled && (
-                    <>
-                        {policyTypeSection}
-                        {metaSection}
-                        {coverSection}
-                        {pdfSection}
-                        {ackSection}
-                        {aiDisclosureSection}
-                        {seoSection}
-                    </>
-                )}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--line)" }}>
-                    <span style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--muted)", fontWeight: 600 }}>Status</span>
-                    {lastSavedAt ? (
-                        <span style={{ fontSize: "0.85rem" }}>
-                            Saved as <strong style={{ color: "var(--crimson)" }}>{articleStatus.replace(/_/g, " ").toUpperCase()}</strong>
-                            <br />
-                            <span style={{ color: "var(--muted)", fontSize: "0.75rem" }}>{formatRelative(lastSavedAt)} yang lalu</span>
-                        </span>
-                    ) : (
-                        <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
-                            {isEdit ? articleStatus.replace(/_/g, " ").toUpperCase() : "Unsaved draft"}
-                        </span>
-                    )}
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", fontSize: "0.78rem", color: "var(--muted)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>Title</span><Counter value={title.length} max={80} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>Description</span><Counter value={seoDesc.length} max={200} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>Summary social</span><Counter value={summarySocial.length} max={200} />
-                    </div>
-                    {policyProductType && productByKey(policyProductType) && (
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <span>Words</span>
-                            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem" }}>
-                                {editorText.trim().split(/\s+/).filter(Boolean).length}
-                                {" / "}
-                                {productByKey(policyProductType)!.wordCount.min}
-                                {productByKey(policyProductType)!.wordCount.max ? `–${productByKey(policyProductType)!.wordCount.max}` : "+"}
-                            </span>
-                        </div>
-                    )}
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", paddingTop: "0.5rem", borderTop: "1px solid var(--line)" }}>
-                    {canPublish ? (
-                        <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "publish")} style={{ width: "100%" }}>
-                            {saving ? "⏳ Saving..." : isEdit ? "Update & Publish" : "Publish Article"}
-                        </button>
-                    ) : (() => {
-                        // Submit makes sense only from draft / changes_requested / in_review
-                        // (re-submit). Once it's approved or further, the partner's job is
-                        // to sign the consent form (sent by email) — not to "submit" again.
-                        // Showing a disabled, labelled button avoids the confusion the user
-                        // hit where clicking Submit on a consent_received article left the
-                        // status unchanged.
-                        const stage = articleStatus;
-                        const submittable = !isEdit || stage === "draft" || stage === "changes_requested" || stage === "in_review";
-                        let label = isEdit && stage === "changes_requested" ? "Re-submit for Review" : "Submit for Review";
-                        if (!submittable) {
-                            if (stage === "approved") label = "Waiting for your consent form";
-                            else if (stage === "consent_received") label = "Waiting for admin to publish";
-                            else if (stage === "published") label = "Already published";
-                        }
-                        return (
+                        gap: "0.7rem",
+                        flexShrink: 0,
+                    }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem", minWidth: 0 }}>
+                                <span style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--muted)", fontWeight: 700 }}>Status</span>
+                                {lastSavedAt ? (
+                                    <span style={{ fontSize: "0.85rem", lineHeight: 1.35 }}>
+                                        Saved as <strong style={{ color: "var(--crimson)" }}>{articleStatus.replace(/_/g, " ").toUpperCase()}</strong>
+                                        <br />
+                                        <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>{formatRelative(lastSavedAt)} yang lalu</span>
+                                    </span>
+                                ) : (
+                                    <span style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+                                        {isEdit ? articleStatus.replace(/_/g, " ").toUpperCase() : "Unsaved draft"}
+                                    </span>
+                                )}
+                            </div>
                             <button
                                 type="button"
-                                className="btn-primary"
-                                disabled={saving || !submittable}
-                                onClick={(e) => handleSubmit(e, "submit")}
-                                style={{ width: "100%", opacity: submittable ? 1 : 0.55, cursor: submittable ? "pointer" : "not-allowed" }}
-                                title={submittable ? undefined : "This action isn't available at the current stage."}
+                                onClick={() => persistAside(true)}
+                                title="Collapse panel"
+                                aria-label="Collapse panel"
+                                style={{ background: "transparent", border: "1px solid var(--line)", borderRadius: 4, cursor: "pointer", padding: "2px 8px", color: "var(--muted)", fontSize: "0.78rem", lineHeight: 1, flexShrink: 0 }}
                             >
-                                {saving ? "⏳ Saving..." : label}
+                                ›
                             </button>
-                        );
-                    })()}
-                    <button type="button" className="btn-outline" disabled={saving} onClick={(e) => handleSubmit(e, "draft")} style={{ width: "100%" }}>
-                        Save as Draft
-                    </button>
-                </div>
-            </aside>
-            )}
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.74rem", color: "var(--muted)", paddingTop: "0.5rem", borderTop: "1px solid var(--line)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span>Title</span><Counter value={title.length} max={80} />
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span>Description</span><Counter value={seoDesc.length} max={200} />
+                            </div>
+                            {policyProductType && productByKey(policyProductType) && (
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span>Words</span>
+                                    <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem" }}>
+                                        {editorText.trim().split(/\s+/).filter(Boolean).length}
+                                        {" / "}
+                                        {productByKey(policyProductType)!.wordCount.min}
+                                        {productByKey(policyProductType)!.wordCount.max ? `–${productByKey(policyProductType)!.wordCount.max}` : "+"}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", paddingTop: "0.5rem", borderTop: "1px solid var(--line)" }}>
+                            {canPublish ? (
+                                <button type="button" className="btn-primary" disabled={saving} onClick={(e) => handleSubmit(e, "publish")} style={{ width: "100%" }}>
+                                    {saving ? "⏳ Saving..." : isEdit ? "Update & Publish" : "Publish Article"}
+                                </button>
+                            ) : (() => {
+                                const stage = articleStatus;
+                                const submittable = !isEdit || stage === "draft" || stage === "changes_requested" || stage === "in_review";
+                                let label = isEdit && stage === "changes_requested" ? "Re-submit for Review" : "Submit for Review";
+                                if (!submittable) {
+                                    if (stage === "approved") label = "Waiting for your consent form";
+                                    else if (stage === "consent_received") label = "Waiting for admin to publish";
+                                    else if (stage === "published") label = "Already published";
+                                }
+                                return (
+                                    <button
+                                        type="button"
+                                        className="btn-primary"
+                                        disabled={saving || !submittable}
+                                        onClick={(e) => handleSubmit(e, "submit")}
+                                        style={{ width: "100%", opacity: submittable ? 1 : 0.55, cursor: submittable ? "pointer" : "not-allowed" }}
+                                        title={submittable ? undefined : "This action isn't available at the current stage."}
+                                    >
+                                        {saving ? "⏳ Saving..." : label}
+                                    </button>
+                                );
+                            })()}
+                            <button type="button" className="btn-outline" disabled={saving} onClick={(e) => handleSubmit(e, "draft")} style={{ width: "100%" }}>
+                                Save as Draft
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {asideCollapsed ? (
+                    <aside
+                        className="editor-side editor-side--collapsed"
+                        style={{
+                            position: "sticky",
+                            top: "1rem",
+                            alignSelf: "start",
+                            padding: "0.75rem 0.4rem",
+                            border: "1px solid var(--line)",
+                            borderRadius: 8,
+                            background: "#fff",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "1rem",
+                            minHeight: 220,
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => persistAside(false)}
+                            title="Expand panel"
+                            aria-label="Expand panel"
+                            style={{
+                                background: "transparent",
+                                border: "none",
+                                cursor: "pointer",
+                                padding: "8px",
+                                color: "var(--crimson)",
+                                fontSize: "1.1rem",
+                                lineHeight: 1,
+                            }}
+                        >
+                            ‹
+                        </button>
+                        {/* Quick-jump icons mirror the three tabs so the user can
+                            expand straight to the right view from the strip. */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                            {(["settings", "comments", "history"] as const).map((id) => (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    onClick={() => { setTab(id); persistAside(false); }}
+                                    title={id.charAt(0).toUpperCase() + id.slice(1)}
+                                    aria-label={id}
+                                    style={{
+                                        background: asideTab === id ? "rgba(139,28,28,0.08)" : "transparent",
+                                        color: asideTab === id ? "var(--crimson)" : "var(--muted)",
+                                        border: "none",
+                                        borderRadius: 4,
+                                        padding: "8px 4px",
+                                        fontSize: "1rem",
+                                        cursor: "pointer",
+                                        lineHeight: 1,
+                                    }}
+                                >
+                                    {id === "settings" ? "⚙" : id === "comments" ? "💬" : "⏱"}
+                                </button>
+                            ))}
+                        </div>
+                        <span
+                            aria-hidden
+                            style={{
+                                writingMode: "vertical-rl",
+                                transform: "rotate(180deg)",
+                                fontSize: "0.68rem",
+                                letterSpacing: "0.2em",
+                                textTransform: "uppercase",
+                                color: "var(--muted)",
+                                fontWeight: 700,
+                                marginTop: "auto",
+                                padding: "0.5rem 0",
+                            }}
+                        >
+                            {asideTab === "settings" ? "Settings" : asideTab === "comments" ? "Comments" : "History"}
+                        </span>
+                    </aside>
+                ) : (
+                    <aside className="editor-side editor-side--tabbed" style={{
+                        border: "1px solid var(--line)",
+                        borderRadius: 8,
+                        background: "#fff",
+                        display: "flex",
+                        flexDirection: "column",
+                        flex: 1,
+                        minHeight: 0,
+                        overflow: "hidden",
+                    }}>
+                        {/* Tab nav */}
+                        <div className="editor-side-tabs" role="tablist" style={{ display: "flex", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+                            {(aiStyleEnabled
+                                ? [
+                                    { id: "comments", label: "Comments" },
+                                    { id: "history", label: "History" },
+                                ]
+                                : [
+                                    { id: "settings", label: "Settings" },
+                                    { id: "comments", label: "Comments" },
+                                    { id: "history", label: "History" },
+                                ]).map((t) => {
+                                const active = asideTab === t.id;
+                                return (
+                                    <button
+                                        key={t.id}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={active}
+                                        onClick={() => setTab(t.id as "settings" | "comments" | "history")}
+                                        style={{
+                                            flex: 1,
+                                            background: active ? "rgba(139,28,28,0.04)" : "transparent",
+                                            border: "none",
+                                            borderBottom: active ? "2px solid var(--crimson)" : "2px solid transparent",
+                                            color: active ? "var(--crimson)" : "var(--muted)",
+                                            padding: "0.7rem 0.5rem",
+                                            fontSize: "0.78rem",
+                                            fontWeight: active ? 700 : 500,
+                                            letterSpacing: "0.06em",
+                                            textTransform: "uppercase",
+                                            cursor: "pointer",
+                                            transition: "all 0.15s",
+                                        }}
+                                    >
+                                        {t.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Tab body — scrollable so long content (Settings in
+                            manual mode, big History) doesn't push the viewport. */}
+                        <div className="editor-side-body" style={{ flex: 1, overflowY: "auto", padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                            {asideTab === "settings" && (
+                                !aiStyleEnabled ? (
+                                    <>
+                                        {policyTypeSection}
+                                        {metaSection}
+                                        {coverSection}
+                                        {pdfSection}
+                                        {ackSection}
+                                        {aiDisclosureSection}
+                                        {seoSection}
+                                    </>
+                                ) : (
+                                    <p style={{ color: "var(--muted)", fontSize: "0.85rem", margin: 0, lineHeight: 1.55 }}>
+                                        In AI Magazine mode, article details, cover image, PDF, and SEO live in the main column. Switch the AI toggle off to move them here.
+                                    </p>
+                                )
+                            )}
+                            {asideTab === "comments" && (
+                                isEdit && slug ? (
+                                    <CommentThread
+                                        slug={slug}
+                                        onPosted={() => { if (!canPublish) setFeedbackPending(false); }}
+                                    />
+                                ) : (
+                                    <p style={{ color: "var(--muted)", fontSize: "0.85rem", margin: 0 }}>
+                                        Comments appear here once the article is saved.
+                                    </p>
+                                )
+                            )}
+                            {asideTab === "history" && (
+                                isEdit && slug ? (
+                                    <ReviewHistory slug={slug} />
+                                ) : (
+                                    <p style={{ color: "var(--muted)", fontSize: "0.85rem", margin: 0 }}>
+                                        Review history appears here once the article is saved.
+                                    </p>
+                                )
+                            )}
+                        </div>
+                    </aside>
+                )}
+            </div>
             </div>
 
             {/* Floating chrome toggle — visible only when admin nav is hidden.
@@ -1122,25 +1226,8 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 </button>
             )}
 
-            {isEdit && slug && (
-                <div className="editor-section" style={{ marginTop: "2rem" }}>
-                    <CommentThread
-                        slug={slug}
-                        onPosted={() => {
-                            // When the partner replies, the server flips feedback_pending=false on next save;
-                            // for the admin posting a comment, the server flips it to true. We optimistically
-                            // refresh on next page load — for now just clear the local flag if partner posts.
-                            if (!canPublish) setFeedbackPending(false);
-                        }}
-                    />
-                </div>
-            )}
-
-            {isEdit && slug && (
-                <div className="editor-section" style={{ marginTop: "1rem" }}>
-                    <ReviewHistory slug={slug} />
-                </div>
-            )}
+            {/* CommentThread + ReviewHistory used to live below the form; they
+                now render inside the right sidebar's Comments / History tabs. */}
         </div>
     );
 }
