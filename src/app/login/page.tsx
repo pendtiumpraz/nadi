@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import PasswordInput from "@/components/PasswordInput";
@@ -14,7 +14,17 @@ function safeRedirect(value: string | null): string {
     return value;
 }
 
+// Next 15+ requires useSearchParams() readers to live under a Suspense
+// boundary so the page can stream past the search-params hydration point.
 export default function LoginPage() {
+    return (
+        <Suspense fallback={null}>
+            <LoginPageInner />
+        </Suspense>
+    );
+}
+
+function LoginPageInner() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const callbackUrl = safeRedirect(searchParams?.get("callbackUrl") ?? null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import PasswordInput from "@/components/PasswordInput";
@@ -13,7 +13,17 @@ function safeRedirect(value: string | null): string {
     return value;
 }
 
+// Wrap the search-params reader in Suspense so Next 15+ can stream the
+// shell while query params hydrate.
 export default function RegisterPage() {
+    return (
+        <Suspense fallback={null}>
+            <RegisterPageInner />
+        </Suspense>
+    );
+}
+
+function RegisterPageInner() {
     const searchParams = useSearchParams();
     const callbackUrl = safeRedirect(searchParams?.get("callbackUrl") ?? null);
     const toast = useToast();
