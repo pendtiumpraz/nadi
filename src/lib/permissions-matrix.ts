@@ -14,7 +14,6 @@ export const MENU_ITEMS: { key: string; label: string }[] = [
     { key: "newsletter", label: "Newsletter" },
     { key: "ai", label: "AI Writer" },
     { key: "docs", label: "Docs" },
-    { key: "policy-guideline", label: "Policy Guideline" },
     { key: "guidelines", label: "Guidelines" },
     { key: "settings", label: "Settings" },
     { key: "users", label: "Users" },
@@ -27,13 +26,14 @@ export const ROLES: UserRole[] = ["admin", "reviewer", "contributor", "partner"]
 export type RoleMenuMatrix = Record<UserRole, string[]>;
 
 // Defaults — admin always sees everything; other roles see a sensible subset.
-// `policy-guideline` is the read-only public guideline page; every role gets it
-// so contributors/partners have a sidebar entry point to the canonical doc.
+// `guidelines` is the admin-side uploader. Contributors/partners/reviewers
+// reach the public guideline via the inline links on the article editor and
+// the publications page — they don't need an admin upload entry.
 export const DEFAULT_MATRIX: RoleMenuMatrix = {
     admin: MENU_ITEMS.map((m) => m.key),
-    reviewer: ["dashboard", "articles", "events", "media", "review", "topics", "consents", "docs", "policy-guideline"],
-    contributor: ["dashboard", "articles", "events", "media", "topics", "ai", "docs", "policy-guideline"],
-    partner: ["dashboard", "articles", "events", "docs", "policy-guideline"],
+    reviewer: ["dashboard", "articles", "events", "media", "review", "topics", "consents", "docs"],
+    contributor: ["dashboard", "articles", "events", "media", "topics", "ai", "docs"],
+    partner: ["dashboard", "articles", "events", "docs"],
 };
 
 const SETTINGS_KEY = "role_menu_matrix";
@@ -41,7 +41,7 @@ const SETTINGS_KEY = "role_menu_matrix";
 // Keys that should be auto-granted to every role on load — used to backfill
 // existing saved matrices when a new menu key is introduced (so admins don't
 // have to re-open /admin/permissions and tick boxes manually).
-const ALWAYS_BACKFILL_KEYS: string[] = ["policy-guideline"];
+const ALWAYS_BACKFILL_KEYS: string[] = [];
 
 export async function getMatrix(): Promise<RoleMenuMatrix> {
     try {
