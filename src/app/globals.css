@@ -2184,21 +2184,12 @@ body.editor-focus-mode .admin-body {
   text-decoration: none;
 }
 
-/* Image-based brand mark in the admin topbar. Two <img> elements ship —
-   white variant for the default dark topbar, colour variant for the
-   .adm-light theme — and CSS shows/hides the right one. */
+/* Image-based brand mark in the admin topbar. Always the white variant —
+   the topbar is dark grey (default) or crimson (.adm-light), so the white
+   logo reads cleanly in both. */
 .adm-topbar-logo-img {
   height: 26px;
   width: auto;
-  display: block;
-}
-.adm-topbar-logo-img.on-light {
-  display: none;
-}
-.adm-light .adm-topbar-logo-img.on-dark {
-  display: none;
-}
-.adm-light .adm-topbar-logo-img.on-light {
   display: block;
 }
 

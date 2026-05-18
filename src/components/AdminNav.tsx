@@ -177,12 +177,12 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
             {/* Top bar — ONLY logo left, logout right */}
             <header className="adm-topbar">
                 <a href="/admin" className="adm-topbar-logo" aria-label="NADI Admin">
-                    {/* Dark topbar gets the white variant; .adm-light theme
-                        flips to the colour variant via CSS. */}
+                    {/* Admin topbar is dark by default and crimson under the
+                        v2 light theme — both look best with the white logo
+                        variant. The colour logo is reserved for white
+                        backgrounds (consent, public V2 nav). */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={branding.logoWhiteUrl} alt="NADI" className="adm-topbar-logo-img on-dark" />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={branding.logoUrl} alt="NADI" className="adm-topbar-logo-img on-light" />
+                    <img src={branding.logoWhiteUrl} alt="NADI" className="adm-topbar-logo-img" />
                     <span className="adm-topbar-logo-sub">Admin</span>
                 </a>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginLeft: "auto" }}>
