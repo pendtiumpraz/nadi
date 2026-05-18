@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
             req.nextUrl?.origin ||
             `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
         const resetUrl = `${baseUrl}/reset-password/${encodeURIComponent(token)}`;
-        console.info(`[forgot-password] dispatching reset email to ${user.email}`);
+        console.info(`[forgot-password] dispatching reset email to ${user.email} url=${resetUrl}`);
         // Await so any SMTP error surfaces in the server log instead of being
         // swallowed by .catch(). The response is still always-OK so anti-
         // enumeration semantics are preserved.

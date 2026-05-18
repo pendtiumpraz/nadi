@@ -67,7 +67,13 @@ function ccHeader(list: CCRecipient[]): string {
 }
 
 function transporter() {
-    if (!process.env.SMTP_HOST && !process.env.SMTP_USER) return null;
+    if (!process.env.SMTP_HOST && !process.env.SMTP_USER) {
+        console.warn(
+            "[notify] SMTP not configured (need SMTP_USER + SMTP_PASS, optionally SMTP_HOST/SMTP_PORT). " +
+            "Emails will be logged but NOT delivered."
+        );
+        return null;
+    }
     return nodemailer.createTransport({
         host: process.env.SMTP_HOST || "smtp.gmail.com",
         port: Number(process.env.SMTP_PORT) || 587,
@@ -139,10 +145,11 @@ function render(event: NotifyEvent, p: NotifyPayload): RenderedEmail {
                     "Password Reset",
                     `<p>Hi ${p.targetName || ""},</p>
                      <p>We received a request to reset the password for your NADI account. Click the button below to choose a new password — the link is valid for <strong>1 hour</strong>.</p>
+                     ${p.url ? `<p style="font-size:0.8rem;color:#6B6B6B;word-break:break-all;">Or copy this URL into your browser: <a href="${p.url}" style="color:#8B1C1C;">${p.url}</a></p>` : ""}
                      <p style="color:#6B6B6B;font-size:0.82rem;">If you didn't request this, you can safely ignore this email — your password won't change.</p>`,
                     p.url ? { label: "Reset password", href: p.url } : undefined
                 ),
-                text: `Reset your NADI password (valid 1 hour): ${p.url || ""}. Ignore this email if you didn't request the reset.`,
+                text: `Reset your NADI password (valid 1 hour). Open this URL to set a new password:\n${p.url || "(URL missing)"}\n\nIgnore this email if you didn't request the reset.`,
             };
         case "article_submitted":
             return {
