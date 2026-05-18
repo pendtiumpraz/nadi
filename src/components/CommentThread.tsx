@@ -127,6 +127,19 @@ export default function CommentThread({ slug, title = "Comments", onPosted }: Co
                     ? "Reply to feedback or add context for the reviewer."
                     : "";
 
+    // Authors (contributor / partner) shouldn't see an empty comment thread
+    // before any review has happened — it just creates noise on the editor.
+    // The thread reveals itself once a reviewer or admin posts the first
+    // comment (or mirrors a request_changes note). Reviewers / admins always
+    // see it so they can start the conversation.
+    const isAuthorRole = currentRole === "contributor" || currentRole === "partner";
+    const hasReviewerComment = comments.some(
+        (c) => c.authorRole === "reviewer" || c.authorRole === "admin"
+    );
+    if (isAuthorRole && !loading && !loadError && !hasReviewerComment) {
+        return <></>;
+    }
+
     return (
         <section style={{ marginTop: "2rem" }}>
             <h2
