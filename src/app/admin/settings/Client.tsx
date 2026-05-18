@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/Toast";
+import { DEFAULT_PRIVACY_POLICY_HTML, DEFAULT_TERMS_OF_SERVICE_HTML } from "@/lib/legal-content";
 
 const LANDING_MODES = [
     { value: "v2", label: "V2 — Light Theme (New)", desc: "Modern light design with ECG visualization, team cards, and partner marquee." },
@@ -47,8 +48,11 @@ export default function AdminSettingsPage() {
                 setAdminTheme(data.settings?.admin_theme || "v1");
                 setReviewEta(data.settings?.review_eta_days || "7");
                 setPrivacyTermsMd(data.settings?.privacy_terms_md || "");
-                setPrivacyPolicyHtml(data.settings?.privacy_policy_html || "");
-                setTermsOfServiceHtml(data.settings?.terms_of_service_html || "");
+                // Empty rows in site_settings mean "use the default seed" —
+                // prefill the textareas with that seed so the admin gets a
+                // starting point to edit instead of a blank canvas.
+                setPrivacyPolicyHtml(data.settings?.privacy_policy_html || DEFAULT_PRIVACY_POLICY_HTML);
+                setTermsOfServiceHtml(data.settings?.terms_of_service_html || DEFAULT_TERMS_OF_SERVICE_HTML);
                 try {
                     const parsed = JSON.parse(data.settings?.notification_cc || "[]");
                     setCcList(Array.isArray(parsed) ? parsed : []);
@@ -584,7 +588,7 @@ export default function AdminSettingsPage() {
                                     borderRadius: 4,
                                 }}
                             />
-                            <div style={{ marginTop: "0.75rem" }}>
+                            <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                                 <button
                                     type="button"
                                     className="btn-primary"
@@ -592,6 +596,15 @@ export default function AdminSettingsPage() {
                                     style={{ fontSize: "0.8rem", padding: "6px 14px" }}
                                 >
                                     Save Privacy Policy
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-outline"
+                                    onClick={() => setPrivacyPolicyHtml(DEFAULT_PRIVACY_POLICY_HTML)}
+                                    style={{ fontSize: "0.8rem", padding: "6px 14px" }}
+                                    title="Replace the editor contents with the built-in default. Doesn't save until you click Save."
+                                >
+                                    Reset to default
                                 </button>
                             </div>
                         </div>
@@ -620,7 +633,7 @@ export default function AdminSettingsPage() {
                                     borderRadius: 4,
                                 }}
                             />
-                            <div style={{ marginTop: "0.75rem" }}>
+                            <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                                 <button
                                     type="button"
                                     className="btn-primary"
@@ -628,6 +641,15 @@ export default function AdminSettingsPage() {
                                     style={{ fontSize: "0.8rem", padding: "6px 14px" }}
                                 >
                                     Save Terms of Service
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-outline"
+                                    onClick={() => setTermsOfServiceHtml(DEFAULT_TERMS_OF_SERVICE_HTML)}
+                                    style={{ fontSize: "0.8rem", padding: "6px 14px" }}
+                                    title="Replace the editor contents with the built-in default. Doesn't save until you click Save."
+                                >
+                                    Reset to default
                                 </button>
                             </div>
                         </div>

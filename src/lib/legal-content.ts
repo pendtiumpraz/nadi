@@ -66,7 +66,7 @@ export const DEFAULT_PRIVACY_POLICY_HTML = `
   <li><strong>Restrict</strong> processing by temporarily deactivating your account.</li>
   <li><strong>Port</strong> your data to another service in a portable JSON / CSV export.</li>
 </ul>
-<p>Requests can be submitted to <a href="mailto:privacy@nadi-health.id">privacy@nadi-health.id</a> and will be processed within fourteen business days.</p>
+<p>Requests can be submitted to <a href="mailto:info@nadi-health.id">info@nadi-health.id</a> and will be processed within fourteen business days.</p>
 </section>
 
 <section id="minors">
@@ -83,7 +83,7 @@ export const DEFAULT_PRIVACY_POLICY_HTML = `
 <h2>10. Contact</h2>
 <p>Questions about this privacy policy can be sent to:</p>
 <ul class="legal-list">
-  <li>Email: <a href="mailto:privacy@nadi-health.id">privacy@nadi-health.id</a></li>
+  <li>Email: <a href="mailto:info@nadi-health.id">info@nadi-health.id</a></li>
   <li>Post: Jl. KH Abdullah Syafi'i No. 28, Jakarta 12840, Indonesia</li>
 </ul>
 </section>
@@ -191,7 +191,7 @@ export const DEFAULT_TERMS_OF_SERVICE_HTML = `
 <h2>11. Contact</h2>
 <p>Questions, clarifications, or requests related to these terms can be sent to:</p>
 <ul class="legal-list">
-  <li>Email: <a href="mailto:legal@nadi-health.id">legal@nadi-health.id</a></li>
+  <li>Email: <a href="mailto:info@nadi-health.id">info@nadi-health.id</a></li>
   <li>Post: Jl. KH Abdullah Syafi'i No. 28, Jakarta 12840, Indonesia</li>
 </ul>
 </section>
