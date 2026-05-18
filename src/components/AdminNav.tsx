@@ -74,6 +74,7 @@ const CATEGORIES: NavCategory[] = [
         links: [
             { key: "ai", href: "/admin/ai", label: "AI Writer", icon: "✦" },
             { key: "guidelines", href: "/admin/guidelines", label: "Guidelines", icon: "⬆" },
+            { key: "policy-types", href: "/admin/policy-types", label: "Policy Types", icon: "◧" },
             { key: "docs", href: "/admin/docs", label: "Docs", icon: "◇" },
         ],
     },

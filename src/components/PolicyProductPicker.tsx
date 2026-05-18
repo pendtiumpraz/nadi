@@ -11,6 +11,13 @@ export interface PolicyProductPickerProps {
     value: PolicyProductType | "";
     onChange: (next: PolicyProductType) => void;
     /**
+     * Optional list of types to render. When omitted the picker self-fetches
+     * from /api/public/policy-products. Most callers (e.g. ArticleEditor) pass
+     * this in once at the top so the dynamic list is shared with scaffold +
+     * word-count guidance without firing duplicate requests.
+     */
+    items?: PolicyProductDef[];
+    /**
      * Optional: URL to download the guideline PDF. Kept for backwards compatibility,
      * but the picker now always links to the public `/policy-guideline` explainer
      * page (which itself handles the empty / not-uploaded state gracefully).
@@ -32,12 +39,29 @@ export default function PolicyProductPicker(
     // `guidelineUrl` is intentionally ignored — we always route to the public
     // /policy-guideline page so users see the explainer (and the empty-state
     // message) before downloading. The prop is preserved for API compatibility.
-    const { value, onChange, disabled = false } = props;
+    const { value, onChange, disabled = false, items } = props;
+    const [fetched, setFetched] = React.useState<PolicyProductDef[] | null>(items ?? null);
+
+    React.useEffect(() => {
+        if (items) { setFetched(items); return; }
+        let cancelled = false;
+        fetch("/api/public/policy-products")
+            .then((r) => r.json())
+            .then((data) => {
+                if (cancelled) return;
+                if (Array.isArray(data.items)) setFetched(data.items);
+                else setFetched(POLICY_PRODUCT_LIST);
+            })
+            .catch(() => { if (!cancelled) setFetched(POLICY_PRODUCT_LIST); });
+        return () => { cancelled = true; };
+    }, [items]);
+
+    const list = fetched ?? POLICY_PRODUCT_LIST;
 
     const selected: PolicyProductDef | null = React.useMemo(() => {
         if (!value) return null;
-        return POLICY_PRODUCT_LIST.find((p) => p.key === value) ?? null;
-    }, [value]);
+        return list.find((p) => p.key === value) ?? null;
+    }, [value, list]);
 
     return (
         <div style={{ marginBottom: "1.25rem" }}>
@@ -91,7 +115,7 @@ export default function PolicyProductPicker(
                     gap: "0.75rem",
                 }}
             >
-                {POLICY_PRODUCT_LIST.map((p) => {
+                {list.map((p) => {
                     const isSelected = value === p.key;
                     return (
                         <label

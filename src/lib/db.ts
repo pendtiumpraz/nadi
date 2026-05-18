@@ -508,4 +508,101 @@ export async function migrate() {
   `;
   await sql`CREATE INDEX IF NOT EXISTS password_reset_tokens_hash_idx ON password_reset_tokens (token_hash)`;
   await sql`CREATE INDEX IF NOT EXISTS password_reset_tokens_user_idx ON password_reset_tokens (user_id)`;
+
+  // ── Policy product types (customisable by admins) ──────────────────
+  // Each row is one Policy Product Type the article editor offers.
+  // Seeded with the original three (opinion_piece / policy_brief /
+  // policy_paper) on first run; afterwards admins manage rows via
+  // /admin/policy-types. `key` is the slug stored in articles.policy_product_type.
+  await sql`
+    CREATE TABLE IF NOT EXISTS policy_product_types (
+      key VARCHAR(64) PRIMARY KEY,
+      label VARCHAR(120) NOT NULL,
+      short_description TEXT DEFAULT '',
+      word_count_min INTEGER DEFAULT 0,
+      word_count_max INTEGER,
+      page_length VARCHAR(120) DEFAULT '',
+      tone TEXT DEFAULT '',
+      primary_research_note TEXT DEFAULT '',
+      sections JSONB DEFAULT '[]',
+      legacy_category VARCHAR(120) DEFAULT '',
+      display_order INTEGER DEFAULT 0,
+      is_archived BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS policy_product_types_order_idx ON policy_product_types (display_order, key)`;
+
+  // Seed the three guideline-canonical types if the table is empty so a
+  // brand-new deploy doesn't land with an empty picker. Idempotent — we
+  // only insert when nothing's there yet.
+  const seedCount = (await sql`SELECT COUNT(*)::int AS n FROM policy_product_types`) as { n: number }[];
+  if ((seedCount[0]?.n ?? 0) === 0) {
+    await sql`
+      INSERT INTO policy_product_types (key, label, short_description, word_count_min, word_count_max, page_length, tone, primary_research_note, sections, legacy_category, display_order)
+      VALUES (
+        'opinion_piece',
+        'Opinion Piece',
+        'Short persuasive commentary (600–1,200 words, ~1 page). Tone may be biased so long as arguments are evidence-backed. Author credibility required — byline is public.',
+        600,
+        1200,
+        '≤ 1 page',
+        'May be biased; arguments must be evidence-backed',
+        'Not required',
+        ${JSON.stringify([
+          { heading: "Opening", placeholder: "Strong statements or hooks that catch the reader's attention. Explain why this issue matters and how it is relevant to / affecting the reader." },
+          { heading: "Constructive Opinion / Argument 1", placeholder: "First argument with supporting points and evidence." },
+          { heading: "Constructive Opinion / Argument 2", placeholder: "Second argument with supporting points and evidence." },
+          { heading: "Constructive Opinion / Argument 3", placeholder: "Third argument with supporting points and evidence." },
+          { heading: "Closing", placeholder: "Conclude with a call to action and/or recommendation using NADI's ABC approach (recommendation titles begin with A, then B, then C)." },
+        ])},
+        'OPINION',
+        1
+      )`;
+    await sql`
+      INSERT INTO policy_product_types (key, label, short_description, word_count_min, word_count_max, page_length, tone, primary_research_note, sections, legacy_category, display_order)
+      VALUES (
+        'policy_brief',
+        'Policy Brief',
+        'Concise, action-oriented brief (800–2,000 words, 2–4 pages) aimed at policymakers. Neutral tone, secondary-research-backed.',
+        800,
+        2000,
+        '2–4 pages',
+        'Neutral, common policy language',
+        'Primary research allowed only after verification by the QC team',
+        ${JSON.stringify([
+          { heading: "Key Messages", placeholder: "3–4 one-line bullet points summarising the problem statement, findings, and recommendation." },
+          { heading: "Problem Definition", placeholder: "Context of the issue / policy / program through background and current landscape. Identify the core problem and highlight its importance." },
+          { heading: "Analysis", placeholder: "Assess policy gaps, challenges, and opportunities using a clear analysis approach (e.g., benchmarking to other countries, comparative case studies). May be divided into sub-chapters." },
+          { heading: "Recommendation", placeholder: "One-page concise recommendation using NADI's ABC approach. Must not introduce new information beyond what is already in the brief." },
+          { heading: "Works Cited", placeholder: "Full bibliography of all sources cited (data & statistics, academic literature, official reports, etc.)." },
+        ])},
+        'POLICY BRIEF',
+        2
+      )`;
+    await sql`
+      INSERT INTO policy_product_types (key, label, short_description, word_count_min, word_count_max, page_length, tone, primary_research_note, sections, legacy_category, display_order)
+      VALUES (
+        'policy_paper',
+        'Policy Paper',
+        'In-depth policy analysis (5,000–7,500+ words, 10–15 pages) presenting comprehensive solutions or major reforms. Mixed-method research preferred.',
+        5000,
+        NULL,
+        '10–15 pages',
+        'Neutral, common policy language',
+        'Primary research (surveys, IDIs, FGDs, observation) preferable. Mixed-method approach recommended.',
+        ${JSON.stringify([
+          { heading: "Executive Summary", placeholder: "One-page overview: problem statement, key findings, and main recommendations." },
+          { heading: "Current Situation / Current Landscape", placeholder: "Context of the issue: who is affected, when and where the issue occurs, and the key actors. Include the core problem." },
+          { heading: "Policy Review", placeholder: "Review of relevant government programs, policies, and strategies pertaining to the issue. May be divided into sub-chapters." },
+          { heading: "Analysis", placeholder: "Brief explanation of methods and research approach (details may go to Appendix). Assess policy gaps, challenges, and opportunities backed by comprehensive evidence." },
+          { heading: "Recommendation", placeholder: "One- to two-page recommendation using NADI's ABC approach. Must not introduce new information beyond what is discussed in the paper." },
+          { heading: "Works Cited", placeholder: "Full bibliography of all sources cited." },
+          { heading: "Appendix", placeholder: "Supplementary materials: graphs, tables, figures, and detailed information that adds context or justifies the analysis." },
+        ])},
+        'POLICY ANALYSIS',
+        3
+      )`;
+  }
 }

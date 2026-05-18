@@ -12,7 +12,7 @@ import CommentThread from "@/components/CommentThread";
 import ReviewHistory from "@/components/ReviewHistory";
 import ApproveButton from "@/components/ApproveButton";
 import PublishButton from "@/components/PublishButton";
-import { POLICY_PRODUCTS, type PolicyProductType } from "@/data/policy-products";
+import { POLICY_PRODUCTS, type PolicyProductType, type PolicyProductDef, POLICY_PRODUCT_LIST } from "@/data/policy-products";
 import { buildScaffoldHTML, isUntouchedScaffold } from "@/lib/template-scaffold";
 
 interface ArticleEditorProps {
@@ -67,6 +67,25 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     // 'html' block and the editor layout switches to a wider, Gutenberg-style
     // split (content centre, all metadata in the right sidebar).
     const [aiStyleEnabled, setAiStyleEnabled] = useState(true);
+    // Policy product types — fetched from the DB so admins can manage them via
+    // /admin/policy-types. Falls back to the hardcoded list while loading so
+    // the editor never renders an empty picker.
+    const [productTypes, setProductTypes] = useState<PolicyProductDef[]>(POLICY_PRODUCT_LIST);
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/public/policy-products")
+            .then((r) => r.json())
+            .then((data) => {
+                if (cancelled) return;
+                if (Array.isArray(data.items) && data.items.length > 0) {
+                    setProductTypes(data.items);
+                }
+            })
+            .catch(() => { /* keep the fallback list */ });
+        return () => { cancelled = true; };
+    }, []);
+    const productByKey = (key: string): PolicyProductDef | undefined =>
+        productTypes.find((p) => p.key === key) || POLICY_PRODUCTS[key];
     const coverInputRef = useRef<HTMLInputElement>(null);
     const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -176,17 +195,18 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     // previous pick. Also auto-set the legacy `category` field.
     const handleProductTypeChange = useCallback((next: PolicyProductType) => {
         setPolicyProductType(next);
-        const product = POLICY_PRODUCTS[next];
+        const product = productByKey(next);
         if (product?.legacyCategory) setCategory(product.legacyCategory);
         const currentHTML = editorRef.current?.innerHTML || "";
         const currentText = editorRef.current?.innerText?.trim() || "";
-        if (!currentText || isUntouchedScaffold(currentHTML)) {
-            if (editorRef.current) {
-                editorRef.current.innerHTML = buildScaffoldHTML(next);
+        if (!currentText || isUntouchedScaffold(currentHTML, productTypes)) {
+            if (editorRef.current && product) {
+                editorRef.current.innerHTML = buildScaffoldHTML(product);
                 setEditorText(editorRef.current.innerText || "");
             }
         }
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productTypes]);
 
     // Rich text commands
     const exec = useCallback((cmd: string, value?: string) => {
@@ -361,6 +381,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 value={policyProductType}
                 onChange={(v) => { handleProductTypeChange(v); if (fieldError === "type") setFieldError(null); }}
                 disabled={isEdit && !!policyProductType && articleStatus !== "draft" && articleStatus !== "changes_requested" && !canPublish}
+                items={productTypes}
             />
             {policyProductType === "policy_brief" && (
                 <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.75rem", fontSize: "0.85rem" }}>
@@ -699,12 +720,12 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         onInput={() => { setEditorText(editorRef.current?.innerText || ""); if (fieldError === "content") setFieldError(null); }}
                         style={fieldError === "content" ? { borderColor: "#8B1C1C", boxShadow: "0 0 0 3px rgba(139,28,28,0.12)", backgroundColor: "#fdf6f6" } : undefined}
                     />
-                    {policyProductType && (
+                    {policyProductType && productByKey(policyProductType) && (
                         <div style={{ marginTop: "0.5rem" }}>
                             <WordCounter
                                 text={editorText}
-                                min={POLICY_PRODUCTS[policyProductType].wordCount.min}
-                                max={POLICY_PRODUCTS[policyProductType].wordCount.max}
+                                min={productByKey(policyProductType)!.wordCount.min}
+                                max={productByKey(policyProductType)!.wordCount.max}
                             />
                         </div>
                     )}
@@ -868,14 +889,14 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span>Summary social</span><Counter value={summarySocial.length} max={200} />
                     </div>
-                    {policyProductType && (
+                    {policyProductType && productByKey(policyProductType) && (
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span>Words</span>
                             <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.7rem" }}>
                                 {editorText.trim().split(/\s+/).filter(Boolean).length}
                                 {" / "}
-                                {POLICY_PRODUCTS[policyProductType].wordCount.min}
-                                {POLICY_PRODUCTS[policyProductType].wordCount.max ? `–${POLICY_PRODUCTS[policyProductType].wordCount.max}` : "+"}
+                                {productByKey(policyProductType)!.wordCount.min}
+                                {productByKey(policyProductType)!.wordCount.max ? `–${productByKey(policyProductType)!.wordCount.max}` : "+"}
                             </span>
                         </div>
                     )}

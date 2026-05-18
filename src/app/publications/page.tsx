@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import V2PageLayout from "@/components/V2PageLayout";
-import { POLICY_PRODUCT_LIST, getProduct, type PolicyProductType } from "@/data/policy-products";
+import { POLICY_PRODUCT_LIST, getProduct, type PolicyProductType, type PolicyProductDef } from "@/data/policy-products";
 import "@/app/landing-v2.css";
 
 const SUBMIT_TARGET = "/admin/articles/new";
@@ -16,14 +16,6 @@ interface ArticleItem {
 }
 
 interface Pagination { page: number; totalPages: number; total: number; }
-
-// Filter chips: "All" + the 3 canonical policy product types from the guideline.
-// Legacy `category` strings remain in the data for backwards compat but the
-// filter UX surfaces only product types per the NADI guideline doc.
-const FILTERS: { key: "ALL" | PolicyProductType; label: string }[] = [
-    { key: "ALL", label: "All" },
-    ...POLICY_PRODUCT_LIST.map((p) => ({ key: p.key, label: p.label })),
-];
 
 /** Returns the visible page-number sequence with "…" gaps for large totals.
  *  Layout: [1] … [c-1] [c] [c+1] … [last] — always shows first/last, current ±1. */
@@ -49,6 +41,25 @@ export default function PublicationsPage() {
     const PER_PAGE = 9;
     const { data: session, status } = useSession();
     const isAuthed = status === "authenticated" && !!session?.user;
+    // Filter chips come from the DB-backed types list so admin edits in
+    // /admin/policy-types flow here automatically. Falls back to the
+    // hardcoded set while loading.
+    const [productList, setProductList] = useState<PolicyProductDef[]>(POLICY_PRODUCT_LIST);
+    useEffect(() => {
+        let cancelled = false;
+        fetch("/api/public/policy-products")
+            .then((r) => r.json())
+            .then((data) => {
+                if (cancelled) return;
+                if (Array.isArray(data.items) && data.items.length > 0) setProductList(data.items);
+            })
+            .catch(() => { /* keep fallback */ });
+        return () => { cancelled = true; };
+    }, []);
+    const FILTERS: { key: "ALL" | PolicyProductType; label: string }[] = [
+        { key: "ALL", label: "All" },
+        ...productList.map((p) => ({ key: p.key, label: p.label })),
+    ];
     // Logged-in users go straight to the editor; visitors are bounced through
     // /login (which honours callbackUrl) and land in the editor after auth.
     const submitHref = isAuthed
@@ -66,8 +77,8 @@ export default function PublicationsPage() {
         if (filter !== "ALL") {
             params.set("policy_product_type", filter);
             // Also set legacy category so older articles still appear in the bucket
-            const product = POLICY_PRODUCT_LIST.find((p) => p.key === filter);
-            if (product) params.set("category", product.legacyCategory);
+            const product = productList.find((p) => p.key === filter);
+            if (product?.legacyCategory) params.set("category", product.legacyCategory);
         }
         fetch(`/api/public/articles?${params}`)
             .then((r) => {
@@ -77,7 +88,7 @@ export default function PublicationsPage() {
             .then((data) => { setArticles(data.articles || []); setPagination(data.pagination || null); })
             .catch(() => { setArticles([]); setError(true); })
             .finally(() => setLoading(false));
-    }, [page, filter]);
+    }, [page, filter, productList]);
 
     const submitBanner = (
         <div

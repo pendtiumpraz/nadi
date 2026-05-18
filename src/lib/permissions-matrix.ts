@@ -16,6 +16,7 @@ export const MENU_ITEMS: { key: string; label: string }[] = [
     { key: "ai", label: "AI Writer" },
     { key: "docs", label: "Docs" },
     { key: "guidelines", label: "Guidelines" },
+    { key: "policy-types", label: "Policy Types" },
     { key: "settings", label: "Settings" },
     { key: "users", label: "Users" },
     { key: "permissions", label: "Permissions" },
@@ -54,7 +55,7 @@ const ALWAYS_BACKFILL_KEYS: string[] = [];
 // (AI Writer, Topics, Docs, Guidelines, Newsletter, Team, Settings, Users,
 // Permissions, Audit) — surfacing them to authors is just clutter and risk.
 // Reviewer is intentionally exempt: they still need topics, docs, etc.
-const STRIPPED_FOR_AUTHORS: string[] = ["topics", "ai", "docs", "guidelines", "newsletter", "team", "settings", "users", "permissions", "audit", "review", "consents"];
+const STRIPPED_FOR_AUTHORS: string[] = ["topics", "ai", "docs", "guidelines", "policy-types", "newsletter", "team", "settings", "users", "permissions", "audit", "review", "consents"];
 
 export async function getMatrix(): Promise<RoleMenuMatrix> {
     try {

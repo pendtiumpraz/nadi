@@ -8,7 +8,11 @@
 //   - articles.policy_product_type DB column
 // ════════════════════════════════════════════════════════════════════
 
-export type PolicyProductType = "opinion_piece" | "policy_brief" | "policy_paper";
+/** Slug of a policy product type. The three built-ins are still used as a
+ *  fallback constants when the dynamic list hasn't loaded yet, but the union
+ *  is widened to `string` because admins can now register custom types via
+ *  /admin/policy-types. */
+export type PolicyProductType = string;
 
 export interface PolicyProductSection {
     heading: string;

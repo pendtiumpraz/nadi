@@ -14,14 +14,13 @@
 //                                product types, so switching products
 //                                doesn't accidentally clobber writing).
 // ════════════════════════════════════════════════════════════════════
-import { POLICY_PRODUCTS, type PolicyProductType } from "@/data/policy-products";
+import { POLICY_PRODUCTS, type PolicyProductDef } from "@/data/policy-products";
 
 function escape(s: string): string {
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 }
 
-export function buildScaffoldHTML(productType: PolicyProductType): string {
-    const product = POLICY_PRODUCTS[productType];
+export function buildScaffoldHTML(product: PolicyProductDef | null | undefined): string {
     if (!product) return "";
     return product.sections
         .map(
@@ -43,10 +42,15 @@ function toPlainText(html: string): string {
         .trim();
 }
 
-export function isUntouchedScaffold(html: string): boolean {
+/** Returns true when the editor body is identical to any known scaffold —
+ *  used to decide whether picking a different product type can safely reseed
+ *  the editor without overwriting real writing. Takes an optional `extra`
+ *  list so the caller can include dynamic types loaded from the API. */
+export function isUntouchedScaffold(html: string, extra: PolicyProductDef[] = []): boolean {
     const actual = toPlainText(html);
     if (!actual) return false;
-    for (const product of Object.values(POLICY_PRODUCTS)) {
+    const all: PolicyProductDef[] = [...Object.values(POLICY_PRODUCTS), ...extra];
+    for (const product of all) {
         const expected = product.sections
             .map((s) => `${s.heading} ${s.placeholder}`)
             .join(" ")
