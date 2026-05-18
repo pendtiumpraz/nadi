@@ -141,7 +141,7 @@ export default function CommentThread({ slug, title = "Comments", onPosted }: Co
     }
 
     return (
-        <section style={{ marginTop: "2rem" }}>
+        <section>
             <h2
                 style={{
                     fontSize: "1rem",

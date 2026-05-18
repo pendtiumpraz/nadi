@@ -89,7 +89,7 @@ export default function ReviewHistory({ slug }: Props): React.JSX.Element {
 
     if (loading) {
         return (
-            <section style={{ marginTop: "2rem" }}>
+            <section>
                 <h2 style={titleStyle}>Review History</h2>
                 <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>Loading review history…</p>
             </section>
@@ -98,7 +98,7 @@ export default function ReviewHistory({ slug }: Props): React.JSX.Element {
 
     if (error) {
         return (
-            <section style={{ marginTop: "2rem" }}>
+            <section>
                 <h2 style={titleStyle}>Review History</h2>
                 <p style={{ color: "#a83838", fontSize: "0.85rem" }}>{error}</p>
             </section>
@@ -107,7 +107,7 @@ export default function ReviewHistory({ slug }: Props): React.JSX.Element {
 
     if (history.length === 0) {
         return (
-            <section style={{ marginTop: "2rem" }}>
+            <section>
                 <h2 style={titleStyle}>Review History</h2>
                 <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
                     No state transitions recorded yet. Once the article is submitted, every approval,
@@ -118,7 +118,7 @@ export default function ReviewHistory({ slug }: Props): React.JSX.Element {
     }
 
     return (
-        <section style={{ marginTop: "2rem" }}>
+        <section>
             <h2 style={titleStyle}>Review History</h2>
             <ol style={{ listStyle: "none", padding: 0, margin: 0, position: "relative" }}>
                 {/* Vertical timeline line */}

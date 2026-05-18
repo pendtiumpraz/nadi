@@ -2725,7 +2725,10 @@ body.editor-focus-mode .admin-body {
 .editor-mode-manual .editor-side .editor-section {
   padding: 1rem;
 }
-.editor-mode-manual .editor-side input,
+/* Stretch text-like inputs to the aside width — but leave checkboxes,
+   radios, and file inputs alone (they have their own intrinsic sizes;
+   stretching them produces giant overlapping squares). */
+.editor-mode-manual .editor-side input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
 .editor-mode-manual .editor-side select,
 .editor-mode-manual .editor-side textarea {
   width: 100%;
@@ -2733,18 +2736,34 @@ body.editor-focus-mode .admin-body {
   box-sizing: border-box;
 }
 
-/* Authorship Ack rows: in a 340px aside the rule text was overflowing
-   past the section border because the <span> wasn't allowed to flex.
-   Force min-width: 0 + word-break so long rule strings wrap cleanly. */
+/* Authorship Ack rows: keep the label as flex with the checkbox
+   shrink-locked and the rule span filling the remaining width. Long
+   words wrap cleanly inside the ~340px aside instead of pushing past
+   the section border. */
+.editor-mode-manual .editor-side .authorship-ack {
+  width: 100%;
+}
 .editor-mode-manual .editor-side .authorship-ack label {
+  display: flex;
   align-items: flex-start;
+  gap: 0.55rem;
   min-width: 0;
+  width: 100%;
+}
+.editor-mode-manual .editor-side .authorship-ack label > input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: #8B1C1C;
 }
 .editor-mode-manual .editor-side .authorship-ack label > span {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
   word-break: break-word;
   overflow-wrap: anywhere;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 /* CommentThread + ReviewHistory used to live below the form with section
