@@ -55,17 +55,16 @@
     border-bottom: 1px solid #E8E5E1;
 }
 
-/* Image-based brand mark used by the V2 nav + footer. */
+/* Image-based brand mark used by the V2 nav + footer. Both surfaces use the
+   light cream background (#FAFAF8 / rgba(250,250,248,0.95)), so the colour
+   (red) variant renders as-is — no invert filter, no white treatment. */
 .v2-logo-img {
-    height: 38px;
+    height: 52px;
     width: auto;
     display: block;
 }
 .v2-footer .v2-logo-img {
-    height: 32px;
-    /* Footer background is dark — invert the dark portion of the colour logo
-       so the subtitle stays legible. */
-    filter: brightness(0) invert(1);
+    height: 46px;
 }
 
 .v2-logo {
