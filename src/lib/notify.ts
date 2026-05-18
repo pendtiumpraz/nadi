@@ -15,6 +15,7 @@ export type NotifyEvent =
     | "article_approved"
     | "article_changes_requested"
     | "feedback_received"
+    | "author_reply"
     | "submission_received"
     | "consent_received"
     | "article_published";
@@ -209,6 +210,18 @@ function render(event: NotifyEvent, p: NotifyPayload): RenderedEmail {
                     p.url ? { label: "Open Article", href: p.url } : undefined
                 ),
                 text: `${p.actorName || "A reviewer"} posted a comment${p.title ? ` on "${p.title}"` : ""}.${p.notes ? `\n\nComment:\n${p.notes}\n` : ""}${p.url ? `\nOpen: ${p.url}` : ""}`,
+            };
+        case "author_reply":
+            return {
+                subject: p.title ? `Author replied on: ${p.title}` : "Author replied to feedback",
+                html: wrap(
+                    "Author Reply",
+                    `<p>${p.actorName ? `<strong>${p.actorName}</strong>` : "The author"} replied on the comment thread${p.title ? ` for <strong>${p.title}</strong>` : ""}.</p>
+                     ${p.notes ? `<div style="background:#fff;border-left:3px solid #8B1C1C;padding:16px 20px;margin:16px 0;"><p style="color:#6B6B6B;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 8px;">Reply</p><p style="margin:0;white-space:pre-wrap;">${p.notes}</p></div>` : ""}
+                     <p style="color:#6B6B6B;font-size:0.85rem;">Open the article in the CMS to see the full thread and respond.</p>`,
+                    p.url ? { label: "Open Article", href: p.url } : undefined
+                ),
+                text: `${p.actorName || "The author"} replied${p.title ? ` on "${p.title}"` : ""}.${p.notes ? `\n\nReply:\n${p.notes}\n` : ""}${p.url ? `\nOpen: ${p.url}` : ""}`,
             };
         case "submission_received":
             return {
@@ -413,6 +426,29 @@ export async function notifyFeedbackReceived(payload: { title: string; slug: str
             title: payload.title,
             slug: payload.slug,
             actorName: payload.commenterName,
+            notes: payload.commentBody,
+            url: payload.baseUrl ? `${payload.baseUrl}/admin/articles/${payload.slug}` : undefined,
+        },
+    });
+}
+
+/** When an author (contributor / partner) replies on the comment thread we
+ *  fan the reply out to every active admin + reviewer plus the standing CC
+ *  list configured in Settings → Notifications, so the reviewers don't have
+ *  to keep refreshing the CMS to see responses. */
+export async function notifyAuthorReply(payload: { title: string; slug: string; authorName: string; commentBody: string; baseUrl?: string }): Promise<void> {
+    const admins = await getEmailsByRole("admin");
+    const reviewers = await getEmailsByRole("reviewer");
+    const recipients = [...new Set([...admins, ...reviewers])];
+    const cc = await getNotificationCC();
+    await send({
+        event: "author_reply",
+        to: recipients,
+        cc,
+        payload: {
+            title: payload.title,
+            slug: payload.slug,
+            actorName: payload.authorName,
             notes: payload.commentBody,
             url: payload.baseUrl ? `${payload.baseUrl}/admin/articles/${payload.slug}` : undefined,
         },

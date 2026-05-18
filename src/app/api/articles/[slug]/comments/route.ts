@@ -4,7 +4,7 @@ import { getArticleBySlugStore, setFeedbackPending } from "@/lib/articles-store"
 import { canReview } from "@/lib/permissions";
 import { getDB } from "@/lib/db";
 import { getUserById } from "@/lib/users";
-import { notifyFeedbackReceived } from "@/lib/notify";
+import { notifyFeedbackReceived, notifyAuthorReply } from "@/lib/notify";
 import { createNotification, createNotificationForUsers, getUserIdsByRole } from "@/lib/notifications-store";
 
 interface Params {
@@ -165,6 +165,23 @@ export async function POST(req: NextRequest, { params }: Params) {
                     link: `/admin/articles/${slug}`,
                 })
             ).catch(() => { });
+
+        // And email every admin + reviewer with the reply body, CC'ing the
+        // standing notification list from Settings → Notifications. Mirrors
+        // notifyFeedbackReceived for the reverse direction so the thread is
+        // genuinely two-way over email.
+        const baseUrl =
+            req.nextUrl?.origin ||
+            `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
+        notifyAuthorReply({
+            title: article.title,
+            slug,
+            authorName: session.user.name || "The author",
+            commentBody: trimmed,
+            baseUrl,
+        }).catch((err) => {
+            console.error("[comments] notifyAuthorReply failed:", (err as Error).message);
+        });
     }
 
     return NextResponse.json({ comment: rowToDTO(row) }, { status: 201 });
