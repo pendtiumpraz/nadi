@@ -2,10 +2,11 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 export default function NewEventPage() {
     const router = useRouter();
-    const [status, setStatus] = useState("");
+    const toast = useToast();
     const [saving, setSaving] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -17,16 +18,15 @@ export default function NewEventPage() {
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setSaving(true);
-        setStatus("Saving event...");
         try {
             const form = new FormData(e.currentTarget);
             const res = await fetch("/api/events", { method: "POST", body: form });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            setStatus("✓ Event created!");
-            setTimeout(() => router.push("/admin/events"), 1000);
+            toast.success("Event created.");
+            setTimeout(() => router.push("/admin/events"), 600);
         } catch (err) {
-            setStatus(`Error: ${(err as Error).message}`);
+            toast.error((err as Error).message);
         }
         setSaving(false);
     };
@@ -71,7 +71,6 @@ export default function NewEventPage() {
                     {imagePreview && <img src={imagePreview} alt="Preview" style={{ marginTop: "1rem", maxWidth: "100%", maxHeight: "300px", borderRadius: "6px", border: "1px solid var(--line)" }} />}
                 </div>
 
-                {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
                 <div className="editor-save">
                     <button type="submit" className="btn-primary" disabled={saving}>{saving ? "⏳ Saving..." : "Create Event"}</button>
                     <a href="/admin/events" className="btn-outline">Cancel</a>

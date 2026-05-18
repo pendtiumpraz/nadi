@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/Toast";
 
 interface MenuItem { key: string; label: string }
 type Role = "admin" | "reviewer" | "contributor" | "partner";
@@ -19,7 +20,7 @@ export default function PermissionsMatrix() {
     const [matrix, setMatrix] = useState<Matrix | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [msg, setMsg] = useState("");
+    const toast = useToast();
 
     useEffect(() => {
         fetch("/api/permissions")
@@ -29,9 +30,9 @@ export default function PermissionsMatrix() {
                 setRoles(d.roles);
                 setMatrix(d.matrix);
             })
-            .catch(() => setMsg("Failed to load matrix."))
+            .catch(() => toast.error("Failed to load matrix."))
             .finally(() => setLoading(false));
-    }, []);
+    }, [toast]);
 
     const toggle = (role: Role, key: string) => {
         if (role === "admin") return;
@@ -44,7 +45,6 @@ export default function PermissionsMatrix() {
     const save = async () => {
         if (!matrix) return;
         setSaving(true);
-        setMsg("");
         try {
             const res = await fetch("/api/permissions", {
                 method: "PUT",
@@ -53,20 +53,18 @@ export default function PermissionsMatrix() {
             });
             const d = await res.json();
             if (!res.ok) throw new Error(d.error);
-            setMsg("✓ Saved. Sidebar will update on next page load.");
+            toast.success("Saved. Sidebar will update on next page load.");
         } catch (err) {
-            setMsg(`Error: ${(err as Error).message}`);
+            toast.error((err as Error).message);
         }
         setSaving(false);
     };
 
     if (loading) return <p style={{ color: "var(--muted)" }}>Loading matrix...</p>;
-    if (!matrix) return <p style={{ color: "var(--muted)" }}>{msg || "No matrix found."}</p>;
+    if (!matrix) return <p style={{ color: "var(--muted)" }}>No matrix found.</p>;
 
     return (
         <div>
-            {msg && <div className="admin-msg" onClick={() => setMsg("")}>{msg}</div>}
-
             <div style={{ overflowX: "auto" }}>
                 <table className="admin-table" style={{ minWidth: 720 }}>
                     <thead>

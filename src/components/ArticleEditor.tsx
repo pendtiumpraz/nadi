@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useToast, confirmDialog, promptDialog } from "@/components/Toast";
 import PolicyProductPicker from "@/components/PolicyProductPicker";
 import AuthorshipAck from "@/components/AuthorshipAck";
 import AiDisclosureField from "@/components/AiDisclosureField";
@@ -19,6 +20,8 @@ interface ArticleEditorProps {
 
 type ArticleStatus = "draft" | "in_review" | "approved" | "consent_received" | "published";
 
+type FieldError = "title" | "content" | "type" | "ack" | "ai" | null;
+
 export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const router = useRouter();
     const { data: session } = useSession();
@@ -26,6 +29,8 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const canPublish = role === "admin" || role === "reviewer";
     const editorRef = useRef<HTMLDivElement>(null);
     const isEdit = !!slug;
+    const toast = useToast();
+    const [fieldError, setFieldError] = useState<FieldError>(null);
 
     const [title, setTitle] = useState("");
     const [category, setCategory] = useState("POLICY BRIEF");
@@ -110,8 +115,8 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     }
                 }
             })
-            .catch(() => setStatus("Failed to load article."));
-    }, [slug, isEdit]);
+            .catch(() => toast.error("Failed to load article."));
+    }, [slug, isEdit, toast]);
 
     // Convert blocks back to editable HTML
     const blocksToHTML = (blocks: Record<string, unknown>[]): string => {
@@ -156,8 +161,12 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
         editorRef.current?.focus();
     }, []);
 
-    const insertLink = () => {
-        const url = prompt("Enter URL:");
+    const insertLink = async () => {
+        const url = await promptDialog({
+            title: "Insert link",
+            message: "Paste the URL to link the selected text.",
+            placeholder: "https://example.com",
+        });
         if (url) exec("createLink", url);
     };
 
@@ -173,9 +182,11 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             setCoverImage(data.url);
-            setStatus("✓ Cover image uploaded!");
+            setStatus("");
+            toast.success("Cover image uploaded.");
         } catch (err) {
-            setStatus(`Error: ${(err as Error).message}`);
+            setStatus("");
+            toast.error((err as Error).message);
         }
         setUploadingCover(false);
     };
@@ -183,7 +194,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const handlePdfUpload = async (file: File) => {
         if (!file || file.size === 0) return;
         if (file.type !== "application/pdf") {
-            setStatus("Error: Please upload a PDF file.");
+            toast.error("Please upload a PDF file.");
             return;
         }
         setUploadingPdf(true);
@@ -197,9 +208,11 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             setPdfUrl(data.url);
-            setStatus("✓ PDF uploaded!");
+            setStatus("");
+            toast.success("PDF uploaded.");
         } catch (err) {
-            setStatus(`Error: ${(err as Error).message}`);
+            setStatus("");
+            toast.error((err as Error).message);
         }
         setUploadingPdf(false);
     };
@@ -207,15 +220,16 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
     const handleSubmit = async (e: FormEvent, intent: "publish" | "submit" | "draft" = canPublish ? "publish" : "submit") => {
         e.preventDefault();
         const content = editorRef.current?.innerText || "";
-        if (!title.trim()) { setStatus("Title is required."); return; }
-        if (content.trim().length < 30) { setStatus("Write some content first."); return; }
+        setFieldError(null);
+        if (!title.trim()) { setFieldError("title"); toast.error("Title is required."); return; }
+        if (content.trim().length < 30) { setFieldError("content"); toast.error("Write some content first (at least 30 characters)."); return; }
 
         // Gate Submit-for-review (and direct Publish) on the Authorship + AI ack.
         // Draft saves can skip — partners can still scribble and save before completing the ack.
         if (intent !== "draft") {
-            if (!policyProductType) { setStatus("Please choose a Policy Product Type."); return; }
-            if (!authorshipAck.every(Boolean)) { setStatus("Please acknowledge all three Authorship & Research Integrity rules."); return; }
-            if (!noAi && !aiDisclosure.trim()) { setStatus("Please describe your AI use, or tick \"I did not use any AI tools\"."); return; }
+            if (!policyProductType) { setFieldError("type"); toast.error("Please choose a Policy Product Type."); return; }
+            if (!authorshipAck.every(Boolean)) { setFieldError("ack"); toast.error("Please acknowledge all three Authorship & Research Integrity rules."); return; }
+            if (!noAi && !aiDisclosure.trim()) { setFieldError("ai"); toast.error("Please describe your AI use, or tick \"I did not use any AI tools\"."); return; }
         }
 
         setSaving(true);
@@ -283,13 +297,15 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
             if (!saveRes.ok) throw new Error(saveData.error);
 
             const verbMap = { publish: "published", submit: "submitted for review", draft: "saved as draft" } as const;
-            setStatus(`✓ Article ${verbMap[intent]}!`);
+            setStatus("");
+            toast.success(`Article ${verbMap[intent]}.`);
             setArticleStatus(saveData.status || (intent === "publish" ? "published" : intent === "submit" ? "in_review" : "draft"));
             setLastSavedAt(Date.now());
             setNowTick(Date.now());
-            if (!isEdit) setTimeout(() => router.push("/admin/articles"), 1500);
+            if (!isEdit) setTimeout(() => router.push("/admin/articles"), 1000);
         } catch (err) {
-            setStatus(`Error: ${(err as Error).message}`);
+            setStatus("");
+            toast.error((err as Error).message);
         }
         setSaving(false);
     };
@@ -342,10 +358,10 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 )}
 
                 {/* Policy Product Type */}
-                <div className="editor-section">
+                <div className="editor-section" style={fieldError === "type" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
                     <PolicyProductPicker
                         value={policyProductType}
-                        onChange={handleProductTypeChange}
+                        onChange={(v) => { handleProductTypeChange(v); if (fieldError === "type") setFieldError(null); }}
                         disabled={isEdit && !!policyProductType && articleStatus !== "draft" && !canPublish}
                     />
                     {policyProductType === "policy_brief" && (
@@ -363,12 +379,12 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 {/* Meta */}
                 <div className="editor-section">
                     <div className="editor-section-title">Article Details</div>
-                    <div className="form-group">
-                        <label htmlFor="ed-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <div className={`form-group${fieldError === "title" ? " field-error" : ""}`}>
+                        <label htmlFor="ed-title" className={fieldError === "title" ? "field-error-label" : ""} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                             <span>Title *</span>
                             <Counter value={title.length} max={80} />
                         </label>
-                        <input id="ed-title" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="e.g. Health Financing Sustainability in Post-Pandemic Indonesia" maxLength={120} />
+                        <input id="ed-title" value={title} onChange={(e) => { setTitle(e.target.value); if (fieldError === "title") setFieldError(null); }} required placeholder="e.g. Health Financing Sustainability in Post-Pandemic Indonesia" maxLength={120} />
                     </div>
                     <div className="editor-grid">
                         <div className="form-group">
@@ -491,7 +507,8 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                         contentEditable
                         data-placeholder="Start writing your article here...&#10;&#10;Use the toolbar above for formatting:&#10;• Bold, Italic, Underline for emphasis&#10;• H2, H3 for section headings&#10;• Bullet / numbered lists&#10;• Blockquotes for citations&#10;• Links, dividers, and more&#10;&#10;AI will convert your formatted text into a beautiful magazine-style layout when you publish."
                         suppressContentEditableWarning
-                        onInput={() => setEditorText(editorRef.current?.innerText || "")}
+                        onInput={() => { setEditorText(editorRef.current?.innerText || ""); if (fieldError === "content") setFieldError(null); }}
+                        style={fieldError === "content" ? { borderColor: "#8B1C1C", boxShadow: "0 0 0 3px rgba(139,28,28,0.12)", backgroundColor: "#fdf6f6" } : undefined}
                     />
                     {policyProductType && (
                         <div style={{ marginTop: "0.5rem" }}>
@@ -506,17 +523,17 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 </div>
 
                 {/* Authorship & Research Integrity */}
-                <div className="editor-section">
-                    <AuthorshipAck values={authorshipAck} onChange={setAuthorshipAck} />
+                <div className="editor-section" style={fieldError === "ack" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
+                    <AuthorshipAck values={authorshipAck} onChange={(v) => { setAuthorshipAck(v); if (fieldError === "ack") setFieldError(null); }} />
                 </div>
 
                 {/* AI Disclosure */}
-                <div className="editor-section">
+                <div className="editor-section" style={fieldError === "ai" ? { border: "1px solid #8B1C1C", borderRadius: 6, padding: "0.75rem", backgroundColor: "#fdf6f6" } : undefined}>
                     <AiDisclosureField
                         value={aiDisclosure}
-                        onChange={setAiDisclosure}
+                        onChange={(v) => { setAiDisclosure(v); if (fieldError === "ai") setFieldError(null); }}
                         noAi={noAi}
-                        onNoAiChange={setNoAi}
+                        onNoAiChange={(v) => { setNoAi(v); if (fieldError === "ai") setFieldError(null); }}
                     />
                 </div>
 
@@ -544,7 +561,22 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     </div>
                 </div>
 
-                {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
+                {status && (
+                    <div
+                        style={{
+                            background: "#F4F6FA",
+                            border: "1px solid #d3dae8",
+                            borderLeft: "3px solid #1d4a8a",
+                            padding: "0.6rem 0.9rem",
+                            marginBottom: "0.75rem",
+                            fontSize: "0.82rem",
+                            color: "#1f2a44",
+                            borderRadius: 4,
+                        }}
+                    >
+                        {status}
+                    </div>
+                )}
                 {isEdit && (
                     <div style={{ marginBottom: "0.75rem", fontSize: "0.85rem", color: "var(--muted)" }}>
                         Current status:{" "}
@@ -593,14 +625,19 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                             type="button"
                             className="btn-outline"
                             onClick={async () => {
-                                if (!confirm("Re-send the consent-to-publish link to the author?")) return;
+                                const ok = await confirmDialog({
+                                    title: "Re-send consent link?",
+                                    message: "A fresh 30-day link is emailed to the author.",
+                                    confirmText: "Re-send",
+                                });
+                                if (!ok) return;
                                 try {
                                     const res = await fetch(`/api/articles/${slug}/resend-consent`, { method: "POST" });
                                     const d = await res.json();
                                     if (!res.ok) throw new Error(d.error);
-                                    setStatus(`✓ Consent link re-sent to ${d.sentTo}`);
+                                    toast.success(`Consent link re-sent to ${d.sentTo}`);
                                 } catch (err) {
-                                    setStatus(`Error: ${(err as Error).message}`);
+                                    toast.error((err as Error).message);
                                 }
                             }}
                             style={{ fontSize: "0.85rem", padding: "8px 16px" }}

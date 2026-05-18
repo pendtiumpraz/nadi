@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import Pagination from "@/components/Pagination";
+import { useToast, confirmDialog } from "@/components/Toast";
 
 type UserRole = "admin" | "reviewer" | "contributor" | "partner";
 type UserStatus = "pending" | "active" | "suspended";
@@ -30,7 +31,7 @@ export default function UserManagement() {
     const [showAdd, setShowAdd] = useState(false);
     const [passwordModal, setPasswordModal] = useState<UserRow | null>(null);
     const [filter, setFilter] = useState<"all" | UserStatus>("all");
-    const [msg, setMsg] = useState("");
+    const toast = useToast();
     const [page, setPage] = useState(1);
 
     useEffect(() => {
@@ -60,7 +61,6 @@ export default function UserManagement() {
 
     const handleAdd = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setMsg("");
         const fd = new FormData(e.currentTarget);
         const res = await fetch("/api/users", {
             method: "POST",
@@ -73,25 +73,31 @@ export default function UserManagement() {
                 status: "active",
             }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok) {
             setShowAdd(false);
             fetchUsers();
-            setMsg("User added successfully.");
+            toast.success("User added successfully.");
         } else {
-            setMsg(data.error || "Failed to add user.");
+            toast.error(data.error || "Failed to add user.");
         }
     };
 
     const handleDelete = async (user: UserRow) => {
-        if (!confirm(`Delete ${user.name} (${user.email})?`)) return;
+        const ok = await confirmDialog({
+            title: "Delete user?",
+            message: `${user.name} (${user.email}) will be permanently removed.`,
+            confirmText: "Delete",
+            tone: "danger",
+        });
+        if (!ok) return;
         const res = await fetch(`/api/users?id=${user.id}`, { method: "DELETE" });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok) {
             fetchUsers();
-            setMsg("User deleted.");
+            toast.success("User deleted.");
         } else {
-            setMsg(data.error);
+            toast.error(data.error || "Failed to delete user.");
         }
     };
 
@@ -101,20 +107,19 @@ export default function UserManagement() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: user.id, ...patch }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok) {
             fetchUsers();
-            if (patch.role) setMsg(`${user.name} is now ${patch.role}.`);
-            if (patch.status) setMsg(`${user.name} ${patch.status === "active" ? "activated" : patch.status === "suspended" ? "suspended" : "marked pending"}.`);
+            if (patch.role) toast.success(`${user.name} is now ${patch.role}.`);
+            if (patch.status) toast.success(`${user.name} ${patch.status === "active" ? "activated" : patch.status === "suspended" ? "suspended" : "marked pending"}.`);
         } else {
-            setMsg(data.error || "Update failed.");
+            toast.error(data.error || "Update failed.");
         }
     };
 
     const handleChangePassword = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!passwordModal) return;
-        setMsg("");
         const fd = new FormData(e.currentTarget);
         const res = await fetch("/api/users/change-password", {
             method: "POST",
@@ -124,12 +129,12 @@ export default function UserManagement() {
                 newPassword: fd.get("newPassword"),
             }),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok) {
             setPasswordModal(null);
-            setMsg("Password changed successfully.");
+            toast.success("Password changed successfully.");
         } else {
-            setMsg(data.error || "Failed to change password.");
+            toast.error(data.error || "Failed to change password.");
         }
     };
 
@@ -141,12 +146,6 @@ export default function UserManagement() {
 
     return (
         <div>
-            {msg && (
-                <div className="admin-msg" onClick={() => setMsg("")}>
-                    {msg}
-                </div>
-            )}
-
             <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", marginBottom: "1.5rem" }}>
                 <button className="btn-primary" onClick={() => setShowAdd(!showAdd)}>
                     {showAdd ? "Cancel" : "+ Add User"}

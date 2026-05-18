@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/Toast";
 
 const LANDING_MODES = [
     { value: "v2", label: "V2 — Light Theme (New)", desc: "Modern light design with ECG visualization, team cards, and partner marquee." },
@@ -33,7 +34,7 @@ export default function AdminSettingsPage() {
     const [submissionLimits, setSubmissionLimits] = useState<SubmissionLimits>({ perDayPerUser: 5 });
     const [topSubmitters, setTopSubmitters] = useState<TopSubmitter[]>([]);
     const [loaded, setLoaded] = useState(false);
-    const [status, setStatus] = useState("");
+    const toast = useToast();
     const [tab, setTab] = useState<"general" | "notifications" | "security">("general");
 
     useEffect(() => {
@@ -80,7 +81,6 @@ export default function AdminSettingsPage() {
     }, []);
 
     const saveAiLimits = async () => {
-        setStatus("Saving AI limits...");
         const res = await fetch("/api/admin/ai-limits", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -89,16 +89,14 @@ export default function AdminSettingsPage() {
         if (res.ok) {
             const d = await res.json();
             if (d.limits) setAiLimits(d.limits);
-            setStatus("✓ AI limits updated.");
-            setTimeout(() => setStatus(""), 3000);
+            toast.success("AI limits updated.");
         } else {
-            const d = await res.json();
-            setStatus(`Error: ${d.error || "Failed to save"}`);
+            const d = await res.json().catch(() => ({}));
+            toast.error(d.error || "Failed to save AI limits.");
         }
     };
 
     const saveSubmissionLimits = async () => {
-        setStatus("Saving submission limits...");
         const res = await fetch("/api/admin/submission-limits", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -107,11 +105,10 @@ export default function AdminSettingsPage() {
         if (res.ok) {
             const d = await res.json();
             if (d.limits) setSubmissionLimits(d.limits);
-            setStatus("✓ Submission limits updated.");
-            setTimeout(() => setStatus(""), 3000);
+            toast.success("Submission limits updated.");
         } else {
-            const d = await res.json();
-            setStatus(`Error: ${d.error || "Failed to save"}`);
+            const d = await res.json().catch(() => ({}));
+            toast.error(d.error || "Failed to save submission limits.");
         }
     };
 
@@ -128,18 +125,16 @@ export default function AdminSettingsPage() {
         setThrottle({ ...throttle, thresholds: throttle.thresholds.filter((_, i) => i !== idx) });
     };
     const saveThrottle = async () => {
-        setStatus("Saving security...");
         const res = await fetch("/api/admin/security", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ settings: throttle }),
         });
         if (res.ok) {
-            setStatus("✓ Login throttle updated.");
-            setTimeout(() => setStatus(""), 3000);
+            toast.success("Login throttle updated.");
         } else {
-            const d = await res.json();
-            setStatus(`Error: ${d.error || "Failed to save"}`);
+            const d = await res.json().catch(() => ({}));
+            toast.error(d.error || "Failed to save throttle settings.");
         }
     };
 
@@ -155,14 +150,17 @@ export default function AdminSettingsPage() {
     const removeCcEntry = (idx: number) => saveCcList(ccList.filter((_, i) => i !== idx));
 
     const saveSetting = async (key: string, value: string) => {
-        setStatus("Saving...");
-        await fetch("/api/settings", {
+        const res = await fetch("/api/settings", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ key, value }),
         });
-        setStatus("✓ Saved! Refresh to see changes.");
-        setTimeout(() => setStatus(""), 3000);
+        if (res.ok) {
+            toast.success("Saved. Refresh to see changes.");
+        } else {
+            const d = await res.json().catch(() => ({}));
+            toast.error(d.error || "Failed to save setting.");
+        }
     };
 
     if (!loaded) return <div className="admin-body"><p className="admin-page-desc">Loading settings...</p></div>;
@@ -208,8 +206,6 @@ export default function AdminSettingsPage() {
                     </button>
                 ))}
             </div>
-
-            {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
 
             {/* Landing Page Mode — General tab */}
             {tab === "general" && (

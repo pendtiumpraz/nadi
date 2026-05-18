@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { confirmDialog, useToast } from "@/components/Toast";
 
 interface Event {
     slug: string; title: string; date: string; location: string;
@@ -10,15 +11,27 @@ interface Event {
 export default function EventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
+    const toast = useToast();
 
     useEffect(() => {
         fetch("/api/events").then(r => r.json()).then(d => { setEvents(d); setLoading(false); }).catch(() => setLoading(false));
     }, []);
 
     const handleDelete = async (slug: string) => {
-        if (!confirm("Delete this event?")) return;
-        await fetch(`/api/events?slug=${slug}`, { method: "DELETE" });
-        setEvents(events.filter(e => e.slug !== slug));
+        const ok = await confirmDialog({
+            title: "Delete event?",
+            message: "This will permanently remove the event.",
+            confirmText: "Delete",
+            tone: "danger",
+        });
+        if (!ok) return;
+        const res = await fetch(`/api/events?slug=${slug}`, { method: "DELETE" });
+        if (res.ok) {
+            setEvents(events.filter(e => e.slug !== slug));
+            toast.success("Event deleted.");
+        } else {
+            toast.error("Failed to delete event.");
+        }
     };
 
     return (

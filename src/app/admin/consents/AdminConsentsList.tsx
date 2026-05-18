@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Pagination from "@/components/Pagination";
+import { useToast } from "@/components/Toast";
 
 const PER_PAGE = 20;
 
@@ -26,7 +27,7 @@ export default function AdminConsentsList() {
     const [consents, setConsents] = useState<ConsentRow[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [msg, setMsg] = useState("");
+    const toast = useToast();
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -36,10 +37,10 @@ export default function AdminConsentsList() {
             if (!res.ok) throw new Error(d.error || "Failed to load consents");
             setConsents(d.consents || []);
         } catch (err) {
-            setMsg((err as Error).message);
+            toast.error((err as Error).message);
         }
         setLoading(false);
-    }, []);
+    }, [toast]);
 
     useEffect(() => { load(); }, [load]);
 
@@ -47,8 +48,6 @@ export default function AdminConsentsList() {
 
     return (
         <div>
-            {msg && <div className="admin-msg" onClick={() => setMsg("")}>{msg}</div>}
-
             {consents && consents.length === 0 ? (
                 <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginTop: "1.5rem" }}>
                     No consent forms submitted yet.

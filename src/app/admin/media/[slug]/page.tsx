@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent, use } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -10,7 +11,7 @@ interface Props {
 export default function EditMediaPage({ params }: Props) {
     const { slug } = use(params);
     const router = useRouter();
-    const [status, setStatus] = useState("");
+    const toast = useToast();
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -39,7 +40,7 @@ export default function EditMediaPage({ params }: Props) {
         fetch(`/api/media?slug=${slug}`)
             .then(r => r.json())
             .then(data => {
-                if (data.error) { setStatus(`Error: ${data.error}`); return; }
+                if (data.error) { toast.error(data.error); return; }
                 setTitle(data.title || "");
                 setDescription(data.description || "");
                 setType(data.type || "video");
@@ -51,14 +52,13 @@ export default function EditMediaPage({ params }: Props) {
                 setCategory(data.category || "Health Policy");
                 setKeywords((data.keywords || []).join(", "));
             })
-            .catch(() => setStatus("Failed to load media."))
+            .catch(() => toast.error("Failed to load media."))
             .finally(() => setLoading(false));
-    }, [slug]);
+    }, [slug, toast]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setSaving(true);
-        setStatus("Saving...");
         try {
             const body = {
                 slug,
@@ -80,10 +80,10 @@ export default function EditMediaPage({ params }: Props) {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            setStatus("✓ Media updated!");
-            setTimeout(() => router.push("/admin/media"), 1000);
+            toast.success("Media updated.");
+            setTimeout(() => router.push("/admin/media"), 600);
         } catch (err) {
-            setStatus(`Error: ${(err as Error).message}`);
+            toast.error((err as Error).message);
         }
         setSaving(false);
     };
@@ -133,7 +133,6 @@ export default function EditMediaPage({ params }: Props) {
                     <div className="form-group"><label htmlFor="media-thumbnail">Custom Thumbnail URL (optional)</label><input id="media-thumbnail" value={thumbnailUrl} onChange={e => setThumbnailUrl(e.target.value)} placeholder="https://..." /></div>
                 </div>
 
-                {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
                 <div className="editor-save">
                     <button type="submit" className="btn-primary" disabled={saving}>{saving ? "⏳ Saving..." : "Update Media"}</button>
                     <a href="/admin/media" className="btn-outline">Cancel</a>

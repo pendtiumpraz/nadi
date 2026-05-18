@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, FormEvent, useMemo } from "react";
+import { useToast } from "@/components/Toast";
 
 export interface ConsentFormPayload {
     ackEthical: boolean;
@@ -97,7 +98,7 @@ export default function ConsentForm({
     const [uploadingSignature, setUploadingSignature] = useState(false);
     const [signatureError, setSignatureError] = useState("");
     const [submitting, setSubmitting] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
+    const toast = useToast();
 
     const signatureInputRef = useRef<HTMLInputElement>(null);
     const titleRef = useRef<HTMLInputElement>(null);
@@ -132,10 +133,12 @@ export default function ConsentForm({
         const isImage = /image\/(jpeg|jpg|png)/i.test(file.type) || /\.(jpe?g|png)$/i.test(file.name);
         if (!isImage) {
             setSignatureError("Please upload a JPG or PNG image.");
+            toast.error("Please upload a JPG or PNG image.");
             return;
         }
         if (file.size > 2 * 1024 * 1024) {
             setSignatureError("Signature image is too large. Max 2MB.");
+            toast.error("Signature image is too large. Max 2MB.");
             return;
         }
         setUploadingSignature(true);
@@ -143,7 +146,9 @@ export default function ConsentForm({
             const url = await onUploadSignature(file);
             setSignatorySignatureUrl(url);
         } catch (err) {
-            setSignatureError((err as Error).message || "Upload failed.");
+            const msg = (err as Error).message || "Upload failed.";
+            setSignatureError(msg);
+            toast.error(msg);
         } finally {
             setUploadingSignature(false);
         }
@@ -151,7 +156,6 @@ export default function ConsentForm({
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setErrorMessage("");
 
         const missing: string[] = [];
         let firstMissingRef: React.RefObject<HTMLElement | null> | null = null;
@@ -189,7 +193,7 @@ export default function ConsentForm({
         }
 
         if (missing.length > 0) {
-            setErrorMessage(missing.join(" "));
+            toast.error(missing.join(" "));
             if (firstMissingRef && firstMissingRef.current) {
                 firstMissingRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
                 if (typeof (firstMissingRef.current as HTMLInputElement).focus === "function") {
@@ -221,7 +225,7 @@ export default function ConsentForm({
         try {
             await onSubmit(payload);
         } catch (err) {
-            setErrorMessage((err as Error).message || "Submission failed. Please try again.");
+            toast.error((err as Error).message || "Submission failed. Please try again.");
         } finally {
             setSubmitting(false);
         }
@@ -625,24 +629,6 @@ export default function ConsentForm({
                         />
                     </div>
                 </div>
-
-                {errorMessage && (
-                    <div
-                        role="alert"
-                        style={{
-                            background: "rgba(196,68,68,0.08)",
-                            border: "1px solid rgba(196,68,68,0.35)",
-                            borderRadius: 4,
-                            padding: "0.75rem 1rem",
-                            marginBottom: "1rem",
-                            fontSize: "0.85rem",
-                            color: "#8a2929",
-                            lineHeight: 1.5,
-                        }}
-                    >
-                        {errorMessage}
-                    </div>
-                )}
 
                 <button
                     type="submit"

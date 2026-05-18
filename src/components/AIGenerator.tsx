@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/Toast";
 
 interface Topic {
     title: string;
@@ -23,7 +24,7 @@ export default function AIGenerator() {
     const [singleDesc, setSingleDesc] = useState("");
     const [generating, setGenerating] = useState(false);
 
-    const [msg, setMsg] = useState("");
+    const toast = useToast();
     const [batchRunning, setBatchRunning] = useState(false);
     const [batchProgress, setBatchProgress] = useState(0);
 
@@ -43,7 +44,6 @@ export default function AIGenerator() {
     // Generate Topics
     const genTopics = async () => {
         setLoadingTopics(true);
-        setMsg("");
         setProgressStep("Asking DeepSeek for topic ideas...");
         try {
             const res = await fetch("/api/ai/topics", {
@@ -55,10 +55,10 @@ export default function AIGenerator() {
             if (res.ok) {
                 setTopics(data.topics.map((t: Topic) => ({ ...t, selected: false, status: "pending" as const })));
             } else {
-                setMsg(data.error || "Failed to generate topics.");
+                toast.error(data.error || "Failed to generate topics.");
             }
         } catch (err) {
-            setMsg((err as Error).message);
+            toast.error((err as Error).message);
         }
         setLoadingTopics(false);
         setProgressStep("");
@@ -66,9 +66,8 @@ export default function AIGenerator() {
 
     // Generate single article
     const genSingle = async () => {
-        if (!singleTitle) { setMsg("Enter a title/topic."); return; }
+        if (!singleTitle) { toast.error("Enter a title/topic."); return; }
         setGenerating(true);
-        setMsg("");
         try {
             setProgressStep("AI is drafting the article (this takes 20–40s)...");
             const res = await fetch("/api/ai/generate", {
@@ -87,14 +86,14 @@ export default function AIGenerator() {
             });
             const saved = await saveRes.json();
             if (saveRes.ok) {
-                setMsg(`✓ Article published: "${saved.title}"`);
+                toast.success(`Article published: "${saved.title}"`);
                 setSingleTitle("");
                 setSingleDesc("");
             } else {
                 throw new Error(saved.error);
             }
         } catch (err) {
-            setMsg(`Error: ${(err as Error).message}`);
+            toast.error((err as Error).message);
         }
         setGenerating(false);
         setProgressStep("");
@@ -108,11 +107,10 @@ export default function AIGenerator() {
     // Batch generate selected topics
     const genBatch = async () => {
         const selected = topics.filter(t => t.selected);
-        if (selected.length === 0) { setMsg("Select at least one topic."); return; }
+        if (selected.length === 0) { toast.error("Select at least one topic."); return; }
 
         setBatchRunning(true);
         setBatchProgress(0);
-        setMsg("");
 
         let processed = 0;
         for (let i = 0; i < topics.length; i++) {
@@ -152,7 +150,7 @@ export default function AIGenerator() {
         setBatchRunning(false);
         setProgressStep("");
         const done = topics.filter(t => t.selected && t.status === "done").length;
-        setMsg(`Batch complete: ${done} of ${selected.length} articles published.`);
+        toast.success(`Batch complete: ${done} of ${selected.length} articles published.`);
     };
 
     const isRunning = loadingTopics || generating || batchRunning;
@@ -167,8 +165,6 @@ export default function AIGenerator() {
                 <button className={`ai-tab${tab === "single" ? " active" : ""}`} onClick={() => setTab("single")}>✏️ Single Article</button>
                 <button className={`ai-tab${tab === "batch" ? " active" : ""}`} onClick={() => setTab("batch")}>📦 Batch Generate</button>
             </div>
-
-            {msg && <div className="admin-msg" onClick={() => setMsg("")}>{msg}</div>}
 
             {isRunning && (
                 <div style={{ margin: "1rem 0", padding: "1rem 1.25rem", border: "1px solid var(--line)", borderRadius: "8px", background: "rgba(139,28,28,0.04)" }}>

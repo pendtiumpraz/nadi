@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getArticleBySlugStore, updateArticleStatus } from "@/lib/articles-store";
+import { getArticleBySlugStore, updateArticleStatus, setFeedbackPending } from "@/lib/articles-store";
 import { canReview, canPublish, canEditOwnContent } from "@/lib/permissions";
 import { getDB } from "@/lib/db";
 import { getUserById } from "@/lib/users";
@@ -96,6 +96,27 @@ export async function POST(req: NextRequest, { params }: Params) {
             ${notes}
         )
     `;
+
+    // When the reviewer sends an article back with notes, post those notes into
+    // the article's comment thread so the author can see them inline (not just
+    // in the email). Also flag feedback_pending so the editor banner shows.
+    if (action === "request_changes" && notes.trim()) {
+        try {
+            await sql`
+                INSERT INTO article_comments (article_slug, author_id, author_role, body, section_anchor)
+                VALUES (
+                    ${slug},
+                    ${session.user.id ? Number(session.user.id) : null},
+                    ${session.user.role || null},
+                    ${notes.trim()},
+                    NULL
+                )
+            `;
+            await setFeedbackPending(slug);
+        } catch (err) {
+            console.error("[transition] failed to mirror request_changes notes into comments:", (err as Error).message);
+        }
+    }
 
     // Fire-and-forget notifications
     const baseUrl = req.nextUrl?.origin || `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;

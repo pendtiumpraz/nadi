@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Pagination from "@/components/Pagination";
+import { useToast, confirmDialog } from "@/components/Toast";
 
 const PER_PAGE = 15;
 
@@ -52,7 +53,7 @@ export default function ArticleList({ initialArticles = [], partnerView = false 
     const [articles, setArticles] = useState<ArticleSummary[]>(initialArticles);
     const [filter, setFilter] = useState<"all" | Status>("all");
     const [page, setPage] = useState(1);
-    const [msg, setMsg] = useState("");
+    const toast = useToast();
 
     // Reset to page 1 whenever the filter changes
     useEffect(() => { setPage(1); }, [filter]);
@@ -64,14 +65,20 @@ export default function ArticleList({ initialArticles = [], partnerView = false 
     };
 
     const handleDelete = async (slug: string, title: string) => {
-        if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+        const ok = await confirmDialog({
+            title: "Delete article?",
+            message: `"${title}" will be permanently removed.`,
+            confirmText: "Delete",
+            tone: "danger",
+        });
+        if (!ok) return;
         const res = await fetch(`/api/articles?slug=${slug}`, { method: "DELETE" });
         if (res.ok) {
-            setMsg("Article deleted.");
+            toast.success("Article deleted.");
             fetchArticles();
         } else {
-            const data = await res.json();
-            setMsg(data.error || "Failed to delete.");
+            const data = await res.json().catch(() => ({}));
+            toast.error(data.error || "Failed to delete.");
         }
     };
 
@@ -89,8 +96,6 @@ export default function ArticleList({ initialArticles = [], partnerView = false 
 
     return (
         <div>
-            {msg && <div className="admin-msg" onClick={() => setMsg("")}>{msg}</div>}
-
             {articles.length > 0 && (
                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1rem" }}>
                     {FILTERS.map((f) => {

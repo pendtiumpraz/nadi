@@ -90,12 +90,28 @@ export default function ConsentPage() {
     };
 
     const handleSubmit = async (payload: ConsentFormPayload): Promise<void> => {
+        // API expects snake_case top-level keys (article_consents columns).
+        // The form component is camelCase for ergonomics — map here.
+        const apiBody = {
+            ack_ethical: payload.ackEthical,
+            ack_original: payload.ackOriginal,
+            ack_edited: payload.ackEdited,
+            ack_ai_disclosure: payload.ackAiDisclosure,
+            ack_may_reject: payload.ackMayReject,
+            ack_no_liability: payload.ackNoLiability,
+            agree_on_behalf: payload.agreeOnBehalf,
+            title_of_paper: payload.titleOfPaper,
+            authors: payload.authors, // nested keys stay camelCase — API reads raw.surnameFirstName / raw.affiliation
+            signatory_full_name: payload.signatoryFullName,
+            signatory_signature_url: payload.signatorySignatureUrl,
+            signatory_date: payload.signatoryDate,
+        };
         const res = await fetch(
             `/api/consent/${encodeURIComponent(slug)}?token=${encodeURIComponent(token)}`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(apiBody),
             }
         );
         const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };

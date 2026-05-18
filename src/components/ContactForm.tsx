@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useToast } from "@/components/Toast";
 
-type FormStatus = "idle" | "sending" | "success" | "error";
+type FormStatus = "idle" | "sending" | "success";
 
 export default function ContactForm() {
+    const toast = useToast();
     const [status, setStatus] = useState<FormStatus>("idle");
-    const [errorMsg, setErrorMsg] = useState("");
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -24,7 +25,6 @@ export default function ContactForm() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setStatus("sending");
-        setErrorMsg("");
 
         try {
             const res = await fetch("/api/contact", {
@@ -33,18 +33,18 @@ export default function ContactForm() {
                 body: JSON.stringify(formData),
             });
 
-            const data = await res.json();
+            const data = await res.json().catch(() => ({}));
 
             if (res.ok) {
                 setStatus("success");
                 setFormData({ name: "", email: "", organization: "", subject: "", message: "" });
             } else {
-                setStatus("error");
-                setErrorMsg(data.error || "Something went wrong.");
+                setStatus("idle");
+                toast.error(data.error || "Something went wrong.");
             }
         } catch {
-            setStatus("error");
-            setErrorMsg("Network error. Please try again.");
+            setStatus("idle");
+            toast.error("Network error. Please try again.");
         }
     };
 
@@ -139,12 +139,6 @@ export default function ContactForm() {
                     placeholder="Tell us about your inquiry..."
                 />
             </div>
-
-            {status === "error" && (
-                <div className="form-error">
-                    {errorMsg}
-                </div>
-            )}
 
             <button
                 type="submit"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { confirmDialog, useToast } from "@/components/Toast";
 
 interface Media {
     slug: string; title: string; type: string; date: string;
@@ -10,15 +11,27 @@ interface Media {
 export default function MediaPage() {
     const [items, setItems] = useState<Media[]>([]);
     const [loading, setLoading] = useState(true);
+    const toast = useToast();
 
     useEffect(() => {
         fetch("/api/media").then(r => r.json()).then(d => { setItems(d); setLoading(false); }).catch(() => setLoading(false));
     }, []);
 
     const handleDelete = async (slug: string) => {
-        if (!confirm("Delete this media?")) return;
-        await fetch(`/api/media?slug=${slug}`, { method: "DELETE" });
-        setItems(items.filter(m => m.slug !== slug));
+        const ok = await confirmDialog({
+            title: "Delete media?",
+            message: "This will permanently remove the media item.",
+            confirmText: "Delete",
+            tone: "danger",
+        });
+        if (!ok) return;
+        const res = await fetch(`/api/media?slug=${slug}`, { method: "DELETE" });
+        if (res.ok) {
+            setItems(items.filter(m => m.slug !== slug));
+            toast.success("Media deleted.");
+        } else {
+            toast.error("Failed to delete media.");
+        }
     };
 
     const typeEmoji: Record<string, string> = { video: "🎬", podcast: "🎙️", webinar: "💻", interview: "🎤", panel: "👥" };

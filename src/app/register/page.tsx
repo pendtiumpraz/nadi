@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useToast } from "@/components/Toast";
 
 export default function RegisterPage() {
+    const toast = useToast();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [hasError, setHasError] = useState(false);
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError("");
+        setHasError(false);
         setSuccess("");
         setLoading(true);
 
@@ -25,11 +27,13 @@ export default function RegisterPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Registration failed.");
             setSuccess(data.message || "Registration received. Wait for admin activation.");
+            toast.success("Registration submitted.");
             setName("");
             setEmail("");
             setPassword("");
         } catch (err) {
-            setError((err as Error).message);
+            setHasError(true);
+            toast.error((err as Error).message);
         }
         setLoading(false);
     };
@@ -61,13 +65,13 @@ export default function RegisterPage() {
                                 autoFocus
                             />
                         </div>
-                        <div className="form-group">
-                            <label htmlFor="reg-email">Email Address</label>
+                        <div className={`form-group${hasError ? " field-error" : ""}`}>
+                            <label htmlFor="reg-email" className={hasError ? "field-error-label" : ""}>Email Address</label>
                             <input
                                 type="email"
                                 id="reg-email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => { setEmail(e.target.value); if (hasError) setHasError(false); }}
                                 required
                                 placeholder="you@email.com"
                             />
@@ -84,7 +88,6 @@ export default function RegisterPage() {
                                 placeholder="Min 6 characters"
                             />
                         </div>
-                        {error && <div className="form-error">{error}</div>}
                         <button type="submit" className="btn-primary login-submit" disabled={loading}>
                             {loading ? "Sending..." : "Request Account"}
                         </button>

@@ -2551,6 +2551,19 @@ footer {
   border-radius: 0 4px 4px 0;
 }
 
+/* Highlights inputs / fields that failed validation. Pair with a toast. */
+.field-error,
+.field-error input,
+.field-error textarea,
+.field-error select {
+  border-color: var(--crimson, #8B1C1C) !important;
+  box-shadow: 0 0 0 3px rgba(139, 28, 28, 0.12) !important;
+  background-color: #fdf6f6 !important;
+}
+.field-error-label {
+  color: var(--crimson, #8B1C1C) !important;
+}
+
 .admin-modal-overlay {
   position: fixed;
   inset: 0;

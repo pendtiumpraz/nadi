@@ -2,10 +2,11 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 export default function NewMediaPage() {
     const router = useRouter();
-    const [status, setStatus] = useState("");
+    const toast = useToast();
     const [saving, setSaving] = useState(false);
     const [embedUrl, setEmbedUrl] = useState("");
 
@@ -23,7 +24,6 @@ export default function NewMediaPage() {
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setSaving(true);
-        setStatus("Saving...");
         try {
             const fd = new FormData(e.currentTarget);
             const body = {
@@ -45,10 +45,10 @@ export default function NewMediaPage() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            setStatus("✓ Media added!");
-            setTimeout(() => router.push("/admin/media"), 1000);
+            toast.success("Media added.");
+            setTimeout(() => router.push("/admin/media"), 600);
         } catch (err) {
-            setStatus(`Error: ${(err as Error).message}`);
+            toast.error((err as Error).message);
         }
         setSaving(false);
     };
@@ -96,7 +96,6 @@ export default function NewMediaPage() {
                     <div className="form-group"><label htmlFor="media-thumbnail">Custom Thumbnail URL (optional)</label><input id="media-thumbnail" name="thumbnailUrl" placeholder="https://..." /></div>
                 </div>
 
-                {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
                 <div className="editor-save">
                     <button type="submit" className="btn-primary" disabled={saving}>{saving ? "⏳ Saving..." : "Add Media"}</button>
                     <a href="/admin/media" className="btn-outline">Cancel</a>

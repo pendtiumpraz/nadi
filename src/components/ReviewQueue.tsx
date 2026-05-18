@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useToast, confirmDialog, promptDialog } from "@/components/Toast";
 
 interface ReviewItem {
     slug: string;
@@ -23,7 +24,7 @@ export default function ReviewQueue() {
     const [data, setData] = useState<QueueData | null>(null);
     const [loading, setLoading] = useState(true);
     const [actingOn, setActingOn] = useState<string | null>(null);
-    const [msg, setMsg] = useState("");
+    const toast = useToast();
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -33,23 +34,28 @@ export default function ReviewQueue() {
             if (!res.ok) throw new Error(d.error);
             setData(d);
         } catch (err) {
-            setMsg((err as Error).message);
+            toast.error((err as Error).message);
         }
         setLoading(false);
-    }, []);
+    }, [toast]);
 
     useEffect(() => { load(); }, [load]);
 
     const resendConsent = async (slug: string) => {
-        if (!confirm("Re-send the consent-to-publish link to the author? A fresh 30-day link is generated.")) return;
+        const ok = await confirmDialog({
+            title: "Re-send consent link?",
+            message: "A fresh 30-day link is generated and emailed to the author.",
+            confirmText: "Re-send",
+        });
+        if (!ok) return;
         setActingOn(slug);
         try {
             const res = await fetch(`/api/articles/${slug}/resend-consent`, { method: "POST" });
             const d = await res.json();
             if (!res.ok) throw new Error(d.error);
-            setMsg(`✓ Consent link re-sent to ${d.sentTo}`);
+            toast.success(`Consent link re-sent to ${d.sentTo}`);
         } catch (err) {
-            setMsg((err as Error).message);
+            toast.error((err as Error).message);
         }
         setActingOn(null);
     };
@@ -57,10 +63,23 @@ export default function ReviewQueue() {
     const transitionArticle = async (slug: string, action: "approve" | "request_changes" | "publish") => {
         let notes = "";
         if (action === "request_changes") {
-            notes = prompt("What changes are needed? (sent back to author)") || "";
-            if (!notes.trim()) return;
+            const entered = await promptDialog({
+                title: "Send back to author",
+                message: "What changes are needed? This note is sent to the author and posted in the comment thread.",
+                inputType: "textarea",
+                placeholder: "Describe the revisions needed...",
+                confirmText: "Send back",
+                validate: (v) => v.trim() ? null : "Please enter the changes needed.",
+            });
+            if (entered === null) return;
+            notes = entered;
         } else if (action === "publish") {
-            if (!confirm("Publish this article? It will become visible on the public site.")) return;
+            const ok = await confirmDialog({
+                title: "Publish article?",
+                message: "It will become visible on the public site.",
+                confirmText: "Publish",
+            });
+            if (!ok) return;
         }
         setActingOn(slug);
         try {
@@ -72,14 +91,14 @@ export default function ReviewQueue() {
             const d = await res.json();
             if (!res.ok) throw new Error(d.error);
             const successMsg = {
-                approve: "✓ Approved. Consent email sent to the author.",
-                request_changes: "✓ Sent back to author",
-                publish: "✓ Published. Article is now live.",
+                approve: "Approved. Consent email sent to the author.",
+                request_changes: "Sent back to author.",
+                publish: "Published. Article is now live.",
             }[action];
-            setMsg(successMsg);
+            toast.success(successMsg);
             await load();
         } catch (err) {
-            setMsg((err as Error).message);
+            toast.error((err as Error).message);
         }
         setActingOn(null);
     };
@@ -87,10 +106,23 @@ export default function ReviewQueue() {
     const transitionMedia = async (slug: string, action: "approve" | "request_changes") => {
         let notes = "";
         if (action === "request_changes") {
-            notes = prompt("What changes are needed? (sent back to author)") || "";
-            if (!notes.trim()) return;
+            const entered = await promptDialog({
+                title: "Send back to author",
+                message: "What changes are needed? This note is sent to the author.",
+                inputType: "textarea",
+                placeholder: "Describe the revisions needed...",
+                confirmText: "Send back",
+                validate: (v) => v.trim() ? null : "Please enter the changes needed.",
+            });
+            if (entered === null) return;
+            notes = entered;
         } else if (action === "approve") {
-            if (!confirm("Approve and publish this media? It will become visible on the public site.")) return;
+            const ok = await confirmDialog({
+                title: "Approve & publish media?",
+                message: "It will become visible on the public site.",
+                confirmText: "Approve",
+            });
+            if (!ok) return;
         }
         setActingOn(slug);
         try {
@@ -102,13 +134,13 @@ export default function ReviewQueue() {
             const d = await res.json();
             if (!res.ok) throw new Error(d.error);
             const successMsg = {
-                approve: "✓ Approved & published. Media is now live.",
-                request_changes: "✓ Sent back to author",
+                approve: "Approved & published. Media is now live.",
+                request_changes: "Sent back to author.",
             }[action];
-            setMsg(successMsg);
+            toast.success(successMsg);
             await load();
         } catch (err) {
-            setMsg((err as Error).message);
+            toast.error((err as Error).message);
         }
         setActingOn(null);
     };
@@ -116,10 +148,23 @@ export default function ReviewQueue() {
     const transitionEvent = async (slug: string, action: "approve" | "request_changes") => {
         let notes = "";
         if (action === "request_changes") {
-            notes = prompt("What changes are needed? (sent back to author)") || "";
-            if (!notes.trim()) return;
+            const entered = await promptDialog({
+                title: "Send back to author",
+                message: "What changes are needed? This note is sent to the author.",
+                inputType: "textarea",
+                placeholder: "Describe the revisions needed...",
+                confirmText: "Send back",
+                validate: (v) => v.trim() ? null : "Please enter the changes needed.",
+            });
+            if (entered === null) return;
+            notes = entered;
         } else if (action === "approve") {
-            if (!confirm("Approve and publish this event? It will become visible on the public site.")) return;
+            const ok = await confirmDialog({
+                title: "Approve & publish event?",
+                message: "It will become visible on the public site.",
+                confirmText: "Approve",
+            });
+            if (!ok) return;
         }
         setActingOn(slug);
         try {
@@ -131,13 +176,13 @@ export default function ReviewQueue() {
             const d = await res.json();
             if (!res.ok) throw new Error(d.error);
             const successMsg = {
-                approve: "✓ Approved & published. Event is now live.",
-                request_changes: "✓ Sent back to author",
+                approve: "Approved & published. Event is now live.",
+                request_changes: "Sent back to author.",
             }[action];
-            setMsg(successMsg);
+            toast.success(successMsg);
             await load();
         } catch (err) {
-            setMsg((err as Error).message);
+            toast.error((err as Error).message);
         }
         setActingOn(null);
     };
@@ -149,7 +194,6 @@ export default function ReviewQueue() {
 
     return (
         <div>
-            {msg && <div className="admin-msg" onClick={() => setMsg("")}>{msg}</div>}
             <p style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
                 {total === 0 ? "Nothing pending review right now." : `${total} item${total === 1 ? "" : "s"} awaiting review.`}
             </p>

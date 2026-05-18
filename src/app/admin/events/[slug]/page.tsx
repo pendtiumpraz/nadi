@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent, use } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -10,7 +11,7 @@ interface Props {
 export default function EditEventPage({ params }: Props) {
     const { slug } = use(params);
     const router = useRouter();
-    const [status, setStatus] = useState("");
+    const toast = useToast();
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export default function EditEventPage({ params }: Props) {
         fetch(`/api/events?slug=${slug}`)
             .then(r => r.json())
             .then(data => {
-                if (data.error) { setStatus(`Error: ${data.error}`); return; }
+                if (data.error) { toast.error(data.error); return; }
                 setTitle(data.title || "");
                 setDescription(data.description || "");
                 setDate(data.date ? data.date.split("T")[0] : "");
@@ -46,9 +47,9 @@ export default function EditEventPage({ params }: Props) {
                 setRegistrationUrl(data.registrationUrl || "");
                 setCurrentImageUrl(data.imageUrl || "");
             })
-            .catch(() => setStatus("Failed to load event."))
+            .catch(() => toast.error("Failed to load event."))
             .finally(() => setLoading(false));
-    }, [slug]);
+    }, [slug, toast]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -58,17 +59,16 @@ export default function EditEventPage({ params }: Props) {
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setSaving(true);
-        setStatus("Saving event...");
         try {
             const form = new FormData(e.currentTarget);
             form.set("slug", slug);
             const res = await fetch("/api/events", { method: "PUT", body: form });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
-            setStatus("✓ Event updated!");
-            setTimeout(() => router.push("/admin/events"), 1000);
+            toast.success("Event updated.");
+            setTimeout(() => router.push("/admin/events"), 600);
         } catch (err) {
-            setStatus(`Error: ${(err as Error).message}`);
+            toast.error((err as Error).message);
         }
         setSaving(false);
     };
@@ -127,7 +127,6 @@ export default function EditEventPage({ params }: Props) {
                     {imagePreview && <img src={imagePreview} alt="Preview" style={{ marginTop: "1rem", maxWidth: "100%", maxHeight: "300px", borderRadius: "6px", border: "1px solid var(--line)" }} />}
                 </div>
 
-                {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
                 <div className="editor-save">
                     <button type="submit" className="btn-primary" disabled={saving}>{saving ? "⏳ Saving..." : "Update Event"}</button>
                     <a href="/admin/events" className="btn-outline">Cancel</a>

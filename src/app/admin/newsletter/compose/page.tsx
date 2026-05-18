@@ -2,31 +2,36 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { confirmDialog, useToast } from "@/components/Toast";
 
 export default function ComposeNewsletter() {
     const router = useRouter();
+    const toast = useToast();
     const [subject, setSubject] = useState("");
     const [content, setContent] = useState("");
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState("");
+    const [progress, setProgress] = useState("");
     const [stats, setStats] = useState<{ sent: number; errors: number } | null>(null);
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
-        setMessage("");
+        setProgress("");
         setStats(null);
 
         if (!subject.trim() || !content.trim()) {
-            setMessage("Subject and content are required.");
+            toast.error("Subject and content are required.");
             return;
         }
 
-        if (!confirm("Are you sure you want to send this newsletter to ALL active subscribers?")) {
-            return;
-        }
+        const ok = await confirmDialog({
+            title: "Send to all active subscribers?",
+            message: "This dispatches the broadcast immediately and cannot be recalled.",
+            confirmText: "Send broadcast",
+        });
+        if (!ok) return;
 
         setLoading(true);
-        setMessage("Sending emails... Please do not close this window.");
+        setProgress("Sending emails... please do not close this window.");
 
         try {
             const res = await fetch("/api/newsletter/send", {
@@ -36,16 +41,18 @@ export default function ComposeNewsletter() {
             });
 
             const data = await res.json();
+            setProgress("");
             if (res.ok) {
-                setMessage("Broadcast completed successfully!");
+                toast.success(`Broadcast completed: ${data.sent} sent${data.errors ? `, ${data.errors} failed` : ""}.`);
                 setStats({ sent: data.sent, errors: data.errors });
                 setSubject("");
                 setContent("");
             } else {
-                setMessage(`Error: ${data.error || "Failed to send emails"}`);
+                toast.error(data.error || "Failed to send emails.");
             }
         } catch (error) {
-            setMessage(`System error: ${(error as Error).message}`);
+            setProgress("");
+            toast.error((error as Error).message);
         }
         setLoading(false);
     };
@@ -67,16 +74,16 @@ export default function ComposeNewsletter() {
                 </div>
             </div>
 
-            {message && (
+            {progress && (
                 <div style={{
                     padding: "1rem",
                     marginBottom: "1.5rem",
                     borderRadius: "6px",
-                    background: message.includes("Error") ? "var(--crimson-pale)" : "rgba(44, 122, 75, 0.1)",
-                    color: message.includes("Error") ? "var(--crimson)" : "#2C7A4B",
-                    border: `1px solid ${message.includes("Error") ? "rgba(139,28,28,0.2)" : "rgba(44, 122, 75, 0.2)"}`
+                    background: "rgba(44, 122, 75, 0.1)",
+                    color: "#2C7A4B",
+                    border: "1px solid rgba(44, 122, 75, 0.2)",
                 }}>
-                    <strong>{message}</strong>
+                    <strong>{progress}</strong>
                     {stats && (
                         <div style={{ marginTop: "0.5rem", fontSize: "0.9rem" }}>
                             Success: {stats.sent} emails delivered. <br />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { confirmDialog, useToast } from "@/components/Toast";
 
 interface PublishButtonProps {
     slug: string;
@@ -11,14 +12,19 @@ interface PublishButtonProps {
 
 export default function PublishButton({ slug, currentStatus, onPublished }: PublishButtonProps): React.JSX.Element {
     const [busy, setBusy] = useState(false);
-    const [msg, setMsg] = useState("");
+    const toast = useToast();
 
     const enabled = currentStatus === "consent_received";
     const disabled = !enabled || busy;
 
     const handleClick = async () => {
         if (!enabled) return;
-        if (!confirm("Publish this article? It will become visible on the public site.")) return;
+        const ok = await confirmDialog({
+            title: "Publish article?",
+            message: "It will become visible on the public site.",
+            confirmText: "Publish",
+        });
+        if (!ok) return;
 
         setBusy(true);
         try {
@@ -29,53 +35,30 @@ export default function PublishButton({ slug, currentStatus, onPublished }: Publ
             });
             const d = await res.json();
             if (!res.ok) throw new Error(d.error || "Request failed");
-            setMsg("✓ Published! The article is now live.");
-            window.setTimeout(() => setMsg(""), 4000);
+            toast.success(`Published! View at /publications/${slug}`);
             onPublished?.();
         } catch (err) {
-            setMsg(`Error: ${(err as Error).message}`);
-            window.setTimeout(() => setMsg(""), 6000);
+            toast.error((err as Error).message);
         }
         setBusy(false);
     };
 
     return (
-        <div>
-            <button
-                type="button"
-                className="admin-btn"
-                disabled={disabled}
-                onClick={handleClick}
-                title={enabled ? undefined : "Publish is only available after the consent-to-publish form has been submitted."}
-                style={{
-                    background: "#8B1C1C",
-                    color: "white",
-                    padding: "8px 18px",
-                    opacity: disabled ? 0.4 : 1,
-                    cursor: disabled ? "not-allowed" : "pointer",
-                }}
-            >
-                {busy ? "Publishing..." : "Publish"}
-            </button>
-            {msg && (
-                <div
-                    style={{
-                        marginTop: "0.5rem",
-                        fontSize: "0.9rem",
-                        color: msg.startsWith("Error") ? "var(--crimson)" : "#1a7a3e",
-                    }}
-                >
-                    {msg}
-                    {!msg.startsWith("Error") && (
-                        <>
-                            {" "}
-                            <a href={`/publications/${slug}`} target="_blank" rel="noopener noreferrer" style={{ color: "#1a7a3e", textDecoration: "underline", fontWeight: 600 }}>
-                                View →
-                            </a>
-                        </>
-                    )}
-                </div>
-            )}
-        </div>
+        <button
+            type="button"
+            className="admin-btn"
+            disabled={disabled}
+            onClick={handleClick}
+            title={enabled ? undefined : "Publish is only available after the consent-to-publish form has been submitted."}
+            style={{
+                background: "#8B1C1C",
+                color: "white",
+                padding: "8px 18px",
+                opacity: disabled ? 0.4 : 1,
+                cursor: disabled ? "not-allowed" : "pointer",
+            }}
+        >
+            {busy ? "Publishing..." : "Publish"}
+        </button>
     );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Pagination from "@/components/Pagination";
+import { useToast, confirmDialog } from "@/components/Toast";
 
 interface Subscriber {
     id: number;
@@ -16,7 +17,7 @@ export default function NewsletterAdmin() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
     const [filtered, setFiltered] = useState<Subscriber[]>([]);
     const [loading, setLoading] = useState(true);
-    const [msg, setMsg] = useState("");
+    const toast = useToast();
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
     const [total, setTotal] = useState(0);
@@ -35,7 +36,7 @@ export default function NewsletterAdmin() {
             setTotal(data.total || 0);
             setActive(data.active || 0);
         } catch {
-            setMsg("Failed to load subscribers.");
+            toast.error("Failed to load subscribers.");
         }
         setLoading(false);
     };
@@ -60,21 +61,27 @@ export default function NewsletterAdmin() {
             body: JSON.stringify({ id, isActive: !currentActive }),
         });
         if (res.ok) {
-            setMsg(`Subscriber ${currentActive ? "deactivated" : "activated"}.`);
+            toast.success(`Subscriber ${currentActive ? "deactivated" : "activated"}.`);
             fetchSubscribers();
         } else {
-            setMsg("Failed to update subscriber.");
+            toast.error("Failed to update subscriber.");
         }
     };
 
     const handleDelete = async (id: number, email: string) => {
-        if (!confirm(`Remove "${email}" from newsletter? This cannot be undone.`)) return;
+        const ok = await confirmDialog({
+            title: "Remove subscriber?",
+            message: `"${email}" will be permanently removed from the newsletter list.`,
+            confirmText: "Remove",
+            tone: "danger",
+        });
+        if (!ok) return;
         const res = await fetch(`/api/newsletter?id=${id}`, { method: "DELETE" });
         if (res.ok) {
-            setMsg("Subscriber removed.");
+            toast.success("Subscriber removed.");
             fetchSubscribers();
         } else {
-            setMsg("Failed to remove subscriber.");
+            toast.error("Failed to remove subscriber.");
         }
     };
 
@@ -99,8 +106,6 @@ export default function NewsletterAdmin() {
 
     return (
         <div>
-            {msg && <div className="admin-msg" onClick={() => setMsg("")}>{msg}</div>}
-
             {/* Stats */}
             <div className="admin-stats" style={{ marginBottom: "1.5rem" }}>
                 <div className="admin-stat-card">

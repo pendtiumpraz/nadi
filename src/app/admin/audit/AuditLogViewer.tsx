@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Pagination from "@/components/Pagination";
+import { useToast } from "@/components/Toast";
 
 // TODO: CSV export — defer. Plan: add an "Export CSV" button that hits
 // /api/admin/audit?format=csv with the current filter range, streams a
@@ -95,11 +96,10 @@ export default function AuditLogViewer() {
 
     const [data, setData] = useState<AuditResponse | null>(null);
     const [loading, setLoading] = useState(true);
-    const [err, setErr] = useState("");
+    const toast = useToast();
 
     const load = useCallback(async () => {
         setLoading(true);
-        setErr("");
         try {
             // Convert local-date inputs to ISO at start/end of day so the server
             // gets a proper inclusive range regardless of timezone.
@@ -117,11 +117,11 @@ export default function AuditLogViewer() {
             if (!res.ok) throw new Error("error" in json ? json.error : "Failed to load");
             setData(json as AuditResponse);
         } catch (e) {
-            setErr((e as Error).message);
+            toast.error((e as Error).message);
             setData(null);
         }
         setLoading(false);
-    }, [filter, since, until, page]);
+    }, [filter, since, until, page, toast]);
 
     useEffect(() => { load(); }, [load]);
 
@@ -148,12 +148,6 @@ export default function AuditLogViewer() {
 
     return (
         <div>
-            {err && (
-                <div className="admin-msg" onClick={() => setErr("")}>
-                    {err}
-                </div>
-            )}
-
             <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", marginBottom: "1rem" }}>
                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                     {FILTER_LABELS.map((f) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useToast, confirmDialog } from "@/components/Toast";
 
 interface TeamMember {
     id: number;
@@ -21,7 +22,7 @@ export default function AdminTeamPage() {
     const [editing, setEditing] = useState<TeamMember | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [status, setStatus] = useState("");
+    const toast = useToast();
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -34,26 +35,43 @@ export default function AdminTeamPage() {
     useEffect(() => { load(); }, [load]);
 
     const save = async () => {
-        if (!editing || !editing.name.trim()) return;
+        if (!editing || !editing.name.trim()) {
+            toast.error("Full name is required.");
+            return;
+        }
         setSaving(true);
-        setStatus("Saving...");
         const method = editing.id ? "PUT" : "POST";
-        await fetch("/api/team", {
+        const res = await fetch("/api/team", {
             method,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(editing),
         });
-        setStatus("✓ Saved!");
-        setEditing(null);
         setSaving(false);
-        load();
-        setTimeout(() => setStatus(""), 2000);
+        if (res.ok) {
+            toast.success(method === "POST" ? "Member added." : "Member updated.");
+            setEditing(null);
+            load();
+        } else {
+            const d = await res.json().catch(() => ({}));
+            toast.error(d.error || "Failed to save member.");
+        }
     };
 
     const del = async (id: number) => {
-        if (!confirm("Delete this team member?")) return;
-        await fetch(`/api/team?id=${id}`, { method: "DELETE" });
-        load();
+        const ok = await confirmDialog({
+            title: "Delete team member?",
+            message: "This will permanently remove the member.",
+            confirmText: "Delete",
+            tone: "danger",
+        });
+        if (!ok) return;
+        const res = await fetch(`/api/team?id=${id}`, { method: "DELETE" });
+        if (res.ok) {
+            toast.success("Member removed.");
+            load();
+        } else {
+            toast.error("Failed to delete member.");
+        }
     };
 
     return (
@@ -92,7 +110,6 @@ export default function AdminTeamPage() {
                         </div>
                     </div>
 
-                    {status && <div className="admin-msg" onClick={() => setStatus("")}>{status}</div>}
                     <div className="editor-save">
                         <button type="submit" className="btn-primary" disabled={saving}>{saving ? "⏳ Saving..." : editing.id ? "Update Member" : "Add Member"}</button>
                         <button type="button" className="btn-outline" onClick={() => setEditing(null)}>Cancel</button>
