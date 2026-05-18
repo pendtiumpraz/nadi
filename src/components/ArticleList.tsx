@@ -99,6 +99,47 @@ export default function ArticleList({ initialArticles = [], partnerView = false 
 
     return (
         <div>
+            <a
+                href="/policy-guideline"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "1rem",
+                    marginBottom: "1.5rem",
+                    padding: "1rem 1.25rem",
+                    background: "#fafafa",
+                    border: "1px solid #E8E5E1",
+                    borderLeft: "3px solid #8B1C1C",
+                    borderRadius: 4,
+                    textDecoration: "none",
+                    color: "inherit",
+                }}
+            >
+                <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>📘</span>
+                <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: "0.15rem" }}>
+                        Policy Product Guideline
+                    </div>
+                    <div style={{ fontSize: "0.8rem", color: "#666", lineHeight: 1.45 }}>
+                        Read the canonical NADI guideline — types, section structure, and word counts — before writing your next {partnerView ? "submission" : "article"}.
+                    </div>
+                </div>
+                <span
+                    style={{
+                        fontSize: "0.72rem",
+                        fontWeight: 600,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "#8B1C1C",
+                        whiteSpace: "nowrap",
+                    }}
+                >
+                    Open →
+                </span>
+            </a>
+
             {articles.length > 0 && (
                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1rem" }}>
                     {FILTERS.map((f) => {
@@ -208,47 +249,6 @@ export default function ArticleList({ initialArticles = [], partnerView = false 
                     itemLabel={partnerView ? "submissions" : "articles"}
                 />
             )}
-
-            <a
-                href="/policy-guideline"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "1rem",
-                    marginTop: "1.5rem",
-                    padding: "1rem 1.25rem",
-                    background: "#fafafa",
-                    border: "1px solid #E8E5E1",
-                    borderLeft: "3px solid #8B1C1C",
-                    borderRadius: 4,
-                    textDecoration: "none",
-                    color: "inherit",
-                }}
-            >
-                <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>📘</span>
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: "0.15rem" }}>
-                        Policy Product Guideline
-                    </div>
-                    <div style={{ fontSize: "0.8rem", color: "#666", lineHeight: 1.45 }}>
-                        Read the canonical NADI guideline — types, section structure, and word counts — before writing your next {partnerView ? "submission" : "article"}.
-                    </div>
-                </div>
-                <span
-                    style={{
-                        fontSize: "0.72rem",
-                        fontWeight: 600,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: "#8B1C1C",
-                        whiteSpace: "nowrap",
-                    }}
-                >
-                    Open →
-                </span>
-            </a>
         </div>
     );
 }
