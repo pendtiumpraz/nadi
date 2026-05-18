@@ -55,8 +55,8 @@ export default async function AdminDashboard() {
                     </div>
                 )}
                 <div className="admin-stat-card">
-                    <span className="admin-stat-value">{session.user.role === "admin" ? "Full" : isAuthor ? "Author" : "Review"}</span>
-                    <span className="admin-stat-label">Access Level</span>
+                    <span className="admin-stat-value" style={{ textTransform: "capitalize" }}>{role}</span>
+                    <span className="admin-stat-label">Role</span>
                 </div>
             </div>
 
@@ -72,11 +72,13 @@ export default async function AdminDashboard() {
                     <span className="admin-card-title">Policy Product Guideline</span>
                     <span className="admin-card-desc">Download the canonical NADI guideline before writing your policy product.</span>
                 </a>
-                <a href="/admin/newsletter" className="admin-card">
-                    <span className="admin-card-icon">✉️</span>
-                    <span className="admin-card-title">Subscribers List</span>
-                    <span className="admin-card-desc">Manage newsletter users, activate, and export to CSV.</span>
-                </a>
+                {!isAuthor && (
+                    <a href="/admin/newsletter" className="admin-card">
+                        <span className="admin-card-icon">✉️</span>
+                        <span className="admin-card-title">Subscribers List</span>
+                        <span className="admin-card-desc">Manage newsletter users, activate, and export to CSV.</span>
+                    </a>
+                )}
                 {session.user.role === "admin" && (
                     <a href="/admin/users" className="admin-card">
                         <span className="admin-card-icon">👥</span>
