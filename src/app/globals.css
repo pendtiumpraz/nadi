@@ -2713,6 +2713,26 @@ body.editor-focus-mode .admin-body {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
+/* In manual (Gutenberg) mode the right aside hosts every metadata section.
+   The aside is only ~340px wide, so a 1fr 1fr inner grid squeezes inputs to
+   ~140px and they overflow. Stack everything to a single column inside the
+   aside, tighten section padding, and force inputs to honour the container's
+   width. */
+.editor-mode-manual .editor-side .editor-grid {
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+.editor-mode-manual .editor-side .editor-section {
+  padding: 1rem;
+}
+.editor-mode-manual .editor-side input,
+.editor-mode-manual .editor-side select,
+.editor-mode-manual .editor-side textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .editor-save {
   display: flex;
   gap: 0.5rem;
