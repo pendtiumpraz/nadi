@@ -11,6 +11,7 @@ import {
 import { canPublish, canEditOwnContent, asRole } from "@/lib/permissions";
 import { getUserById } from "@/lib/users";
 import { notifyArticleSubmitted, notifySubmissionReceived, getReviewEtaDays } from "@/lib/notify";
+import { createNotificationForUsers, getUserIdsByRole } from "@/lib/notifications-store";
 import { checkSubmissionAllowed } from "@/lib/submission-throttle";
 import { getDB } from "@/lib/db";
 import type { Article, ArticleStatus } from "@/data/articles/types";
@@ -19,9 +20,20 @@ function buildBaseUrl(req: NextRequest): string {
     return req.nextUrl?.origin || `${req.headers.get("x-forwarded-proto") || "http"}://${req.headers.get("host") || "localhost:3000"}`;
 }
 
-async function fireSubmitEmails(req: NextRequest, article: Article, actorName: string): Promise<void> {
+async function fireSubmitEmails(req: NextRequest, article: Article, actorName: string, isResubmit = false): Promise<void> {
     const baseUrl = buildBaseUrl(req);
     notifyArticleSubmitted({ title: article.title, slug: article.slug, actorName, baseUrl }).catch(() => { });
+    // Fan out an in-app notification to every active admin + reviewer so the bell
+    // dropdown lights up alongside the email.
+    Promise.all([getUserIdsByRole("admin"), getUserIdsByRole("reviewer")])
+        .then(([admins, reviewers]) =>
+            createNotificationForUsers([...admins, ...reviewers], {
+                type: isResubmit ? "article_resubmitted" : "article_submitted",
+                title: isResubmit ? `Re-submitted: ${article.title}` : `New submission: ${article.title}`,
+                body: `${actorName} ${isResubmit ? "re-submitted after revisions" : "submitted this article for review"}.`,
+                link: `/admin/articles/${article.slug}`,
+            })
+        ).catch(() => { });
     if (article.authorId) {
         const author = await getUserById(article.authorId);
         if (author?.email) {
@@ -127,7 +139,7 @@ export async function POST(req: NextRequest) {
                     VALUES ('article', ${body.slug}, ${Number(session.user.id)}, 'in_review', 'created via POST /api/articles')
                 `;
             } catch { /* non-fatal — don't block the create on audit failure */ }
-            fireSubmitEmails(req, body, session.user.name || "A contributor").catch(() => { });
+            fireSubmitEmails(req, body, session.user.name || "A contributor", false).catch(() => { });
         }
         return NextResponse.json(body, { status: 201 });
     } catch (err) {
@@ -196,6 +208,7 @@ export async function PUT(req: NextRequest) {
         // Fire submission emails when a non-publisher transitions an article TO in_review
         // (resubmit-after-feedback OR first submit from a draft).
         if (status === "in_review" && !wasInReview && !canPublish(session.user)) {
+            const wasFeedbackPending = !!existing.feedbackPending;
             // Audit-row so the daily cap counts this submit (mirrors the transition route).
             try {
                 const sql = getDB();
@@ -203,8 +216,26 @@ export async function PUT(req: NextRequest) {
                     INSERT INTO submissions (type, ref_slug, author_id, status, notes)
                     VALUES ('article', ${body.slug}, ${Number(session.user.id)}, 'in_review', 'resubmit via PUT /api/articles')
                 `;
-            } catch { /* non-fatal */ }
-            fireSubmitEmails(req, body, session.user.name || "A contributor").catch(() => { });
+                // Mirror the submission as a system comment in the article thread so
+                // the back-and-forth (reviewer asked for changes → author re-submitted)
+                // is visible inline alongside other comments. Distinguish first-submit
+                // from re-submit using the existing feedback_pending flag, which the
+                // reviewer's request_changes left set.
+                const verb = wasFeedbackPending ? "re-submitted this article for review after revisions" : "submitted this article for review";
+                await sql`
+                    INSERT INTO article_comments (article_slug, author_id, author_role, body, section_anchor)
+                    VALUES (
+                        ${body.slug},
+                        ${Number(session.user.id)},
+                        ${session.user.role || null},
+                        ${`${session.user.name || "The author"} ${verb}.`},
+                        NULL
+                    )
+                `;
+            } catch (err) {
+                console.error("[articles:PUT] failed to record submission/comment:", (err as Error).message);
+            }
+            fireSubmitEmails(req, body, session.user.name || "A contributor", wasFeedbackPending).catch(() => { });
         }
         return NextResponse.json(body);
     } catch (err) {

@@ -4,6 +4,7 @@ import { getArticleBySlugStore, setConsentReceived } from "@/lib/articles-store"
 import { getUserById } from "@/lib/users";
 import { notifyConsentReceived } from "@/lib/notify";
 import { getDB } from "@/lib/db";
+import { createNotificationForUsers, getUserIdsByRole } from "@/lib/notifications-store";
 
 // ════════════════════════════════════════════════════════════════════
 // Consent-to-publish form API
@@ -216,6 +217,17 @@ export async function POST(req: NextRequest, { params }: Params) {
         signatoryName: signatoryFullName,
         baseUrl,
     }).catch(() => { });
+
+    // In-app: ping every admin + reviewer that the article is ready to publish.
+    Promise.all([getUserIdsByRole("admin"), getUserIdsByRole("reviewer")])
+        .then(([admins, reviewers]) =>
+            createNotificationForUsers([...admins, ...reviewers], {
+                type: "consent_received",
+                title: `Consent submitted: ${article.title}`,
+                body: `Signed by ${signatoryFullName}. The article is ready to publish.`,
+                link: `/admin/review`,
+            })
+        ).catch(() => { });
 
     return NextResponse.json({ ok: true }, { status: 201 });
 }

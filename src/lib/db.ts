@@ -473,4 +473,22 @@ export async function migrate() {
     )
   `;
   await sql`CREATE INDEX IF NOT EXISTS topic_messages_topic_idx ON topic_messages (topic_id, created_at DESC)`;
+
+  // ── In-app notifications (bell icon dropdown) ──────────────────────
+  // Each row = a single notification for a specific user. The `link` is
+  // where the bell dropdown sends them on click — usually an /admin URL.
+  await sql`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      type VARCHAR(50) NOT NULL,
+      title VARCHAR(500) NOT NULL,
+      body TEXT DEFAULT '',
+      link VARCHAR(500) DEFAULT '',
+      is_read BOOLEAN DEFAULT false,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications (user_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS notifications_user_unread_idx ON notifications (user_id, is_read) WHERE is_read = false`;
 }

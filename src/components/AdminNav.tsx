@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import NotificationBell from "@/components/NotificationBell";
 
 interface AdminNavProps {
     user: {
@@ -55,7 +56,10 @@ export default function AdminNav({ user, allowedMenus }: AdminNavProps) {
                     <span className="adm-topbar-logo-text">NADI</span>
                     <span className="adm-topbar-logo-sub">Admin</span>
                 </a>
-                <button onClick={() => signOut({ callbackUrl: "/" })} className="adm-topbar-logout">Sign Out</button>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginLeft: "auto" }}>
+                    <NotificationBell />
+                    <button onClick={() => signOut({ callbackUrl: "/" })} className="adm-topbar-logout">Sign Out</button>
+                </div>
             </header>
 
             {/* Sidebar — menu links */}

@@ -5,6 +5,7 @@ import { canReview } from "@/lib/permissions";
 import { getDB } from "@/lib/db";
 import { getUserById } from "@/lib/users";
 import { notifyFeedbackReceived } from "@/lib/notify";
+import { createNotification, createNotificationForUsers, getUserIdsByRole } from "@/lib/notifications-store";
 
 interface Params {
     params: Promise<{ slug: string }>;
@@ -142,6 +143,27 @@ export async function POST(req: NextRequest, { params }: Params) {
                 console.error("[comments] notifyFeedbackReceived failed:", (err as Error).message);
             }
         })();
+
+        if (article.authorId) {
+            createNotification({
+                userId: Number(article.authorId),
+                type: "comment_posted",
+                title: `New comment on: ${article.title}`,
+                body: `${session.user.name || "A reviewer"}: ${trimmed.slice(0, 140)}${trimmed.length > 140 ? "…" : ""}`,
+                link: `/admin/articles/${slug}`,
+            }).catch(() => { });
+        }
+    } else {
+        // Author commented — let admins + reviewers know via the bell.
+        Promise.all([getUserIdsByRole("admin"), getUserIdsByRole("reviewer")])
+            .then(([admins, reviewers]) =>
+                createNotificationForUsers([...admins, ...reviewers], {
+                    type: "comment_posted",
+                    title: `Author replied on: ${article.title}`,
+                    body: `${session.user.name || "The author"}: ${trimmed.slice(0, 140)}${trimmed.length > 140 ? "…" : ""}`,
+                    link: `/admin/articles/${slug}`,
+                })
+            ).catch(() => { });
     }
 
     return NextResponse.json({ comment: rowToDTO(row) }, { status: 201 });
