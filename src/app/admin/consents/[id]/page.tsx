@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { canReview } from "@/lib/permissions";
 import { getDB } from "@/lib/db";
+import ConsentDocumentActions from "./ConsentDocumentActions";
 
 export const dynamic = "force-dynamic";
 
@@ -32,20 +33,21 @@ interface ConsentRecord {
     created_at: string;
 }
 
-const ACK_CLAUSES: { key: keyof Pick<
-    ConsentRecord,
-    "ack_ethical" | "ack_original" | "ack_edited" | "ack_ai_disclosure" | "ack_may_reject" | "ack_no_liability" | "agree_on_behalf"
->; text: string }[] = [
-    { key: "ack_ethical", text: "The policy product has been developed in an ethical, responsible manner and in compliance with the code of scientific research ethics" },
-    { key: "ack_original", text: "The policy product meets basic publication standards, is original and free of plagiarism" },
-    { key: "ack_edited", text: "The policy product has been edited in accordance with the guidelines and revisions imposed by the quality control team" },
-    { key: "ack_ai_disclosure", text: "The policy product has used AI tools in a responsible and transparent manner, with all AI-assisted content reviewed and verified by the author" },
-    { key: "ack_may_reject", text: "The author(s) agree that the NADI Quality Control team may reject the paper if it violates any of the above declarations" },
-    { key: "ack_no_liability", text: "NADI assumes no responsibility for the content, accuracy, or opinions" },
-    { key: "agree_on_behalf", text: "I sign on behalf of all co-authors" },
+// Mirrors the docx clauses verbatim — items 1-4 are author declarations,
+// 5-6 are NADI's locked terms, 7 is the on-behalf-of-co-authors effect clause.
+const AUTHOR_CLAUSES: { key: "ack_ethical" | "ack_original" | "ack_edited" | "ack_ai_disclosure"; text: string }[] = [
+    { key: "ack_ethical", text: "The policy product has been developed in an ethical, responsible manner and in compliance with the code of scientific research ethics;" },
+    { key: "ack_original", text: "The policy product meets basic publication standards, is original and free of plagiarism;" },
+    { key: "ack_edited", text: "The policy product has been edited in accordance with the guidelines and revisions imposed by the quality control team;" },
+    { key: "ack_ai_disclosure", text: "The policy product has used artificial intelligence (AI) tools in a responsible and transparent manner, with all AI-assisted content reviewed and verified by the author;" },
 ];
 
-function formatDate(value: string | null | undefined): string {
+const NADI_TERMS_CLAUSES: { key: "ack_may_reject" | "ack_no_liability"; text: string }[] = [
+    { key: "ack_may_reject", text: "The author(s) agree that the NADI Quality Control team may reject the paper if it violates any of the above declarations (Nos. 1–4) or contains deficiencies." },
+    { key: "ack_no_liability", text: "The author(s) agree that NADI assumes no responsibility for the content, accuracy, or opinions expressed in the policy paper, which remain solely the responsibility of the author(s)." },
+];
+
+function formatLongDate(value: string | null | undefined): string {
     if (!value) return "—";
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return String(value);
@@ -73,20 +75,30 @@ function parseAuthors(value: unknown): ConsentAuthor[] {
     return [];
 }
 
-const sectionLabelStyle: React.CSSProperties = {
-    fontSize: "0.75rem",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "var(--muted)",
-    fontWeight: 700,
-    marginBottom: "0.4rem",
-};
-
-const sectionStyle: React.CSSProperties = {
-    marginTop: "1.75rem",
-    paddingBottom: "1.25rem",
-    borderBottom: "1px solid #e5e2dc",
-};
+function CheckBox({ checked }: { checked: boolean }) {
+    return (
+        <span
+            aria-label={checked ? "checked" : "unchecked"}
+            style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 14,
+                height: 14,
+                border: "1.5px solid #2a2a2a",
+                marginRight: "0.5rem",
+                marginTop: 3,
+                flexShrink: 0,
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                color: "#1a1a1a",
+                lineHeight: 1,
+            }}
+        >
+            {checked ? "✓" : ""}
+        </span>
+    );
+}
 
 export default async function ConsentDetailPage({ params }: Props) {
     const session = await auth();
@@ -138,113 +150,246 @@ export default async function ConsentDetailPage({ params }: Props) {
 
     return (
         <div className="admin-body">
-            <h1 className="admin-page-title">Consent-to-Publish Form</h1>
-            <p className="admin-page-desc">
-                Signed submission for article <code>{c.article_slug}</code>.
-            </p>
+            {/* Header bar — hidden on print so the printed PDF is just the document */}
+            <div className="consent-doc-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem", marginBottom: "1.5rem" }}>
+                <div>
+                    <h1 className="admin-page-title" style={{ margin: 0 }}>Consent-to-Publish Form</h1>
+                    <p className="admin-page-desc" style={{ margin: "0.25rem 0 0" }}>
+                        Article <code>{c.article_slug}</code> · Submitted {formatDateTime(c.created_at)}
+                    </p>
+                </div>
+                <ConsentDocumentActions articleSlug={c.article_slug} signatoryName={c.signatory_full_name} />
+            </div>
 
+            {/* The document — styled to look like a printed A4 page */}
             <div
+                className="consent-doc-page"
                 style={{
-                    marginTop: "1.5rem",
-                    padding: "2rem",
+                    margin: "0 auto",
                     background: "#fff",
-                    border: "1px solid #e5e2dc",
-                    borderRadius: 4,
+                    color: "#1a1a1a",
+                    border: "1px solid #d8d4cc",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                     maxWidth: 820,
+                    minHeight: "1100px",
+                    padding: "60px 72px",
+                    fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                    fontSize: "10.5pt",
+                    lineHeight: 1.55,
                 }}
             >
-                <section style={sectionStyle}>
-                    <div style={sectionLabelStyle}>Title of the paper</div>
-                    <div style={{ fontSize: "1.15rem", fontWeight: 600 }}>{c.title_of_paper}</div>
-                </section>
+                {/* Document title */}
+                <h2
+                    style={{
+                        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+                        textAlign: "center",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        fontSize: "1.4rem",
+                        fontWeight: 700,
+                        marginTop: 0,
+                        marginBottom: "0.25rem",
+                    }}
+                >
+                    Consent-to-Publish Form
+                </h2>
+                <p style={{ textAlign: "center", color: "#555", margin: "0 0 2rem", fontSize: "0.85rem" }}>
+                    NADI — Network for Advancing Development &amp; Innovation in Health · 2026
+                </p>
 
-                <section style={sectionStyle}>
-                    <div style={sectionLabelStyle}>Authors</div>
-                    {authors.length === 0 ? (
-                        <div style={{ color: "var(--muted)" }}>No authors recorded.</div>
-                    ) : (
-                        <ol style={{ paddingLeft: "1.25rem", margin: 0 }}>
-                            {authors.map((a, i) => (
-                                <li key={i} style={{ marginBottom: "0.35rem" }}>
-                                    <strong>{a.surnameFirstName || "—"}</strong>
-                                    {a.affiliation ? ` — ${a.affiliation}` : ""}
-                                </li>
-                            ))}
-                        </ol>
-                    )}
-                </section>
+                <p style={{ marginBottom: "1.25rem" }}>
+                    I, the undersigned, hereby confirm that I consent to publish my submitted policy
+                    product and declare that:
+                </p>
 
-                <section style={sectionStyle}>
-                    <div style={sectionLabelStyle}>Signatory full name</div>
-                    <div style={{ fontSize: "1rem", fontWeight: 600 }}>{c.signatory_full_name}</div>
-                </section>
+                {/* Author declarations 1-4 */}
+                <ol start={1} style={{ paddingLeft: 0, listStyle: "none", marginBottom: "1.25rem" }}>
+                    {AUTHOR_CLAUSES.map((clause, idx) => {
+                        const checked = Boolean(c[clause.key]);
+                        return (
+                            <li
+                                key={clause.key}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    marginBottom: "0.55rem",
+                                }}
+                            >
+                                <CheckBox checked={checked} />
+                                <span>
+                                    <strong style={{ marginRight: "0.35rem" }}>{idx + 1}.</strong>
+                                    {clause.text}
+                                </span>
+                            </li>
+                        );
+                    })}
+                </ol>
 
-                <section style={sectionStyle}>
-                    <div style={sectionLabelStyle}>Signature</div>
-                    {c.signatory_signature_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                            src={c.signatory_signature_url}
-                            alt={`Signature of ${c.signatory_full_name}`}
-                            style={{ maxHeight: 120, maxWidth: "100%", display: "block", background: "#fafaf7", padding: "0.5rem", border: "1px solid #eee" }}
-                        />
-                    ) : (
-                        <div style={{ color: "var(--muted)" }}>No signature image on file.</div>
-                    )}
-                </section>
+                {/* NADI terms 5-6 */}
+                <p style={{ fontStyle: "italic", color: "#555", margin: "1rem 0 0.5rem", fontSize: "0.9rem" }}>
+                    NADI Standard Terms (accepted on submission):
+                </p>
+                <ol start={5} style={{ paddingLeft: 0, listStyle: "none", marginBottom: "1.5rem" }}>
+                    {NADI_TERMS_CLAUSES.map((clause, idx) => {
+                        const checked = Boolean(c[clause.key]);
+                        return (
+                            <li
+                                key={clause.key}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    marginBottom: "0.55rem",
+                                }}
+                            >
+                                <CheckBox checked={checked} />
+                                <span>
+                                    <strong style={{ marginRight: "0.35rem" }}>{idx + 5}.</strong>
+                                    {clause.text}
+                                </span>
+                            </li>
+                        );
+                    })}
+                </ol>
 
-                <section style={sectionStyle}>
-                    <div style={sectionLabelStyle}>Signature date</div>
-                    <div>{formatDate(c.signatory_date)}</div>
-                </section>
+                {/* Effect clause */}
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        marginBottom: "1.75rem",
+                        padding: "0.75rem 0",
+                        borderTop: "1px solid #d8d4cc",
+                        borderBottom: "1px solid #d8d4cc",
+                    }}
+                >
+                    <CheckBox checked={Boolean(c.agree_on_behalf)} />
+                    <span>
+                        This consent and the above declarations take effect upon signature by at least one author,
+                        who signs on behalf of all co-authors, if applicable.{" "}
+                        <strong>I confirm I sign on behalf of all co-authors.</strong>
+                    </span>
+                </div>
 
-                <section style={sectionStyle}>
-                    <div style={sectionLabelStyle}>Acknowledgements</div>
-                    <ol style={{ paddingLeft: "1.25rem", margin: 0 }}>
-                        {ACK_CLAUSES.map(({ key, text }) => {
-                            const checked = Boolean(c[key]);
-                            return (
-                                <li key={key} style={{ marginBottom: "0.6rem", lineHeight: 1.45 }}>
-                                    <span
-                                        style={{
-                                            display: "inline-block",
-                                            width: "1.5rem",
-                                            color: checked ? "#1a7a3e" : "var(--crimson)",
-                                            fontWeight: 700,
-                                        }}
-                                        aria-label={checked ? "agreed" : "not agreed"}
-                                    >
-                                        {checked ? "✓" : "✗"}
-                                    </span>
-                                    <span>{text}</span>
-                                </li>
-                            );
-                        })}
-                    </ol>
-                </section>
+                {/* Title of the paper */}
+                <div style={{ marginBottom: "1.5rem" }}>
+                    <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: "0.3rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Title of the paper
+                    </div>
+                    <div
+                        style={{
+                            borderBottom: "1px solid #1a1a1a",
+                            padding: "0.4rem 0",
+                            fontSize: "1.05rem",
+                            fontStyle: c.title_of_paper ? "normal" : "italic",
+                            color: c.title_of_paper ? "#1a1a1a" : "#888",
+                        }}
+                    >
+                        {c.title_of_paper || "—"}
+                    </div>
+                </div>
 
-                <section style={{ ...sectionStyle, borderBottom: "none" }}>
-                    <div style={sectionLabelStyle}>Submitted at</div>
-                    <div>{formatDateTime(c.created_at)}</div>
-                </section>
+                {/* Authors table */}
+                <div style={{ marginBottom: "1.75rem" }}>
+                    <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: "0.45rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Authors
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.95rem" }}>
+                        <thead>
+                            <tr>
+                                <th style={tableHead}>#</th>
+                                <th style={{ ...tableHead, width: "45%" }}>Surname, First name</th>
+                                <th style={{ ...tableHead }}>Affiliation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {authors.length === 0 ? (
+                                <tr>
+                                    <td colSpan={3} style={{ ...tableCell, fontStyle: "italic", color: "#888" }}>No authors recorded.</td>
+                                </tr>
+                            ) : (
+                                authors.map((a, i) => (
+                                    <tr key={i}>
+                                        <td style={tableCell}>{i + 1}.</td>
+                                        <td style={tableCell}>{a.surnameFirstName || "—"}</td>
+                                        <td style={tableCell}>{a.affiliation || "—"}</td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Signature block */}
+                <div style={{ marginTop: "2.5rem" }}>
+                    <div style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: "0.45rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Signed by
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", alignItems: "flex-end" }}>
+                        {/* Signature image */}
+                        <div>
+                            <div style={{ minHeight: 110, borderBottom: "1px solid #1a1a1a", display: "flex", alignItems: "flex-end", paddingBottom: "0.25rem" }}>
+                                {c.signatory_signature_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={c.signatory_signature_url}
+                                        alt={`Signature of ${c.signatory_full_name}`}
+                                        style={{ maxHeight: 110, maxWidth: "100%", display: "block" }}
+                                    />
+                                ) : (
+                                    <span style={{ fontStyle: "italic", color: "#888" }}>No signature on file</span>
+                                )}
+                            </div>
+                            <div style={{ fontSize: "0.78rem", color: "#666", marginTop: "0.3rem" }}>Signature</div>
+                        </div>
+
+                        {/* Date */}
+                        <div>
+                            <div style={{ borderBottom: "1px solid #1a1a1a", paddingBottom: "0.4rem", minHeight: 110, display: "flex", alignItems: "flex-end" }}>
+                                <span style={{ fontSize: "1.05rem" }}>{formatLongDate(c.signatory_date)}</span>
+                            </div>
+                            <div style={{ fontSize: "0.78rem", color: "#666", marginTop: "0.3rem" }}>Date</div>
+                        </div>
+                    </div>
+
+                    {/* Full name */}
+                    <div style={{ marginTop: "1.25rem" }}>
+                        <div style={{ borderBottom: "1px solid #1a1a1a", padding: "0.4rem 0", fontSize: "1.05rem" }}>
+                            {c.signatory_full_name || "—"}
+                        </div>
+                        <div style={{ fontSize: "0.78rem", color: "#666", marginTop: "0.3rem" }}>Full name of the signatory</div>
+                    </div>
+                </div>
+
+                <p style={{ textAlign: "center", marginTop: "3rem", fontSize: "0.78rem", color: "#888" }}>
+                    Form submitted {formatDateTime(c.created_at)} · Reference ID {c.id}
+                </p>
             </div>
 
-            <div className="admin-actions" style={{ marginTop: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-                <a
-                    href="/admin/consents"
-                    className="admin-btn admin-btn--secondary"
-                    style={{ textDecoration: "none" }}
-                >
-                    ← Back to list
-                </a>
-                <a
-                    href={`/admin/articles/${c.article_slug}`}
-                    className="admin-btn"
-                    style={{ background: "var(--crimson)", color: "#fff", textDecoration: "none" }}
-                >
-                    Open article →
-                </a>
-            </div>
+            <style>{`
+                @media print {
+                    body { background: #fff !important; }
+                    .adm-topbar, .adm-sidebar, .consent-doc-toolbar { display: none !important; }
+                    .admin-body { margin: 0 !important; padding: 0 !important; }
+                    .consent-doc-page { box-shadow: none !important; border: none !important; max-width: 100% !important; }
+                }
+            `}</style>
         </div>
     );
 }
+
+const tableHead: React.CSSProperties = {
+    border: "1px solid #1a1a1a",
+    padding: "6px 10px",
+    textAlign: "left",
+    fontSize: "0.78rem",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    fontWeight: 700,
+    background: "#f5f2ed",
+};
+
+const tableCell: React.CSSProperties = {
+    border: "1px solid #1a1a1a",
+    padding: "6px 10px",
+    verticalAlign: "top",
+};

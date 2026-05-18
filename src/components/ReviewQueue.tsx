@@ -10,7 +10,7 @@ interface ReviewItem {
     author?: string;
     date?: string;
     type?: string;
-    status?: "in_review" | "approved" | "consent_received";
+    status?: "in_review" | "changes_requested" | "approved" | "consent_received";
     publishStatus?: "draft" | "in_review" | "published";
 }
 
@@ -200,9 +200,10 @@ export default function ReviewQueue() {
 
             {data.articles.length > 0 && (() => {
                 const inReview = data.articles.filter((a) => !a.status || a.status === "in_review");
+                const changesRequested = data.articles.filter((a) => a.status === "changes_requested");
                 const awaitingConsent = data.articles.filter((a) => a.status === "approved");
                 const readyToPublish = data.articles.filter((a) => a.status === "consent_received");
-                const renderRow = (a: ReviewItem, kind: "review" | "approved" | "publish") => (
+                const renderRow = (a: ReviewItem, kind: "review" | "changes_requested" | "approved" | "publish") => (
                     <tr key={a.slug}>
                         <td><a href={`/admin/articles/${a.slug}`} style={{ color: "var(--crimson)", textDecoration: "none", fontWeight: 600 }}>{a.title}</a></td>
                         <td>{a.category}</td>
@@ -228,6 +229,11 @@ export default function ReviewQueue() {
                                             Request Changes
                                         </button>
                                     </>
+                                )}
+                                {kind === "changes_requested" && (
+                                    <span style={{ color: "var(--muted)", fontSize: "0.78rem", fontStyle: "italic" }}>
+                                        Awaiting author revisions
+                                    </span>
                                 )}
                                 {kind === "approved" && (
                                     <>
@@ -269,6 +275,20 @@ export default function ReviewQueue() {
                                 <table className="admin-table">
                                     <thead><tr><th>Title</th><th>Category</th><th>Author</th><th>Date</th><th>Actions</th></tr></thead>
                                     <tbody>{inReview.map((a) => renderRow(a, "review"))}</tbody>
+                                </table>
+                            </section>
+                        )}
+                        {changesRequested.length > 0 && (
+                            <section style={{ marginTop: "2rem" }}>
+                                <h2 style={{ fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: "0.75rem" }}>
+                                    Changes Requested ({changesRequested.length})
+                                </h2>
+                                <p style={{ color: "var(--muted)", fontSize: "0.78rem", marginTop: "-0.4rem", marginBottom: "0.75rem" }}>
+                                    Sent back to the author with reviewer notes. They will re-appear under <em>Pending QC / Review</em> after the author re-submits.
+                                </p>
+                                <table className="admin-table">
+                                    <thead><tr><th>Title</th><th>Category</th><th>Author</th><th>Date</th><th>Status</th></tr></thead>
+                                    <tbody>{changesRequested.map((a) => renderRow(a, "changes_requested"))}</tbody>
                                 </table>
                             </section>
                         )}

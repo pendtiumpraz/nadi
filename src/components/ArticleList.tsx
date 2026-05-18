@@ -6,7 +6,7 @@ import { useToast, confirmDialog } from "@/components/Toast";
 
 const PER_PAGE = 15;
 
-type Status = "draft" | "in_review" | "approved" | "consent_received" | "published";
+type Status = "draft" | "in_review" | "changes_requested" | "approved" | "consent_received" | "published";
 
 interface ArticleSummary {
     slug: string;
@@ -27,6 +27,7 @@ interface ArticleListProps {
 const STATUS_LABEL: Record<Status, string> = {
     draft: "Draft",
     in_review: "In Review",
+    changes_requested: "Changes Requested",
     approved: "Approved",
     consent_received: "Consent Received",
     published: "Published",
@@ -35,6 +36,7 @@ const STATUS_LABEL: Record<Status, string> = {
 const STATUS_COLOUR: Record<Status, { bg: string; fg: string }> = {
     draft: { bg: "rgba(150,150,150,0.15)", fg: "#666" },
     in_review: { bg: "rgba(220,150,40,0.15)", fg: "#9a6a10" },
+    changes_requested: { bg: "rgba(196,68,68,0.12)", fg: "#a83838" },
     approved: { bg: "rgba(140,90,200,0.15)", fg: "#6a3a9a" },
     consent_received: { bg: "rgba(30,90,170,0.12)", fg: "#1d4a8a" },
     published: { bg: "rgba(40,140,80,0.12)", fg: "#1a7a3e" },
@@ -44,6 +46,7 @@ const FILTERS: { key: "all" | Status; label: string }[] = [
     { key: "all", label: "All" },
     { key: "draft", label: "Drafts" },
     { key: "in_review", label: "In Review" },
+    { key: "changes_requested", label: "Changes Requested" },
     { key: "approved", label: "Approved" },
     { key: "consent_received", label: "Consent Received" },
     { key: "published", label: "Published" },

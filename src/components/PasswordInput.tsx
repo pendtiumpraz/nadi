@@ -7,6 +7,28 @@ interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
     inputRef?: React.Ref<HTMLInputElement>;
 }
 
+// Plain stroked-icon eye / eye-with-slash — renders consistently on every
+// platform (Windows shipped the eye-with-slash emoji as a monkey-with-eyes,
+// which looked unprofessional next to a password field).
+function EyeIcon({ open }: { open: boolean }): React.JSX.Element {
+    if (open) {
+        return (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+            </svg>
+        );
+    }
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.77 19.77 0 0 1 5.06-5.94" />
+            <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.86 19.86 0 0 1-2.16 3.19" />
+            <path d="M9.88 9.88A3 3 0 0 0 12 15a3 3 0 0 0 2.12-5.12" />
+            <line x1="2" y1="2" x2="22" y2="22" />
+        </svg>
+    );
+}
+
 /**
  * Password input with a built-in show/hide toggle (eye icon).
  *
@@ -44,13 +66,13 @@ export default function PasswordInput({ inputRef, style, ...rest }: PasswordInpu
                     border: "none",
                     cursor: "pointer",
                     padding: 4,
-                    fontSize: "1rem",
-                    lineHeight: 1,
                     color: "#666",
-                    opacity: 0.75,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                 }}
             >
-                {visible ? "🙈" : "👁"}
+                <EyeIcon open={visible} />
             </button>
         </div>
     );

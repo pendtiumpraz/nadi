@@ -172,10 +172,11 @@ export async function PUT(req: NextRequest) {
 
         // Status policy on edit:
         // - admin/reviewer: keeps existing OR caller-supplied status
-        // - contributor: editing a draft/in_review/feedback article moves it to in_review when they
-        //   submit, else stays draft (or in_review if it was). They cannot publish.
-        // - non-publisher edits while article is already `approved` or `consent_received` MUST NOT
-        //   demote it back to draft — preserve the state.
+        // - contributor: editing a draft / changes_requested / in_review article moves it
+        //   to in_review when they submit; otherwise preserves the editable state
+        //   (changes_requested stays changes_requested until resubmit). They cannot publish.
+        // - non-publisher edits while article is `approved` / `consent_received` /
+        //   `published` MUST NOT demote it.
         const lockedStates: ArticleStatus[] = ["approved", "consent_received", "published"];
         let status: ArticleStatus;
         if (canPublish(session.user)) {
@@ -185,9 +186,18 @@ export async function PUT(req: NextRequest) {
             status = existing.status as ArticleStatus;
         } else if (body.submit) {
             status = "in_review";
+        } else if (existing.status === "in_review") {
+            status = "in_review";
+        } else if (existing.status === "changes_requested") {
+            // Preserve changes_requested while the author is iterating; only an
+            // explicit submit transitions it back to in_review.
+            status = "changes_requested";
         } else {
-            status = existing.status === "in_review" ? "in_review" : "draft";
+            status = "draft";
         }
+        // wasInReview captures whether this save is the moment the article
+        // transitions INTO review from somewhere else (draft or changes_requested).
+        // Used to fire the resubmit-notification once, not on every save.
         const wasInReview = existing.status === "in_review";
         body.status = status;
         body.authorId = existing.authorId || body.authorId;
@@ -208,20 +218,20 @@ export async function PUT(req: NextRequest) {
         // Fire submission emails when a non-publisher transitions an article TO in_review
         // (resubmit-after-feedback OR first submit from a draft).
         if (status === "in_review" && !wasInReview && !canPublish(session.user)) {
-            const wasFeedbackPending = !!existing.feedbackPending;
+            // Treat both "changes_requested" and "feedback_pending=true" as resubmit
+            // signals so the email + comment + notification use the right wording.
+            const isResubmit = existing.status === "changes_requested" || !!existing.feedbackPending;
             // Audit-row so the daily cap counts this submit (mirrors the transition route).
             try {
                 const sql = getDB();
                 await sql`
                     INSERT INTO submissions (type, ref_slug, author_id, status, notes)
-                    VALUES ('article', ${body.slug}, ${Number(session.user.id)}, 'in_review', 'resubmit via PUT /api/articles')
+                    VALUES ('article', ${body.slug}, ${Number(session.user.id)}, 'in_review', ${isResubmit ? 'resubmit via PUT /api/articles' : 'submit via PUT /api/articles'})
                 `;
                 // Mirror the submission as a system comment in the article thread so
                 // the back-and-forth (reviewer asked for changes → author re-submitted)
-                // is visible inline alongside other comments. Distinguish first-submit
-                // from re-submit using the existing feedback_pending flag, which the
-                // reviewer's request_changes left set.
-                const verb = wasFeedbackPending ? "re-submitted this article for review after revisions" : "submitted this article for review";
+                // is visible inline alongside other comments.
+                const verb = isResubmit ? "re-submitted this article for review after revisions" : "submitted this article for review";
                 await sql`
                     INSERT INTO article_comments (article_slug, author_id, author_role, body, section_anchor)
                     VALUES (
@@ -235,7 +245,7 @@ export async function PUT(req: NextRequest) {
             } catch (err) {
                 console.error("[articles:PUT] failed to record submission/comment:", (err as Error).message);
             }
-            fireSubmitEmails(req, body, session.user.name || "A contributor", wasFeedbackPending).catch(() => { });
+            fireSubmitEmails(req, body, session.user.name || "A contributor", isResubmit).catch(() => { });
         }
         return NextResponse.json(body);
     } catch (err) {

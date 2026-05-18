@@ -100,7 +100,13 @@ export interface ArticleSEO {
     keywords: string[];
 }
 
-export type ArticleStatus = "draft" | "in_review" | "approved" | "consent_received" | "published";
+export type ArticleStatus =
+    | "draft"
+    | "in_review"
+    | "changes_requested"
+    | "approved"
+    | "consent_received"
+    | "published";
 
 export type PolicyProductType = "opinion_piece" | "policy_brief" | "policy_paper";
 

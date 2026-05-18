@@ -49,8 +49,13 @@ export async function POST(req: NextRequest, { params }: Params) {
         if (!canEditOwnContent(session.user, article.authorId)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
-        // Only valid source states: draft (first submit) or in_review (resubmit-after-feedback).
-        if (article.status !== "draft" && article.status !== "in_review") {
+        // Valid source states: draft (first submit), changes_requested
+        // (resubmit-after-feedback), or in_review (no-op safe).
+        if (
+            article.status !== "draft" &&
+            article.status !== "changes_requested" &&
+            article.status !== "in_review"
+        ) {
             return NextResponse.json({ error: `Cannot submit from status='${article.status}'` }, { status: 400 });
         }
         // Daily submission cap — exempts publishers (admin/reviewer).
@@ -72,7 +77,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         if (article.status !== "in_review") {
             return NextResponse.json({ error: `Can only request changes on an article currently in review (status was '${article.status}').` }, { status: 400 });
         }
-        nextStatus = "draft";
+        // Distinct from "draft" so the article stays visible in the admin
+        // review queue under a "Changes Requested" bucket with the reviewer's
+        // notes attached, and admins/reviewers can keep tracking it.
+        nextStatus = "changes_requested";
     } else {
         // publish
         if (!canPublish(session.user)) return NextResponse.json({ error: "Reviewer or admin required" }, { status: 403 });
@@ -123,7 +131,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     // partners can see their own submission events alongside reviewer feedback.
     if (action === "submit") {
         try {
-            const verb = article.feedbackPending ? "re-submitted this article for review after revisions" : "submitted this article for review";
+            const isResubmit = article.status === "changes_requested" || !!article.feedbackPending;
+            const verb = isResubmit ? "re-submitted this article for review after revisions" : "submitted this article for review";
             await sql`
                 INSERT INTO article_comments (article_slug, author_id, author_role, body, section_anchor)
                 VALUES (
@@ -151,12 +160,13 @@ export async function POST(req: NextRequest, { params }: Params) {
             baseUrl,
         }).catch(() => { });
         // In-app: notify all reviewers + admins
+        const isResubmit = article.status === "changes_requested" || !!article.feedbackPending;
         Promise.all([getUserIdsByRole("admin"), getUserIdsByRole("reviewer")])
             .then(([admins, reviewers]) =>
                 createNotificationForUsers([...admins, ...reviewers], {
-                    type: article.feedbackPending ? "article_resubmitted" : "article_submitted",
-                    title: article.feedbackPending ? `Re-submitted: ${article.title}` : `New submission: ${article.title}`,
-                    body: `${session.user.name || "A contributor"} ${article.feedbackPending ? "re-submitted after revisions" : "submitted this article for review"}.`,
+                    type: isResubmit ? "article_resubmitted" : "article_submitted",
+                    title: isResubmit ? `Re-submitted: ${article.title}` : `New submission: ${article.title}`,
+                    body: `${session.user.name || "A contributor"} ${isResubmit ? "re-submitted after revisions" : "submitted this article for review"}.`,
                     link: `/admin/articles/${slug}`,
                 })
             ).catch(() => { });

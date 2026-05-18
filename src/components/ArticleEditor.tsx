@@ -9,6 +9,7 @@ import AuthorshipAck from "@/components/AuthorshipAck";
 import AiDisclosureField from "@/components/AiDisclosureField";
 import WordCounter from "@/components/WordCounter";
 import CommentThread from "@/components/CommentThread";
+import ReviewHistory from "@/components/ReviewHistory";
 import ApproveButton from "@/components/ApproveButton";
 import PublishButton from "@/components/PublishButton";
 import { POLICY_PRODUCTS, type PolicyProductType } from "@/data/policy-products";
@@ -18,7 +19,7 @@ interface ArticleEditorProps {
     slug?: string;
 }
 
-type ArticleStatus = "draft" | "in_review" | "approved" | "consent_received" | "published";
+type ArticleStatus = "draft" | "in_review" | "changes_requested" | "approved" | "consent_received" | "published";
 
 type FieldError = "title" | "content" | "type" | "ack" | "ai" | null;
 
@@ -317,17 +318,17 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
 
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: "1.5rem", alignItems: "start" }} className="editor-grid-wrap">
             <form onSubmit={(e) => handleSubmit(e)} className="editor" style={{ minWidth: 0 }}>
-                {feedbackPending && (
+                {(feedbackPending || articleStatus === "changes_requested") && (
                     <div style={{
-                        background: "rgba(220,150,40,0.12)",
-                        border: "1px solid rgba(220,150,40,0.35)",
+                        background: "rgba(196,68,68,0.10)",
+                        border: "1px solid rgba(196,68,68,0.30)",
                         borderRadius: 4,
                         padding: "12px 16px",
                         marginBottom: "1rem",
                         fontSize: "0.88rem",
-                        color: "#7a4a08",
+                        color: "#7a1a1a",
                     }}>
-                        💬 <strong>Feedback pending.</strong> A reviewer has posted comments — read them below, revise your article, and resubmit.
+                        ↻ <strong>Changes requested.</strong> A reviewer has sent this article back with notes — read the comment thread below, revise, and click <em>Submit for Review</em> to re-submit.
                     </div>
                 )}
                 {isEdit && articleStatus === "approved" && !canPublish && (
@@ -362,7 +363,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                     <PolicyProductPicker
                         value={policyProductType}
                         onChange={(v) => { handleProductTypeChange(v); if (fieldError === "type") setFieldError(null); }}
-                        disabled={isEdit && !!policyProductType && articleStatus !== "draft" && !canPublish}
+                        disabled={isEdit && !!policyProductType && articleStatus !== "draft" && articleStatus !== "changes_requested" && !canPublish}
                     />
                     {policyProductType === "policy_brief" && (
                         <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.75rem", fontSize: "0.85rem" }}>
@@ -592,14 +593,16 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                                 articleStatus === "published" ? "rgba(40,140,80,0.12)" :
                                     articleStatus === "consent_received" ? "rgba(30,90,170,0.12)" :
                                         articleStatus === "approved" ? "rgba(140,90,200,0.15)" :
-                                            articleStatus === "in_review" ? "rgba(220,150,40,0.15)" :
-                                                "rgba(150,150,150,0.15)",
+                                            articleStatus === "changes_requested" ? "rgba(196,68,68,0.12)" :
+                                                articleStatus === "in_review" ? "rgba(220,150,40,0.15)" :
+                                                    "rgba(150,150,150,0.15)",
                             color:
                                 articleStatus === "published" ? "#1a7a3e" :
                                     articleStatus === "consent_received" ? "#1d4a8a" :
                                         articleStatus === "approved" ? "#6a3a9a" :
-                                            articleStatus === "in_review" ? "#9a6a10" :
-                                                "#666",
+                                            articleStatus === "changes_requested" ? "#a83838" :
+                                                articleStatus === "in_review" ? "#9a6a10" :
+                                                    "#666",
                         }}>
                             {articleStatus.replace(/_/g, " ")}
                         </span>
@@ -733,6 +736,12 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                             if (!canPublish) setFeedbackPending(false);
                         }}
                     />
+                </div>
+            )}
+
+            {isEdit && slug && (
+                <div className="editor-section" style={{ marginTop: "1rem" }}>
+                    <ReviewHistory slug={slug} />
                 </div>
             )}
         </div>

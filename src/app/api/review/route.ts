@@ -14,7 +14,9 @@ export async function GET() {
     const sql = getDB();
     const articles = await sql`
         SELECT slug, title, category, author, date, author_id, updated_at, status
-        FROM articles WHERE status IN ('in_review', 'approved', 'consent_received') ORDER BY updated_at DESC
+        FROM articles
+        WHERE status IN ('in_review', 'changes_requested', 'approved', 'consent_received')
+        ORDER BY updated_at DESC
     `;
     const media = await sql`
         SELECT m.slug, m.title, m.type, m.category, m.author_id, m.date, m.status, u.name AS author_name
