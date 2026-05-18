@@ -2768,14 +2768,30 @@ body.editor-focus-mode .admin-body {
 
 /* CommentThread + ReviewHistory used to live below the form with section
    margins of 2rem to space themselves from the article body. Now that they
-   live inside the tabbed aside, those margins create awkward gaps at the
-   top of the tab body. Reset them so the tab content sits flush with the
-   tab nav. */
+   live inside the tabbed aside, the tab body owns the spacing — kill the
+   inner margins (top AND bottom) so content sits flush against the tab
+   nav and the tab body's own padding. */
 .editor-side-body section {
   margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 .editor-side-body > * + * {
   margin-top: 0 !important;
+}
+/* Trailing margin from the last child of any block inside the tab — the
+   list of comments / history entries shouldn't leave extra air below the
+   final item. */
+.editor-side-body section > *:last-child {
+  margin-bottom: 0 !important;
+}
+.editor-side-body ol,
+.editor-side-body ul {
+  margin-bottom: 0 !important;
+}
+/* Trim the tab body's own padding-bottom so the final card sits close to
+   the aside border. */
+.editor-side-body {
+  padding-bottom: 0.6rem !important;
 }
 
 .editor-save {
