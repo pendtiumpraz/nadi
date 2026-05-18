@@ -35,7 +35,10 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
 
     const [title, setTitle] = useState("");
     const [category, setCategory] = useState("POLICY BRIEF");
-    const [author, setAuthor] = useState("NADI Research Team");
+    // Default author byline is the signed-in user's name — useEffect below
+    // hydrates this once the session resolves. Editing an existing article
+    // overrides with whatever's stored on the row.
+    const [author, setAuthor] = useState("");
     const [readTime, setReadTime] = useState("8 min read");
     const [coverColor, setCoverColor] = useState("crimson");
     const [seoDesc, setSeoDesc] = useState("");
@@ -87,6 +90,17 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
         return <span style={{ fontSize: "0.7rem", color: colour, fontFamily: "var(--font-mono, monospace)" }}>{value}/{max}</span>;
     };
 
+    // Prefill the byline with the signed-in user's name on a fresh article so
+    // contributors / partners don't have to retype it. We only set it if the
+    // field is still empty — once the user edits the field manually, leave it
+    // alone. Editing an existing article will load the stored byline below.
+    useEffect(() => {
+        if (isEdit) return;
+        if (author) return;
+        const sessionName = session?.user?.name;
+        if (sessionName) setAuthor(sessionName);
+    }, [session?.user?.name, isEdit, author]);
+
     // Load existing article
     useEffect(() => {
         if (!isEdit) return;
@@ -96,7 +110,7 @@ export default function ArticleEditor({ slug }: ArticleEditorProps) {
                 if (data.title) {
                     setTitle(data.title);
                     setCategory(data.category || "POLICY BRIEF");
-                    setAuthor(data.author || "NADI Research Team");
+                    setAuthor(data.author || session?.user?.name || "");
                     setReadTime(data.readTime || "8 min read");
                     setCoverColor(data.coverColor || "crimson");
                     setCoverImage(data.coverImage || "");
